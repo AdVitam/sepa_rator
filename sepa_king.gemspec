@@ -18,6 +18,7 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 3.1'
 
   s.add_dependency 'activemodel', '>= 6.1', '< 9'
-  s.add_dependency 'nokogiri', '>= 1.13'
   s.add_dependency 'iban-tools'
+  s.add_dependency 'nokogiri', '>= 1.13'
+  s.metadata['rubygems_mfa_required'] = 'true'
 end

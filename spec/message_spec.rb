@@ -91,7 +91,9 @@ RSpec.describe SEPA::Message do
 
     describe 'getter' do
       it 'should return Time.now.iso8601' do
-        expect(subject.creation_date_time).to eq(Time.now.iso8601)
+        freeze_time do
+          expect(subject.creation_date_time).to eq(Time.now.iso8601)
+        end
       end
     end
 

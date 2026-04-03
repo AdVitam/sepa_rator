@@ -69,6 +69,8 @@ RSpec.describe SEPA::CreditTransferTransaction do
   end
 
   context 'Requested date' do
+    around(:each) { |example| travel_to(Time.new(2025, 6, 15, 12, 0, 0)) { example.run } }
+
     it 'should allow valid value' do
       expect(SEPA::CreditTransferTransaction).to accept(nil, Date.new(1999, 1, 1), Date.today, Date.today.next, Date.today + 2, for: :requested_date)
     end

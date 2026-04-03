@@ -35,6 +35,10 @@ module SEPA
       super
       self.local_instrument ||= 'CORE'
       self.sequence_type ||= 'OOFF'
+
+      if local_instrument == 'COR1'
+        warn '[SEPA] COR1 local instrument is deprecated since November 2017. Use CORE instead.'
+      end
     end
 
     def amendment_informations?
