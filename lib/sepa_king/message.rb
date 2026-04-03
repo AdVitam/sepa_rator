@@ -81,6 +81,8 @@ module SEPA
     end
 
     def schema_compatible?(schema_name)
+      raise ArgumentError, "Schema #{schema_name} is unknown!" unless known_schemas.include?(schema_name)
+
       features = schema_features(schema_name)
       return false if features[:requires_bic] && account.bic.blank?
 
