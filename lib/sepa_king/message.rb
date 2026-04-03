@@ -158,7 +158,9 @@ module SEPA
 
     # Unique and consecutive identifier (used for the <PmntInf> blocks)
     def payment_information_identification(group)
-      "#{message_identification}/#{grouped_transactions.keys.index(group) + 1}"[0, 35]
+      suffix = "/#{grouped_transactions.keys.index(group) + 1}"
+      max_prefix_length = 35 - suffix.length
+      "#{message_identification[0, max_prefix_length]}#{suffix}"
     end
 
     # Returns a key to determine the group to which the transaction belongs

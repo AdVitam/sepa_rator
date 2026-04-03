@@ -21,7 +21,7 @@ module SEPA
                   :creditor_address,
                   :structured_remittance_information
 
-    convert :name, :instruction, :reference, :remittance_information, to: :text
+    convert :name, :instruction, :reference, :remittance_information, :structured_remittance_information, to: :text
     convert :amount, to: :decimal
 
     validates_length_of :name, within: 1..70
@@ -29,6 +29,7 @@ module SEPA
     validates_length_of :instruction, within: 1..35, allow_nil: true
     validates_length_of :reference, within: 1..35, allow_nil: true
     validates_length_of :remittance_information, within: 1..140, allow_nil: true
+    validates_length_of :structured_remittance_information, within: 1..35, allow_nil: true
     validates_numericality_of :amount, greater_than: 0, less_than_or_equal_to: 999_999_999.99
     validates_presence_of :requested_date
     validates_inclusion_of :batch_booking, :in => [true, false]
