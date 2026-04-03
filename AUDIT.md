@@ -1,8 +1,8 @@
 # Comprehensive Audit — sepa_king (AdVitam fork)
 
-**Date**: 2026-04-03
-**Branch audited**: `fix/low-severity-audit-issues`
-**Baseline**: 238 tests passing, 96.93% line coverage, 448 Rubocop offenses (437 autocorrectable)
+**Date**: 2026-04-03 (updated: 2026-04-03)
+**Branch audited**: `fix/low-severity-audit-issues` → updated on `chore/audit-docs-attribution`
+**Baseline**: 238 tests passing, 98.1% line coverage, 0 Rubocop offenses
 
 ---
 
@@ -99,7 +99,7 @@ SCHEMA_FEATURES = {
 
 | ID  | Severity | Description                                                         | File(s)                    | Status |
 |-----|----------|---------------------------------------------------------------------|----------------------------|--------|
-| N1  | Medium   | Factory typo: `direct_debt_transaction` → `direct_debit_transaction` | `spec/support/factories.rb` | [ ]    |
+| N1  | Medium   | Factory typo: `direct_debt_transaction` → `direct_debit_transaction` | `spec/support/factories.rb` | [x]    |
 | N2  | Low      | Variable shadowing: outer `builder` vs block param `builder`         | `message.rb:52`            | [ ]    |
 
 ### 2.7 Rubocop
@@ -135,18 +135,18 @@ SCHEMA_FEATURES = {
 
 | ID  | Description                                                                    | File(s)              | Status |
 |-----|--------------------------------------------------------------------------------|----------------------|--------|
-| A1  | gemspec: homepage/authors still point to salesking, no metadata URIs           | `sepa_king.gemspec`  | [ ]    |
-| A2  | README: no fork mention, salesking badges, "Ruby 2.7+" instead of 3.1+, all links to salesking | `README.md` | [ ]    |
-| A3  | LICENSE: copyright 2013-2022, AdVitam not mentioned                            | `LICENSE.txt`        | [ ]    |
-| A4  | Version still 0.14.0 despite 4 new schemas + 3 audit PRs                      | `version.rb`         | [ ]    |
+| A1  | gemspec: homepage/authors still point to salesking, no metadata URIs           | `sepa_king.gemspec`  | [x]    |
+| A2  | README: no fork mention, salesking badges, "Ruby 2.7+" instead of 3.1+, all links to salesking | `README.md` | [x]    |
+| A3  | LICENSE: copyright 2013-2022, AdVitam not mentioned                            | `LICENSE.txt`        | [x]    |
+| A4  | Version still 0.14.0 despite 4 new schemas + 3 audit PRs                      | `version.rb`         | [x]    |
 
 ### 4.2 Important
 
 | ID  | Description                                                                    | File(s)              | Status |
 |-----|--------------------------------------------------------------------------------|----------------------|--------|
-| A5  | CONTRIBUTING.md: written from salesking perspective, outdated commands          | `CONTRIBUTING.md`    | [ ]    |
-| A6  | CHANGELOG.md does not exist                                                    | —                    | [ ]    |
-| A7  | `coveralls_reborn` in Gemfile likely unused by the fork                        | `Gemfile`            | [ ]    |
+| A5  | CONTRIBUTING.md: written from salesking perspective, outdated commands          | `CONTRIBUTING.md`    | [x]    |
+| A6  | CHANGELOG.md does not exist                                                    | —                    | [x]    |
+| A7  | `coveralls_reborn` in Gemfile likely unused by the fork                        | `Gemfile`            | [x]    |
 
 ### 4.3 Nice-to-have
 
@@ -164,27 +164,27 @@ Recommended execution order. Each item groups related audit findings.
 
 ### Phase 1 — Quick Wins
 
-- [ ] **Rubocop autofix** (R1): `bundle exec rubocop -a`, then manually fix remaining ~11 offenses
-- [ ] **Fix factory typo** (N1): `direct_debt_transaction` → `direct_debit_transaction`
-- [ ] **Ruby idioms** (I1, I2, I3, I4): `inject` → `sum`, `collect` → `map`, add frozen_string_literal to specs
-- [ ] **Remove duplicate attr_accessor** `debtor_address` in DirectDebitTransaction
+- [x] **Rubocop autofix** (R1): `bundle exec rubocop -a`, then manually fix remaining ~11 offenses
+- [x] **Fix factory typo** (N1): `direct_debt_transaction` → `direct_debit_transaction`
+- [x] **Ruby idioms** (I1, I2, I3, I4): `inject` → `sum`, `collect` → `map`, add frozen_string_literal to specs
+- [x] **Remove duplicate attr_accessor** `debtor_address` in DirectDebitTransaction
 
 ### Phase 2 — Documentation & Attribution
 
-- [ ] **Update gemspec** (A1): authors, homepage, metadata URIs, description
-- [ ] **Rewrite README** (A2): fork notice, badges, correct Ruby/ActiveModel versions, update all links
-- [ ] **Update LICENSE** (A3): add AdVitam copyright line, update years to 2013-2026
-- [ ] **Rewrite CONTRIBUTING.md** (A5): AdVitam workflow, correct commands
-- [ ] **Create CHANGELOG.md** (A6): document new schemas and audit fixes
-- [ ] **Bump version** (A4): 0.15.0 or 1.0.0
-- [ ] **Clean Gemfile** (A7): remove `coveralls_reborn` if unused
+- [x] **Update gemspec** (A1): authors, homepage, metadata URIs, description
+- [x] **Rewrite README** (A2): fork notice, badges, correct Ruby/ActiveModel versions, update all links
+- [x] **Update LICENSE** (A3): add AdVitam copyright line, update years to 2013-2026
+- [x] **Rewrite CONTRIBUTING.md** (A5): AdVitam workflow, correct commands
+- [x] **Create CHANGELOG.md** (A6): document new schemas and audit fixes
+- [x] **Bump version** (A4): 0.15.0
+- [x] **Clean Gemfile** (A7): removed `coveralls_reborn` (done in prior PR)
 
 ### Phase 3 — DRY Extractions
 
-- [ ] **Extract `build_bic`** helper in Message (D1, D3): handles BIC/BICFI + NOTPROVIDED
-- [ ] **Extract `build_remittance_information`** in Message (D2): shared RmtInf block
-- [ ] **Extract `format_amount`** helper (D5)
-- [ ] **Extract `AttributeAssignment` module** (D4): shared initialize pattern
+- [x] **Extract `build_agent_bic`** helper in Message (D1, D3): handles BIC/BICFI + NOTPROVIDED
+- [x] **Extract `build_remittance_information`** in Message (D2): shared RmtInf block
+- [x] **Extract `format_amount`** helper (D5)
+- [~] **Extract `AttributeAssignment` module** (D4): skipped — trivial duplication, mixin adds indirection for no gain
 
 ### Phase 4 — Functional Gaps
 
@@ -196,8 +196,8 @@ Recommended execution order. Each item groups related audit findings.
 ### Phase 5 — Refactoring
 
 - [ ] **Decompose `build_payment_informations`** (CS1): extract sub-methods
-- [ ] **Introduce schema feature map** (O1, CS3): replace scattered `include?` checks
-- [ ] **Polymorphic identity in Account** (O2, CS2): move creditor_identifier rendering to CreditorAccount
+- [~] **Introduce schema feature map** (O1, CS3): deferred — BICFI_SCHEMAS constant addresses main duplication, remaining checks are unique
+- [x] **Polymorphic identity in Account** (O2, CS2): move creditor_identifier rendering to CreditorAccount
 - [ ] **`send` → `public_send`** in converter (S1)
 
 ### Phase 6 — Security Hardening

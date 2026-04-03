@@ -1,37 +1,29 @@
-We love pull requests. Here's a quick guide:
+# Contributing to sepa_king (AdVitam fork)
 
-1. Fork the repo.
+## Getting started
 
-2. Run the tests. We only take pull requests with passing tests, and it's great
-to know that you have a clean slate: `bundle && rake`
+1. Fork the repo and clone it locally.
+2. Install dependencies: `bundle install`
+3. Run the test suite: `bundle exec rubocop && bundle exec rspec`
 
-3. Add a test for your change. Only refactoring and documentation changes
-require no new tests. If you are adding functionality or fixing a bug, we need
-a test!
+## Making changes
 
-4. Make the test pass.
+1. Create a feature branch from `master`: `git switch -c feat/your-change`
+2. Write tests for your changes.
+3. Make sure all tests pass: `bundle exec rubocop && bundle exec rspec`
+4. Commit with a descriptive message: `git commit -m "type: description"`
+5. Push and open a pull request against `master`.
 
-5. Push to your fork and submit a pull request.
+## Code style
 
-At this point you're waiting on us. We like to at least comment on, if not
-accept, pull requests within three business days (and, typically, one business
-day). We may suggest some changes or improvements or alternatives.
+* Follow the existing conventions and `.rubocop.yml` configuration.
+* Two spaces for indentation, no tabs.
+* All Ruby files must have `# frozen_string_literal: true`.
 
-Some things that will increase the chance that your pull request is accepted,
-taken straight from the Ruby on Rails guide:
+## Multi-version testing
 
-* Use Rails idioms and helpers
-* Include tests that fail without your code, and pass with it
-* Update the documentation, the surrounding one, examples elsewhere, guides,
-  whatever is affected by your contribution
+Test against different ActiveModel versions:
 
-Syntax:
-
-* Two spaces, no tabs.
-* No trailing whitespace. Blank lines should not have any space.
-* Prefer &&/|| over and/or.
-* MyClass.my_method(my_arg) not my_method( my_arg ) or my_method my_arg.
-* a = b and not a=b.
-* Follow the conventions you see used in the source already.
-
-And in case we didn't emphasize it enough: we love tests!
+```bash
+BUNDLE_GEMFILE=gemfiles/Gemfile-activemodel-8.1.x bundle exec rspec
+```

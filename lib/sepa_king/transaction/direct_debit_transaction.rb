@@ -12,8 +12,7 @@ module SEPA
                   :creditor_account,
                   :original_debtor_account,
                   :same_mandate_new_debtor_agent,
-                  :original_creditor_account,
-                  :debtor_address
+                  :original_creditor_account
 
     validates_with MandateIdentifierValidator, field_name: :mandate_id, message: 'is invalid'
     validates_presence_of :mandate_date_of_signature

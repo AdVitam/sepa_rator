@@ -9,7 +9,7 @@ def credit_transfer_transaction(attributes = {})
     remittance_information: 'Rechnung vom 22.08.2013' }.merge(attributes)
 end
 
-def direct_debt_transaction(attributes = {})
+def direct_debit_transaction(attributes = {})
   { name: 'Müller & Schmidt oHG',
     bic: 'GENODEF1JEV',
     iban: 'DE68210501700012345678',

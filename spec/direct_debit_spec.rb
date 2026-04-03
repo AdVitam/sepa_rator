@@ -23,7 +23,7 @@ RSpec.describe SEPA::DirectDebit do
   describe :add_transaction do
     it 'should add valid transactions' do
       3.times do
-        direct_debit.add_transaction(direct_debt_transaction)
+        direct_debit.add_transaction(direct_debit_transaction)
       end
 
       expect(direct_debit.transactions.size).to eq(3)
@@ -38,15 +38,15 @@ RSpec.describe SEPA::DirectDebit do
 
   describe :batch_id do
     it 'returns the id of the batch where the given transactions belongs to (1 batch)' do
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE'))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE'))
 
       expect(direct_debit.batch_id('EXAMPLE REFERENCE')).to match(%r{#{message_id_regex}/1})
     end
 
     it 'returns the id of the batch where the given transactions belongs to (2 batches)' do
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE 1'))
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE 2', requested_date: Date.today.next.next))
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE 3'))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE 1'))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE 2', requested_date: Date.today.next.next))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE 3'))
 
       expect(direct_debit.batch_id('EXAMPLE REFERENCE 1')).to match(%r{#{message_id_regex}/1})
       expect(direct_debit.batch_id('EXAMPLE REFERENCE 2')).to match(%r{#{message_id_regex}/2})
@@ -56,9 +56,9 @@ RSpec.describe SEPA::DirectDebit do
 
   describe :batches do
     it 'returns an array of batch ids in the sepa message' do
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE 1'))
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE 2', requested_date: Date.today.next.next))
-      direct_debit.add_transaction(direct_debt_transaction(reference: 'EXAMPLE REFERENCE 3'))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE 1'))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE 2', requested_date: Date.today.next.next))
+      direct_debit.add_transaction(direct_debit_transaction(reference: 'EXAMPLE REFERENCE 3'))
 
       expect(direct_debit.batches.size).to eq(2)
       expect(direct_debit.batches[0]).to match(%r{#{message_id_regex}/[0-9]+})
@@ -389,9 +389,9 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 1))
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 2))
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 2))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 1))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 2))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 2))
 
           sdd.to_xml
         end
@@ -413,8 +413,8 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction.merge(local_instrument: 'CORE'))
-          sdd.add_transaction(direct_debt_transaction.merge(local_instrument: 'B2B'))
+          sdd.add_transaction(direct_debit_transaction.merge(local_instrument: 'CORE'))
+          sdd.add_transaction(direct_debit_transaction.merge(local_instrument: 'B2B'))
 
           sdd
         end
@@ -434,9 +434,9 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction.merge(sequence_type: 'OOFF'))
-          sdd.add_transaction(direct_debt_transaction.merge(sequence_type: 'FRST'))
-          sdd.add_transaction(direct_debt_transaction.merge(sequence_type: 'FRST'))
+          sdd.add_transaction(direct_debit_transaction.merge(sequence_type: 'OOFF'))
+          sdd.add_transaction(direct_debit_transaction.merge(sequence_type: 'FRST'))
+          sdd.add_transaction(direct_debit_transaction.merge(sequence_type: 'FRST'))
 
           sdd.to_xml
         end
@@ -453,9 +453,9 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction.merge(batch_booking: false))
-          sdd.add_transaction(direct_debt_transaction.merge(batch_booking: true))
-          sdd.add_transaction(direct_debt_transaction.merge(batch_booking: true))
+          sdd.add_transaction(direct_debit_transaction.merge(batch_booking: false))
+          sdd.add_transaction(direct_debit_transaction.merge(batch_booking: true))
+          sdd.add_transaction(direct_debit_transaction.merge(batch_booking: true))
 
           sdd.to_xml
         end
@@ -472,10 +472,10 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 1, sequence_type: 'OOFF', amount: 1))
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 1, sequence_type: 'FNAL', amount: 2))
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 2, sequence_type: 'OOFF', amount: 4))
-          sdd.add_transaction(direct_debt_transaction.merge(requested_date: Date.today + 2, sequence_type: 'FNAL', amount: 8))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 1, sequence_type: 'OOFF', amount: 1))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 1, sequence_type: 'FNAL', amount: 2))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 2, sequence_type: 'OOFF', amount: 4))
+          sdd.add_transaction(direct_debit_transaction.merge(requested_date: Date.today + 2, sequence_type: 'FNAL', amount: 8))
 
           sdd.to_xml
         end
@@ -506,8 +506,8 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction)
-          sdd.add_transaction(direct_debt_transaction.merge(creditor_account: SEPA::CreditorAccount.new(
+          sdd.add_transaction(direct_debit_transaction)
+          sdd.add_transaction(direct_debit_transaction.merge(creditor_account: SEPA::CreditorAccount.new(
             name: 'Creditor Inc.',
             bic: 'RABONL2U',
             iban: 'NL08RABO0135742099',
@@ -527,9 +527,9 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction(direct_debt_transaction.merge(original_debtor_account: 'NL08RABO0135742099'))
-          sdd.add_transaction(direct_debt_transaction.merge(same_mandate_new_debtor_agent: true))
-          sdd.add_transaction(direct_debt_transaction.merge(original_creditor_account: SEPA::CreditorAccount.new(creditor_identifier: 'NL53ZZZ091734220000', name: 'Creditor Inc.')))
+          sdd.add_transaction(direct_debit_transaction.merge(original_debtor_account: 'NL08RABO0135742099'))
+          sdd.add_transaction(direct_debit_transaction.merge(same_mandate_new_debtor_agent: true))
+          sdd.add_transaction(direct_debit_transaction.merge(original_creditor_account: SEPA::CreditorAccount.new(creditor_identifier: 'NL53ZZZ091734220000', name: 'Creditor Inc.')))
           sdd.to_xml
         end
 
@@ -551,7 +551,7 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sct = direct_debit
 
-          sct.add_transaction(direct_debt_transaction.merge(instruction: '1234/ABC'))
+          sct.add_transaction(direct_debit_transaction.merge(instruction: '1234/ABC'))
 
           sct.to_xml
         end
@@ -569,7 +569,7 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sct = direct_debit
           sct.message_identification = 'A' * 35
-          sct.add_transaction(direct_debt_transaction.merge(instruction: '1234/ABC'))
+          sct.add_transaction(direct_debit_transaction.merge(instruction: '1234/ABC'))
           sct
         end
 
@@ -582,7 +582,7 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sct = direct_debit
 
-          sct.add_transaction(direct_debt_transaction.merge(instruction: '1234/ABC', currency: 'SEK'))
+          sct.add_transaction(direct_debit_transaction.merge(instruction: '1234/ABC', currency: 'SEK'))
 
           sct
         end
