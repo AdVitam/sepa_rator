@@ -124,7 +124,7 @@ module SEPA
 
     # Get unique identifer for the message (with fallback to a random string)
     def message_identification
-      @message_identification ||= "SEPA-KING/#{SecureRandom.hex(11)}"
+      @message_identification ||= "MSG/#{SecureRandom.hex(14)}"
     end
 
     # Set creation date time for the message
@@ -155,6 +155,8 @@ module SEPA
     def batches
       grouped_transactions.keys.map { |group| payment_information_identification(group) }
     end
+
+    SCHEMA_CACHE_MUTEX = Mutex.new
 
     def self.schema_cache
       @schema_cache ||= {}
@@ -255,9 +257,12 @@ module SEPA
     end
 
     def validate_final_document!(document, schema_name)
-      xsd = self.class.schema_cache[schema_name] ||= Nokogiri::XML::Schema(
-        File.read(File.expand_path("../../lib/schema/#{schema_name}.xsd", __dir__))
-      )
+      xsd = self.class.schema_cache[schema_name] || begin
+        schema = Nokogiri::XML::Schema(
+          File.read(File.expand_path("../../lib/schema/#{schema_name}.xsd", __dir__))
+        )
+        SCHEMA_CACHE_MUTEX.synchronize { self.class.schema_cache[schema_name] ||= schema }
+      end
       errors = xsd.validate(document).map(&:message)
       raise SEPA::SchemaValidationError, "Incompatible with schema #{schema_name}: #{errors.join(', ')}" if errors.any?
     end

@@ -69,7 +69,10 @@ module SEPA
 
     def initialize(attributes = {})
       attributes.each do |name, value|
-        public_send("#{name}=", value)
+        setter = "#{name}="
+        raise ArgumentError, "Unknown attribute: #{name}" unless respond_to?(setter)
+
+        public_send(setter, value)
       end
     end
   end

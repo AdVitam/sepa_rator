@@ -133,6 +133,16 @@ RSpec.describe SEPA::Transaction do
     end
   end
 
+  context 'Unknown attributes' do
+    it 'should raise ArgumentError for unknown attribute' do
+      expect { SEPA::Transaction.new(nonexistent_attr: 'value') }.to raise_error(ArgumentError, /Unknown attribute: nonexistent_attr/)
+    end
+
+    it 'should accept valid attributes' do
+      expect { SEPA::Transaction.new(name: 'Test', iban: 'DE21500500009876543210', bic: 'SPUEDE2UXXX', amount: 100) }.not_to raise_error
+    end
+  end
+
   context 'UETR' do
     it 'should accept valid UUIDv4' do
       expect(SEPA::Transaction).to accept(nil, '550e8400-e29b-41d4-a716-446655440000', for: :uetr)

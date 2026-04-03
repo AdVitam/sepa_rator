@@ -48,7 +48,7 @@ RSpec.describe SEPA::Message do
 
     describe 'getter' do
       it 'should return prefixed random hex string' do
-        expect(subject.message_identification).to match(%r{SEPA-KING/([a-f0-9]{2}){11}})
+        expect(subject.message_identification).to match(%r{MSG/([a-f0-9]{2}){14}})
       end
     end
 

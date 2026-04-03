@@ -26,6 +26,12 @@ module SEPA
     validate do |t|
       errors.add(:creditor_account, 'is not correct') if creditor_account && !creditor_account.valid?
 
+      if original_debtor_account.present?
+        iban_str = original_debtor_account.to_s
+        errors.add(:original_debtor_account, 'is not a valid IBAN') unless
+          IBANTools::IBAN.valid?(iban_str) && iban_str.match?(IBANValidator::REGEX)
+      end
+
       if t.mandate_date_of_signature.is_a?(Date)
         errors.add(:mandate_date_of_signature, 'is in the future') if t.mandate_date_of_signature > Date.today
       else

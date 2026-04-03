@@ -7,7 +7,7 @@ module SEPA
 
     def validate(record)
       field_name = options[:field_name] || :iban
-      value = record.send(field_name).to_s
+      value = record.public_send(field_name).to_s
 
       return if IBANTools::IBAN.valid?(value) && value.match?(REGEX)
 
@@ -21,7 +21,7 @@ module SEPA
 
     def validate(record)
       field_name = options[:field_name] || :bic
-      value = record.send(field_name)
+      value = record.public_send(field_name)
 
       return unless value
       return if value.to_s.match?(REGEX)
@@ -40,7 +40,7 @@ module SEPA
 
     def validate(record)
       field_name = options[:field_name] || :creditor_identifier
-      value = record.send(field_name)
+      value = record.public_send(field_name)
 
       return if valid?(value)
 
@@ -70,7 +70,7 @@ module SEPA
 
     def validate(record)
       field_name = options[:field_name] || :mandate_id
-      value = record.send(field_name)
+      value = record.public_send(field_name)
 
       return if value.to_s.match?(REGEX)
 
