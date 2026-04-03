@@ -228,6 +228,73 @@ RSpec.describe SEPA::DirectDebit do
         end
       end
 
+      context 'XML structure for pain.008.001.08' do
+        subject do
+          sdd = direct_debit
+
+          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
+                              bic: 'SPUEDE2UXXX',
+                              iban: 'DE21500500009876543210',
+                              amount: 39.99,
+                              reference: 'XYZ/2013-08-ABO/12345',
+                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
+                              mandate_id: 'K-02-2011-12345',
+                              mandate_date_of_signature: Date.new(2011, 1, 25)
+
+          sdd.to_xml(SEPA::PAIN_008_001_08)
+        end
+
+        it 'should use BICFI instead of BIC for creditor agent' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC')
+        end
+
+        it 'should use BICFI instead of BIC for debtor agent' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BICFI', 'SPUEDE2UXXX')
+          expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BIC')
+        end
+
+        it 'should NOT wrap ReqdColltnDt in Dt' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt')
+          expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt/Dt')
+        end
+
+        it 'should use correct namespace' do
+          expect(subject).to include('urn:iso:std:iso:20022:tech:xsd:pain.008.001.08')
+        end
+      end
+
+      context 'XML structure for pain.008.001.12' do
+        subject do
+          sdd = direct_debit
+
+          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
+                              bic: 'SPUEDE2UXXX',
+                              iban: 'DE21500500009876543210',
+                              amount: 39.99,
+                              reference: 'XYZ/2013-08-ABO/12345',
+                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
+                              mandate_id: 'K-02-2011-12345',
+                              mandate_date_of_signature: Date.new(2011, 1, 25)
+
+          sdd.to_xml(SEPA::PAIN_008_001_12)
+        end
+
+        it 'should use BICFI instead of BIC' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC')
+        end
+
+        it 'should NOT wrap ReqdColltnDt in Dt' do
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt')
+          expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt/Dt')
+        end
+
+        it 'should use correct namespace' do
+          expect(subject).to include('urn:iso:std:iso:20022:tech:xsd:pain.008.001.12')
+        end
+      end
+
       context 'with BIC and debtor address ' do
         subject do
           sdd = direct_debit
@@ -693,6 +760,137 @@ RSpec.describe SEPA::DirectDebit do
           is_expected.to start_with(xml_header)
         end
       end
+    end
+  end
+
+  describe 'PostalAddress24 fields' do
+    subject do
+      sdd = direct_debit
+
+      sdd.add_transaction direct_debit_transaction(
+        debtor_address: SEPA::DebtorAddress.new(
+          country_code: 'DE',
+          street_name: 'Hauptstrasse',
+          building_name: 'Tower A',
+          floor: '3',
+          post_code: '10115',
+          town_name: 'Berlin'
+        )
+      )
+      sdd
+    end
+
+    it 'should validate against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'should contain BldgNm element' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08))
+        .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/PstlAdr/BldgNm', 'Tower A')
+    end
+  end
+
+  describe 'PostalAddress27 fields' do
+    subject do
+      sdd = direct_debit
+
+      sdd.add_transaction direct_debit_transaction(
+        debtor_address: SEPA::DebtorAddress.new(
+          country_code: 'DE',
+          street_name: 'Hauptstrasse',
+          care_of: 'c/o Max Mustermann',
+          unit_number: '4B',
+          post_code: '10115',
+          town_name: 'Berlin'
+        )
+      )
+      sdd
+    end
+
+    it 'should validate against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'should contain CareOf element' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12))
+        .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/PstlAdr/CareOf', 'c/o Max Mustermann')
+    end
+  end
+
+  describe 'InstrPrty' do
+    subject do
+      sdd = direct_debit
+
+      sdd.add_transaction direct_debit_transaction(instruction_priority: 'HIGH')
+      sdd
+    end
+
+    it 'should validate against pain.008.001.02' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
+    end
+
+    it 'should validate against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'should contain InstrPrty element' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_02))
+        .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtTpInf/InstrPrty', 'HIGH')
+    end
+
+    it 'should fail for pain.008.002.02' do
+      expect { subject.to_xml(SEPA::PAIN_008_002_02) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
+    end
+  end
+
+  describe 'UETR' do
+    subject do
+      sdd = direct_debit
+
+      sdd.add_transaction direct_debit_transaction(uetr: '550e8400-e29b-41d4-a716-446655440000')
+      sdd
+    end
+
+    it 'should validate against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'should validate against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'should contain UETR element' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08))
+        .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/PmtId/UETR', '550e8400-e29b-41d4-a716-446655440000')
+    end
+
+    it 'should fail for pain.008.001.02' do
+      expect { subject.to_xml(SEPA::PAIN_008_001_02) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
+    end
+  end
+
+  describe 'RPRE sequence type' do
+    subject do
+      sdd = direct_debit
+
+      sdd.add_transaction direct_debit_transaction(sequence_type: 'RPRE')
+      sdd
+    end
+
+    it 'should validate against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'should validate against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'should contain RPRE in SeqTp' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtTpInf/SeqTp', 'RPRE')
+    end
+
+    it 'should fail for pain.008.001.02' do
+      expect { subject.to_xml(SEPA::PAIN_008_001_02) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
     end
   end
 end

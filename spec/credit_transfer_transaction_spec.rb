@@ -58,6 +58,11 @@ RSpec.describe SEPA::CreditTransferTransaction do
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.001.09')
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.09')
       end
+
+      it 'should accept UETR' do
+        expect(SEPA::CreditTransferTransaction.new(uetr: '550e8400-e29b-41d4-a716-446655440000'))
+          .to be_schema_compatible('pain.001.001.09')
+      end
     end
 
     context 'for pain.001.001.13' do
@@ -65,6 +70,23 @@ RSpec.describe SEPA::CreditTransferTransaction do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX')).to be_schema_compatible('pain.001.001.13')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.001.13')
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.13')
+      end
+
+      it 'should accept UETR' do
+        expect(SEPA::CreditTransferTransaction.new(uetr: '550e8400-e29b-41d4-a716-446655440000'))
+          .to be_schema_compatible('pain.001.001.13')
+      end
+    end
+
+    context 'UETR schema compatibility' do
+      it 'should reject UETR for pain.001.001.03' do
+        expect(SEPA::CreditTransferTransaction.new(uetr: '550e8400-e29b-41d4-a716-446655440000'))
+          .not_to be_schema_compatible('pain.001.001.03')
+      end
+
+      it 'should reject UETR for pain.001.002.03' do
+        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', uetr: '550e8400-e29b-41d4-a716-446655440000'))
+          .not_to be_schema_compatible('pain.001.002.03')
       end
     end
   end
@@ -78,6 +100,16 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'should not allow invalid value' do
       expect(SEPA::CreditTransferTransaction).not_to accept(Date.new(1995, 12, 21), Date.today - 1, for: :requested_date)
+    end
+  end
+
+  context 'Instruction Priority' do
+    it 'should allow valid value' do
+      expect(SEPA::CreditTransferTransaction).to accept(nil, 'HIGH', 'NORM', for: :instruction_priority)
+    end
+
+    it 'should not allow invalid value' do
+      expect(SEPA::CreditTransferTransaction).not_to accept('', 'LOW', 'high', for: :instruction_priority)
     end
   end
 

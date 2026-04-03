@@ -118,12 +118,12 @@ SCHEMA_FEATURES = {
 
 | ID  | Severity   | Description                                                                           | Status |
 |-----|------------|---------------------------------------------------------------------------------------|--------|
-| F1  | **Medium** | Missing `RPRE` (Represented) sequence type for pain.008.001.08/.12                    | [ ]    |
-| F2  | **Medium** | No detailed XML structure tests for newer schemas (BICFI, date wrapping assertions)   | [ ]    |
-| F3  | Low        | Optional `UETR` field (UUIDv4) not exposed for .09/.13/.08/.12                        | [ ]    |
-| F4  | Low        | No reference XML fixtures in `spec/examples/` for newer schemas                       | [ ]    |
-| F5  | Low        | PostalAddress27 new fields not exposed (CareOf, BldgNm, Flr, etc.)                   | [ ]    |
-| F6  | Low        | `InstrPrty` (Instruction Priority: HIGH/NORM) not exposed                             | [ ]    |
+| F1  | **Medium** | Missing `RPRE` (Represented) sequence type for pain.008.001.08/.12                    | [x]    |
+| F2  | **Medium** | No detailed XML structure tests for newer schemas (BICFI, date wrapping assertions)   | [x]    |
+| F3  | Low        | Optional `UETR` field (UUIDv4) not exposed for .09/.13/.08/.12                        | [x]    |
+| F4  | Low        | No reference XML fixtures in `spec/examples/` for newer schemas                       | [x]    |
+| F5  | Low        | PostalAddress27 new fields not exposed (CareOf, BldgNm, Flr, etc.)                   | [x]    |
+| F6  | Low        | `InstrPrty` (Instruction Priority: HIGH/NORM) not exposed                             | [x]    |
 
 ---
 
@@ -188,10 +188,12 @@ Recommended execution order. Each item groups related audit findings.
 
 ### Phase 4 — Functional Gaps
 
-- [ ] **Add `RPRE` sequence type** (F1): for pain.008.001.08/.12
-- [ ] **Add structural tests for newer schemas** (F2): assert BICFI, date wrapping, etc.
-- [ ] **Add reference XML fixtures** (F4): for .09/.13/.08/.12 in `spec/examples/`
-- [ ] **Consider `UETR` field** (F3): optional UUIDv4 in newer schemas
+- [x] **Add `RPRE` sequence type** (F1): for pain.008.001.08/.12
+- [x] **Add structural tests for newer schemas** (F2): assert BICFI, date wrapping, etc.
+- [x] **Add reference XML fixtures** (F4): for .09/.13/.08/.12 in `spec/examples/`
+- [x] **Add `UETR` field** (F3): optional UUIDv4 in newer schemas
+- [x] **Expose PostalAddress24/27 fields** (F5): CareOf, BldgNm, Floor, Room, UnitNb, etc.
+- [x] **Add `InstrPrty` field** (F6): HIGH/NORM instruction priority
 
 ### Phase 5 — Refactoring
 
@@ -212,5 +214,5 @@ Recommended execution order. Each item groups related audit findings.
 - [ ] Add Dependabot config (A8)
 - [ ] Add CODEOWNERS (A9)
 - [ ] Add issue/PR templates (A10)
-- [ ] Expose `InstrPrty` field (F6)
-- [ ] Expose PostalAddress27 fields (F5)
+- [x] Expose `InstrPrty` field (F6)
+- [x] Expose PostalAddress27 fields (F5)

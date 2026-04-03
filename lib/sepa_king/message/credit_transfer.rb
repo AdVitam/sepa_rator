@@ -14,7 +14,8 @@ module SEPA
       { requested_date: transaction.requested_date,
         batch_booking: transaction.batch_booking,
         service_level: transaction.service_level,
-        category_purpose: transaction.category_purpose }
+        category_purpose: transaction.category_purpose,
+        instruction_priority: transaction.instruction_priority }
     end
 
     def build_payment_informations(builder, schema_name)
@@ -36,9 +37,10 @@ module SEPA
     end
 
     def build_payment_type_information(builder, group)
-      return unless group[:service_level] || group[:category_purpose]
+      return unless group[:service_level] || group[:category_purpose] || group[:instruction_priority]
 
       builder.PmtTpInf do
+        builder.InstrPrty(group[:instruction_priority]) if group[:instruction_priority]
         if group[:service_level]
           builder.SvcLvl do
             builder.Cd(group[:service_level])
@@ -82,6 +84,7 @@ module SEPA
         builder.PmtId do
           builder.InstrId(transaction.instruction) if transaction.instruction.present?
           builder.EndToEndId(transaction.reference)
+          builder.UETR(transaction.uetr) if transaction.uetr.present?
         end
         builder.Amt do
           builder.InstdAmt(format_amount(transaction.amount), Ccy: transaction.currency)
