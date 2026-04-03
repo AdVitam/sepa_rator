@@ -197,6 +197,67 @@ RSpec.describe SEPA::CreditTransfer do
         end
       end
 
+      context 'XML structure for pain.001.001.09' do
+        subject do
+          sct = credit_transfer
+
+          sct.add_transaction name: 'Telekomiker AG',
+                              bic: 'PBNKDEFF370',
+                              iban: 'DE37112589611964645802',
+                              amount: 102.50,
+                              reference: 'XYZ-1234/123',
+                              remittance_information: 'Rechnung vom 22.08.2013'
+
+          sct.to_xml(SEPA::PAIN_001_001_09)
+        end
+
+        it 'should use BICFI instead of BIC for debtor agent' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BIC')
+        end
+
+        it 'should use BICFI instead of BIC for creditor agent' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/BICFI', 'PBNKDEFF370')
+          expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/BIC')
+        end
+
+        it 'should wrap ReqdExctnDt in Dt' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/ReqdExctnDt/Dt')
+        end
+
+        it 'should use correct namespace' do
+          expect(subject).to include('urn:iso:std:iso:20022:tech:xsd:pain.001.001.09')
+        end
+      end
+
+      context 'XML structure for pain.001.001.13' do
+        subject do
+          sct = credit_transfer
+
+          sct.add_transaction name: 'Telekomiker AG',
+                              bic: 'PBNKDEFF370',
+                              iban: 'DE37112589611964645802',
+                              amount: 102.50,
+                              reference: 'XYZ-1234/123',
+                              remittance_information: 'Rechnung vom 22.08.2013'
+
+          sct.to_xml(SEPA::PAIN_001_001_13)
+        end
+
+        it 'should use BICFI instead of BIC' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BIC')
+        end
+
+        it 'should wrap ReqdExctnDt in Dt' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/ReqdExctnDt/Dt')
+        end
+
+        it 'should use correct namespace' do
+          expect(subject).to include('urn:iso:std:iso:20022:tech:xsd:pain.001.001.13')
+        end
+      end
+
       context 'without requested_date given' do
         subject do
           sct = credit_transfer
@@ -578,6 +639,125 @@ RSpec.describe SEPA::CreditTransfer do
           remittance_information: ']]><Injected>data</Injected>'
         )
         expect(sct.to_xml).to validate_against('pain.001.001.03.xsd')
+      end
+    end
+
+    context 'with PostalAddress24 fields' do
+      subject do
+        sct = credit_transfer
+
+        sct.add_transaction credit_transfer_transaction(
+          creditor_address: SEPA::CreditorAddress.new(
+            country_code: 'DE',
+            street_name: 'Hauptstrasse',
+            building_number: '42',
+            building_name: 'Tower A',
+            floor: '3',
+            post_code: '10115',
+            town_name: 'Berlin',
+            district_name: 'Berlin-Mitte'
+          )
+        )
+        sct
+      end
+
+      it 'should validate against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'should contain BldgNm element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/PstlAdr/BldgNm', 'Tower A')
+      end
+
+      it 'should contain DstrctNm element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/PstlAdr/DstrctNm', 'Berlin-Mitte')
+      end
+    end
+
+    context 'with PostalAddress27 fields' do
+      subject do
+        sct = credit_transfer
+
+        sct.add_transaction credit_transfer_transaction(
+          creditor_address: SEPA::CreditorAddress.new(
+            country_code: 'DE',
+            street_name: 'Hauptstrasse',
+            care_of: 'c/o Max Mustermann',
+            unit_number: '4B',
+            post_code: '10115',
+            town_name: 'Berlin'
+          )
+        )
+        sct
+      end
+
+      it 'should validate against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'should contain CareOf element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/PstlAdr/CareOf', 'c/o Max Mustermann')
+      end
+
+      it 'should contain UnitNb element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/PstlAdr/UnitNb', '4B')
+      end
+    end
+
+    context 'with InstrPrty' do
+      subject do
+        sct = credit_transfer
+
+        sct.add_transaction credit_transfer_transaction(instruction_priority: 'HIGH')
+        sct
+      end
+
+      it 'should validate against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'should validate against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'should contain InstrPrty element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/PmtTpInf/InstrPrty', 'HIGH')
+      end
+
+      it 'should place InstrPrty before SvcLvl' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml.index('InstrPrty')).to be < xml.index('SvcLvl')
+      end
+    end
+
+    context 'with UETR' do
+      subject do
+        sct = credit_transfer
+
+        sct.add_transaction credit_transfer_transaction(uetr: '550e8400-e29b-41d4-a716-446655440000')
+        sct
+      end
+
+      it 'should validate against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'should validate against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'should contain UETR element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/PmtId/UETR', '550e8400-e29b-41d4-a716-446655440000')
+      end
+
+      it 'should fail for pain.001.001.03' do
+        expect { subject.to_xml(SEPA::PAIN_001_001_03) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
       end
     end
   end

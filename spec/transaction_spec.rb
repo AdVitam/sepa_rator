@@ -132,4 +132,20 @@ RSpec.describe SEPA::Transaction do
       expect(SEPA::Transaction).not_to accept('', 'EURO', 'ABCDEF', for: :currency)
     end
   end
+
+  context 'UETR' do
+    it 'should accept valid UUIDv4' do
+      expect(SEPA::Transaction).to accept(nil, '550e8400-e29b-41d4-a716-446655440000', for: :uetr)
+    end
+
+    it 'should not accept invalid UETR' do
+      expect(SEPA::Transaction).not_to accept(
+        '',
+        'not-a-uuid',
+        '550e8400-e29b-31d4-a716-446655440000', # v3, not v4
+        '550E8400-E29B-41D4-A716-446655440000', # uppercase
+        for: :uetr
+      )
+    end
+  end
 end

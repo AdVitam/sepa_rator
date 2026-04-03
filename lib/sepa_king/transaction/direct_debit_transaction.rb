@@ -2,13 +2,15 @@
 
 module SEPA
   class DirectDebitTransaction < Transaction
-    SEQUENCE_TYPES = %w[FRST OOFF RCUR FNAL].freeze
+    SEQUENCE_TYPES = %w[FRST OOFF RCUR FNAL RPRE].freeze
+    SEQUENCE_TYPES_V1 = %w[FRST OOFF RCUR FNAL].freeze
     LOCAL_INSTRUMENTS = %w[CORE COR1 B2B].freeze
 
     attr_accessor :mandate_id,
                   :mandate_date_of_signature,
                   :local_instrument,
                   :sequence_type,
+                  :instruction_priority,
                   :creditor_account,
                   :original_debtor_account,
                   :same_mandate_new_debtor_agent,
@@ -18,6 +20,7 @@ module SEPA
     validates_presence_of :mandate_date_of_signature
     validates_inclusion_of :local_instrument, in: LOCAL_INSTRUMENTS
     validates_inclusion_of :sequence_type, in: SEQUENCE_TYPES
+    validates_inclusion_of :instruction_priority, in: %w[HIGH NORM], allow_nil: true
     validate { |t| t.validate_requested_date_after(Date.today.next) }
 
     validate do |t|
@@ -44,13 +47,22 @@ module SEPA
       original_debtor_account || same_mandate_new_debtor_agent || original_creditor_account
     end
 
+    UETR_SCHEMAS = %w[pain.008.001.08 pain.008.001.12].freeze
+    INSTR_PRTY_UNSUPPORTED_SCHEMAS = %w[pain.008.002.02 pain.008.003.02].freeze
+
     def schema_compatible?(schema_name)
+      return false if uetr.present? && !UETR_SCHEMAS.include?(schema_name)
+      return false if instruction_priority.present? && INSTR_PRTY_UNSUPPORTED_SCHEMAS.include?(schema_name)
+
       case schema_name
+      when PAIN_008_001_02
+        SEQUENCE_TYPES_V1.include?(sequence_type)
       when PAIN_008_002_02
-        bic.present? && %w[CORE B2B].include?(self.local_instrument) && currency == 'EUR'
+        bic.present? && %w[CORE B2B].include?(local_instrument) && currency == 'EUR' &&
+          SEQUENCE_TYPES_V1.include?(sequence_type)
       when PAIN_008_003_02
-        currency == 'EUR'
-      when PAIN_008_001_02, PAIN_008_001_08, PAIN_008_001_12
+        currency == 'EUR' && SEQUENCE_TYPES_V1.include?(sequence_type)
+      when PAIN_008_001_08, PAIN_008_001_12
         true
       end
     end

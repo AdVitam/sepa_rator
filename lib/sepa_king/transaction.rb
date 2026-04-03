@@ -22,7 +22,8 @@ module SEPA
                   :currency,
                   :debtor_address,
                   :creditor_address,
-                  :structured_remittance_information
+                  :structured_remittance_information,
+                  :uetr
 
     convert :name, :instruction, :reference, :remittance_information, :structured_remittance_information, to: :text
     convert :amount, to: :decimal
@@ -35,6 +36,9 @@ module SEPA
     validates_length_of :structured_remittance_information, within: 1..35, allow_nil: true
     validates_numericality_of :amount, greater_than: 0, less_than_or_equal_to: 999_999_999.99
     validates_presence_of :requested_date
+
+    UETR_REGEX = /\A[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}\z/
+    validates_format_of :uetr, with: UETR_REGEX, allow_nil: true
     validates_inclusion_of :batch_booking, in: [true, false]
     validates_with BICValidator, IBANValidator, message: 'is invalid'
 

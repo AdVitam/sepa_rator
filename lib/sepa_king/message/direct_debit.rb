@@ -19,7 +19,8 @@ module SEPA
         local_instrument: transaction.local_instrument,
         sequence_type: transaction.sequence_type,
         batch_booking: transaction.batch_booking,
-        account: transaction.creditor_account || account }
+        account: transaction.creditor_account || account,
+        instruction_priority: transaction.instruction_priority }
     end
 
     def build_payment_informations(builder, schema_name)
@@ -41,6 +42,7 @@ module SEPA
 
     def build_payment_type_information(builder, group)
       builder.PmtTpInf do
+        builder.InstrPrty(group[:instruction_priority]) if group[:instruction_priority]
         builder.SvcLvl do
           builder.Cd('SEPA')
         end
@@ -125,6 +127,7 @@ module SEPA
         builder.PmtId do
           builder.InstrId(transaction.instruction) if transaction.instruction.present?
           builder.EndToEndId(transaction.reference)
+          builder.UETR(transaction.uetr) if transaction.uetr.present?
         end
         builder.InstdAmt(format_amount(transaction.amount), Ccy: transaction.currency)
         builder.DrctDbtTx do

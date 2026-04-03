@@ -27,6 +27,29 @@ module SEPA
     PAIN_008_003_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false }
   }.each_value(&:freeze).freeze
 
+  # Element order follows PostalAddress27 XSD sequence (the superset).
+  # Fields absent in older schemas are rejected by XSD validation.
+  POSTAL_ADDRESS_FIELDS = [
+    %i[CareOf care_of],
+    %i[Dept department],
+    %i[SubDept sub_department],
+    %i[StrtNm street_name],
+    %i[BldgNb building_number],
+    %i[BldgNm building_name],
+    %i[Flr floor],
+    %i[UnitNb unit_number],
+    %i[PstBx post_box],
+    %i[Room room],
+    %i[PstCd post_code],
+    %i[TwnNm town_name],
+    %i[TwnLctnNm town_location_name],
+    %i[DstrctNm district_name],
+    %i[CtrySubDvsn country_sub_division],
+    %i[Ctry country_code],
+    %i[AdrLine address_line1],
+    %i[AdrLine address_line2]
+  ].freeze
+
   class Message
     include ActiveModel::Validations
 
@@ -187,13 +210,10 @@ module SEPA
 
     def build_postal_address(builder, address)
       builder.PstlAdr do
-        builder.StrtNm(address.street_name) if address.street_name
-        builder.BldgNb(address.building_number)  if address.building_number
-        builder.PstCd(address.post_code)         if address.post_code
-        builder.TwnNm(address.town_name)         if address.town_name
-        builder.Ctry(address.country_code)       if address.country_code
-        builder.AdrLine(address.address_line1)   if address.address_line1
-        builder.AdrLine(address.address_line2)   if address.address_line2
+        POSTAL_ADDRESS_FIELDS.each do |xml_tag, attr|
+          value = address.public_send(attr)
+          builder.__send__(xml_tag, value) if value
+        end
       end
     end
 
