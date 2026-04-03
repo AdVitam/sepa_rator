@@ -221,7 +221,7 @@ end
 - **Issue**: `PmtInfId` = `"#{message_identification}/#{index+1}"`. If MsgId is 30 chars and index > 9, length exceeds XSD’s 35 chars.
 - **Fix**: Truncate or validate length
 
-- [ ] Fixed
+- [x] Fixed
 
 ---
 
@@ -239,21 +239,21 @@ end
 - **File**: `sepa_king.gemspec`
 - Ruby 2.7 has been EOL since 2023. Move to `>= 3.1`.
 
-- [ ] Fixed
+- [x] Fixed (H1)
 
 ### B3 — Outdated `actions/checkout@v3` in CI
 
 - **File**: `.github/workflows/main.yml`
 - v3 uses Node.js 16 (EOL). Upgrade to v4.
 
-- [ ] Fixed
+- [x] Fixed (M2)
 
 ### B4 — Deprecated `add_development_dependency`
 
 - **File**: `sepa_king.gemspec`
 - Deprecated in favor of `Gemfile` since Bundler 2.x.
 
-- [ ] Fixed
+- [x] Fixed (rubocop commit)
 
 ### B5 — No XML injection tests
 
@@ -292,7 +292,7 @@ end
 - **File**: `lib/sepa_king/validator.rb:51`
 - `if ok = creditor_identifier.to_s.match?(REGEX)` — code smell; RuboCop would flag it.
 
-- [ ] Fixed
+- [x] Fixed (M12)
 
 ---
 
