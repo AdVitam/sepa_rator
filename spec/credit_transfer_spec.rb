@@ -65,6 +65,14 @@ RSpec.describe SEPA::CreditTransfer do
       it 'should validate against pain.001.003.03' do
         expect(subject.to_xml(SEPA::PAIN_001_003_03)).to validate_against('pain.001.003.03.xsd')
       end
+
+      it 'should validate against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'should validate against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
     end
 
     context 'setting creditor address with structured fields' do
@@ -93,6 +101,14 @@ RSpec.describe SEPA::CreditTransfer do
       it 'should validate against pain.001.001.03' do
         expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
       end
+
+      it 'should validate against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'should validate against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
     end
 
     context 'for valid debtor' do
@@ -120,6 +136,14 @@ RSpec.describe SEPA::CreditTransfer do
 
         it 'should validate against pain.001.001.03' do
           expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+        end
+
+        it 'should validate against pain.001.001.09' do
+          expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+        end
+
+        it 'should validate against pain.001.001.13' do
+          expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
         end
 
         context 'with CHF as currency' do
@@ -161,6 +185,14 @@ RSpec.describe SEPA::CreditTransfer do
 
         it 'should validate against pain.001.003.03' do
           expect(subject.to_xml('pain.001.003.03')).to validate_against('pain.001.003.03.xsd')
+        end
+
+        it 'should validate against pain.001.001.09' do
+          expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+        end
+
+        it 'should validate against pain.001.001.13' do
+          expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
         end
       end
 
@@ -413,6 +445,14 @@ RSpec.describe SEPA::CreditTransfer do
 
         it 'should validate against pain.001.001.03' do
           expect(subject.to_xml('pain.001.001.03')).to validate_against('pain.001.001.03.xsd')
+        end
+
+        it 'should validate against pain.001.001.09' do
+          expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+        end
+
+        it 'should validate against pain.001.001.13' do
+          expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
         end
 
         it 'should fail for pain.001.002.03' do

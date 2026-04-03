@@ -45,6 +45,20 @@ RSpec.describe SEPA::DirectDebitTransaction do
         expect(SEPA::DirectDebitTransaction.new(:bic => 'SPUEDE2UXXX', :currency => 'CHF')).to be_schema_compatible('pain.008.001.02')
       end
     end
+
+    context 'for pain.008.001.08' do
+      it 'should succeed for valid attributes' do
+        expect(SEPA::DirectDebitTransaction.new(:bic => 'SPUEDE2UXXX', :currency => 'CHF')).to be_schema_compatible('pain.008.001.08')
+        expect(SEPA::DirectDebitTransaction.new(:bic => nil)).to be_schema_compatible('pain.008.001.08')
+      end
+    end
+
+    context 'for pain.008.001.12' do
+      it 'should succeed for valid attributes' do
+        expect(SEPA::DirectDebitTransaction.new(:bic => 'SPUEDE2UXXX', :currency => 'CHF')).to be_schema_compatible('pain.008.001.12')
+        expect(SEPA::DirectDebitTransaction.new(:bic => nil)).to be_schema_compatible('pain.008.001.12')
+      end
+    end
   end
 
   context 'Mandate Date of Signature' do
