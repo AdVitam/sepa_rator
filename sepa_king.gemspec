@@ -1,30 +1,23 @@
-# coding: utf-8
-lib = File.expand_path('lib', __dir__)
-$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'sepa_king/version'
+# frozen_string_literal: true
+
+require_relative 'lib/sepa_king/version'
 
 Gem::Specification.new do |s|
   s.name          = 'sepa_king'
   s.version       = SEPA::VERSION
   s.authors       = ['Georg Leciejewski', 'Georg Ledermann']
   s.email         = ['gl@salesking.eu', 'georg@ledermann.dev']
-  s.description   = 'Implemention of Payments Initiation (ISO 20022)'
+  s.description   = 'Implementation of Payments Initiation (ISO 20022)'
   s.summary       = 'Ruby gem for creating SEPA XML files'
   s.homepage      = 'https://github.com/salesking/sepa_king'
   s.license       = 'MIT'
 
-  s.files         = `git ls-files`.split($/)
+  s.files         = Dir['lib/**/*', 'LICENSE.txt', 'README.md']
   s.require_paths = ['lib']
 
   s.required_ruby_version = '>= 3.1'
 
-  s.add_runtime_dependency 'activemodel', '>= 6.1', '< 9'
-  s.add_runtime_dependency 'nokogiri', '>= 1.13'
-  s.add_runtime_dependency 'iban-tools'
-
-  s.add_development_dependency 'bundler'
-  s.add_development_dependency 'rspec'
-  s.add_development_dependency 'coveralls_reborn'
-  s.add_development_dependency 'simplecov'
-  s.add_development_dependency 'rake'
+  s.add_dependency 'activemodel', '>= 6.1', '< 9'
+  s.add_dependency 'nokogiri', '>= 1.13'
+  s.add_dependency 'iban-tools'
 end

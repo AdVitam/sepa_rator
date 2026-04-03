@@ -5,16 +5,16 @@ module SEPA
     self.account_class = DebtorAccount
     self.transaction_class = CreditTransferTransaction
     self.xml_main_tag = 'CstmrCdtTrfInitn'
-    self.known_schemas = [ PAIN_001_001_03, PAIN_001_001_03_CH_02, PAIN_001_001_09, PAIN_001_001_13, PAIN_001_003_03, PAIN_001_002_03 ]
+    self.known_schemas = [PAIN_001_001_03, PAIN_001_001_03_CH_02, PAIN_001_001_09, PAIN_001_001_13, PAIN_001_003_03, PAIN_001_002_03]
 
-  private
+    private
+
     # Find groups of transactions which share the same values of some attributes
     def transaction_group(transaction)
       { requested_date: transaction.requested_date,
-        batch_booking:  transaction.batch_booking,
-        service_level:  transaction.service_level,
-        category_purpose: transaction.category_purpose
-      }
+        batch_booking: transaction.batch_booking,
+        service_level: transaction.service_level,
+        category_purpose: transaction.category_purpose }
     end
 
     def build_payment_informations(builder, schema_name)
@@ -71,9 +71,7 @@ module SEPA
               end
             end
           end
-          if group[:service_level]
-            builder.ChrgBr('SLEV')
-          end
+          builder.ChrgBr('SLEV') if group[:service_level]
 
           transactions.each do |transaction|
             build_transaction(builder, transaction, schema_name)
@@ -85,9 +83,7 @@ module SEPA
     def build_transaction(builder, transaction, schema_name)
       builder.CdtTrfTxInf do
         builder.PmtId do
-          if transaction.instruction.present?
-            builder.InstrId(transaction.instruction)
-          end
+          builder.InstrId(transaction.instruction) if transaction.instruction.present?
           builder.EndToEndId(transaction.reference)
         end
         builder.Amt do

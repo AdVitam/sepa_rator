@@ -32,8 +32,8 @@ module SEPA
     validates_length_of :structured_remittance_information, within: 1..35, allow_nil: true
     validates_numericality_of :amount, greater_than: 0, less_than_or_equal_to: 999_999_999.99
     validates_presence_of :requested_date
-    validates_inclusion_of :batch_booking, :in => [true, false]
-    validates_with BICValidator, IBANValidator, message: "is invalid"
+    validates_inclusion_of :batch_booking, in: [true, false]
+    validates_with BICValidator, IBANValidator, message: 'is invalid'
 
     validate do |t|
       if t.remittance_information && t.structured_remittance_information
@@ -44,10 +44,10 @@ module SEPA
     validate do |t|
       %i[debtor_address creditor_address].each do |field|
         address = t.public_send(field)
-        if address && !address.valid?
-          address.errors.each do |error|
-            t.errors.add(field, error.full_message)
-          end
+        next unless address && !address.valid?
+
+        address.errors.each do |error|
+          t.errors.add(field, error.full_message)
         end
       end
     end
@@ -59,7 +59,7 @@ module SEPA
 
       self.requested_date ||= DEFAULT_REQUESTED_DATE
       self.reference ||= 'NOTPROVIDED'
-      self.batch_booking = true if self.batch_booking.nil?
+      self.batch_booking = true if batch_booking.nil?
       self.currency ||= 'EUR'
     end
 
@@ -68,9 +68,9 @@ module SEPA
     def validate_requested_date_after(min_requested_date)
       return unless requested_date.is_a?(Date)
 
-      if requested_date != DEFAULT_REQUESTED_DATE && requested_date < min_requested_date
-        errors.add(:requested_date, "must be greater or equal to #{min_requested_date}, or nil")
-      end
+      return unless requested_date != DEFAULT_REQUESTED_DATE && requested_date < min_requested_date
+
+      errors.add(:requested_date, "must be greater or equal to #{min_requested_date}, or nil")
     end
   end
 end

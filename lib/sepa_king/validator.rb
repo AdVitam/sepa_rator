@@ -9,9 +9,9 @@ module SEPA
       field_name = options[:field_name] || :iban
       value = record.send(field_name).to_s
 
-      unless IBANTools::IBAN.valid?(value) && value.match?(REGEX)
-        record.errors.add(field_name, :invalid, message: options[:message])
-      end
+      return if IBANTools::IBAN.valid?(value) && value.match?(REGEX)
+
+      record.errors.add(field_name, :invalid, message: options[:message])
     end
   end
 
@@ -23,11 +23,10 @@ module SEPA
       field_name = options[:field_name] || :bic
       value = record.send(field_name)
 
-      if value
-        unless value.to_s.match?(REGEX)
-          record.errors.add(field_name, :invalid, message: options[:message])
-        end
-      end
+      return unless value
+      return if value.to_s.match?(REGEX)
+
+      record.errors.add(field_name, :invalid, message: options[:message])
     end
   end
 
@@ -43,18 +42,16 @@ module SEPA
       field_name = options[:field_name] || :creditor_identifier
       value = record.send(field_name)
 
-      unless valid?(value)
-        record.errors.add(field_name, :invalid, message: options[:message])
-      end
+      return if valid?(value)
+
+      record.errors.add(field_name, :invalid, message: options[:message])
     end
 
     def valid?(creditor_identifier)
       return false unless creditor_identifier.to_s.match?(REGEX)
 
       # In Germany, the identifier has to be exactly 18 chars long
-      if creditor_identifier[0..1].match?(/DE/i)
-        return false unless creditor_identifier.length == 18
-      end
+      return false if creditor_identifier[0..1].match?(/DE/i) && creditor_identifier.length != 18
 
       # Verify mod-97 check digit (ISO 7064)
       # Structure: CC DD BBB NNNN...
@@ -73,9 +70,9 @@ module SEPA
       field_name = options[:field_name] || :mandate_id
       value = record.send(field_name)
 
-      unless value.to_s.match?(REGEX)
-        record.errors.add(field_name, :invalid, message: options[:message])
-      end
+      return if value.to_s.match?(REGEX)
+
+      record.errors.add(field_name, :invalid, message: options[:message])
     end
   end
 end
