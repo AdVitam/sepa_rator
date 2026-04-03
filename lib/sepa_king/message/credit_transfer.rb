@@ -18,54 +18,62 @@ module SEPA
     end
 
     def build_payment_informations(builder, schema_name)
-      # Build a PmtInf block for every group of transactions
       grouped_transactions.each do |group, transactions|
-        # All transactions with the same requested_date are placed into the same PmtInf block
         builder.PmtInf do
           builder.PmtInfId(payment_information_identification(group))
           builder.PmtMtd('TRF')
           builder.BtchBookg(group[:batch_booking])
           builder.NbOfTxs(transactions.length)
           builder.CtrlSum(format_amount(amount_total(transactions)))
-          if group[:service_level] || group[:category_purpose]
-            builder.PmtTpInf do
-              if group[:service_level]
-                builder.SvcLvl do
-                  builder.Cd(group[:service_level])
-                end
-              end
-              if group[:category_purpose]
-                builder.CtgyPurp do
-                  builder.Cd(group[:category_purpose])
-                end
-              end
-            end
-          end
-          if [PAIN_001_001_09, PAIN_001_001_13].include?(schema_name)
-            builder.ReqdExctnDt do
-              builder.Dt(group[:requested_date].iso8601)
-            end
-          else
-            builder.ReqdExctnDt(group[:requested_date].iso8601)
-          end
-          builder.Dbtr do
-            builder.Nm(account.name)
-          end
-          builder.DbtrAcct do
-            builder.Id do
-              builder.IBAN(account.iban)
-            end
-          end
-          builder.DbtrAgt do
-            build_agent_bic(builder, account.bic, schema_name,
-                            fallback: schema_name != PAIN_001_001_03_CH_02)
-          end
+          build_payment_type_information(builder, group)
+          build_requested_execution_date(builder, group, schema_name)
+          build_debtor_info(builder, schema_name)
           builder.ChrgBr('SLEV') if group[:service_level]
 
-          transactions.each do |transaction|
-            build_transaction(builder, transaction, schema_name)
+          transactions.each { |transaction| build_transaction(builder, transaction, schema_name) }
+        end
+      end
+    end
+
+    def build_payment_type_information(builder, group)
+      return unless group[:service_level] || group[:category_purpose]
+
+      builder.PmtTpInf do
+        if group[:service_level]
+          builder.SvcLvl do
+            builder.Cd(group[:service_level])
           end
         end
+        if group[:category_purpose]
+          builder.CtgyPurp do
+            builder.Cd(group[:category_purpose])
+          end
+        end
+      end
+    end
+
+    def build_requested_execution_date(builder, group, schema_name)
+      if schema_features(schema_name)[:wrap_date]
+        builder.ReqdExctnDt do
+          builder.Dt(group[:requested_date].iso8601)
+        end
+      else
+        builder.ReqdExctnDt(group[:requested_date].iso8601)
+      end
+    end
+
+    def build_debtor_info(builder, schema_name)
+      builder.Dbtr do
+        builder.Nm(account.name)
+      end
+      builder.DbtrAcct do
+        builder.Id do
+          builder.IBAN(account.iban)
+        end
+      end
+      builder.DbtrAgt do
+        build_agent_bic(builder, account.bic, schema_name,
+                        fallback: !schema_features(schema_name)[:swiss])
       end
     end
 
