@@ -56,7 +56,9 @@ module SEPA
       # Verify mod-97 check digit (ISO 7064)
       # Structure: CC DD BBB NNNN...
       # CC = country code, DD = check digits, BBB = business code (skipped), N = national id
-      check_base = creditor_identifier[0..3] + creditor_identifier[7..]
+      # Strip non-alphanumeric chars from national id before check (the spec allows +?/:().,'-
+      # but they are ignored for mod-97 computation)
+      check_base = creditor_identifier[0..3] + creditor_identifier[7..].gsub(/[^A-Za-z0-9]/, '')
       rearranged = check_base[4..] + check_base[0..3]
       numeric = rearranged.gsub(/[A-Z]/i) { |c| c.upcase.ord - 55 }
       numeric.to_i % 97 == 1
