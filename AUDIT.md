@@ -22,13 +22,13 @@
 
 | ID  | Severity   | Category           | File(s)                                          | Description                                                                                     | Status |
 |-----|------------|--------------------|--------------------------------------------------|-------------------------------------------------------------------------------------------------|--------|
-| S1  | Low        | Input validation   | `converter.rb:13`                                | Uses `send` instead of `public_send` in converter macro                                         | [ ]    |
-| S2  | Low        | Input validation   | `direct_debit_transaction.rb:13`                 | `original_debtor_account` not validated as IBAN                                                 | [ ]    |
-| S3  | Low        | Thread safety      | `message.rb:123`                                 | `SCHEMA_CACHE` not thread-safe (benign race in MRI, potential issue in JRuby/TruffleRuby)       | [ ]    |
+| S1  | Low        | Input validation   | `converter.rb:13`                                | Uses `send` instead of `public_send` in converter macro                                         | [x]    |
+| S2  | Low        | Input validation   | `direct_debit_transaction.rb:13`                 | `original_debtor_account` not validated as IBAN                                                 | [x]    |
+| S3  | Low        | Thread safety      | `message.rb:123`                                 | `SCHEMA_CACHE` not thread-safe (benign race in MRI, potential issue in JRuby/TruffleRuby)       | [x]    |
 | S4  | Low        | SEPA compliance    | `direct_debit.rb:43`                             | Verify `ReqdColltnDt` wrapping for .08/.12 schemas (confirmed correct — no wrapper needed)      | [x]    |
-| S5  | **Medium** | Input validation   | `transaction.rb:59`, `account.rb:15`, `address.rb:32` | `public_send` in `initialize` accepts arbitrary attribute names — risk if untrusted keys passed | [ ]    |
-| S6  | Low        | Info disclosure    | `message.rb:92`                                  | Library name `SEPA-KING/` in default `message_identification`                                   | [ ]    |
-| S7  | Low        | Encoding           | `converter.rb:24`                                | No encoding enforcement on input to `convert_text`                                              | [ ]    |
+| S5  | **Medium** | Input validation   | `transaction.rb:59`, `account.rb:15`, `address.rb:32` | `public_send` in `initialize` accepts arbitrary attribute names — risk if untrusted keys passed | [x]    |
+| S6  | Low        | Info disclosure    | `message.rb:92`                                  | Library name `SEPA-KING/` in default `message_identification`                                   | [x]    |
+| S7  | Low        | Encoding           | `converter.rb:24`                                | No encoding enforcement on input to `convert_text`                                              | [x]    |
 
 ---
 

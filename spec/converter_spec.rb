@@ -59,6 +59,23 @@ RSpec.describe SEPA::Converter do
       expect(convert_text(nil)).to eq(nil)
     end
 
+    context 'encoding handling' do
+      it 'should handle ISO-8859-1 encoded strings' do
+        iso_string = 'Stra\xDFe'.dup.force_encoding('ISO-8859-1')
+        result = convert_text(iso_string)
+        expect(result.encoding).to eq(Encoding::UTF_8)
+        expect(result).to include('Stra')
+      end
+
+      it 'should replace invalid byte sequences' do
+        invalid_string = "test\xFF\xFEdata".dup.force_encoding('UTF-8')
+        result = convert_text(invalid_string)
+        expect(result.encoding).to eq(Encoding::UTF_8)
+        expect(result).to include('test')
+        expect(result).to include('data')
+      end
+    end
+
     context 'XML injection protection' do
       it 'should strip HTML/XML tags' do
         expect(convert_text('<script>alert(1)</script>')).to eq('scriptalert(1)/script')

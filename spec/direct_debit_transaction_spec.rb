@@ -105,6 +105,16 @@ RSpec.describe SEPA::DirectDebitTransaction do
     end
   end
 
+  context 'Original Debtor Account' do
+    it 'should accept valid IBAN' do
+      expect(SEPA::DirectDebitTransaction).to accept(nil, 'DE21500500009876543210', for: :original_debtor_account)
+    end
+
+    it 'should not accept invalid value' do
+      expect(SEPA::DirectDebitTransaction).not_to accept('INVALID', 'XX00000000', for: :original_debtor_account)
+    end
+  end
+
   context 'Instruction Priority' do
     it 'should allow valid value' do
       expect(SEPA::DirectDebitTransaction).to accept(nil, 'HIGH', 'NORM', for: :instruction_priority)

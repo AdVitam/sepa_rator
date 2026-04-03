@@ -2,7 +2,7 @@
 <Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.008.001.12" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:iso:std:iso:20022:tech:xsd:pain.008.001.12 pain.008.001.12.xsd">
   <CstmrDrctDbtInitn>
     <GrpHdr>
-      <MsgId>SEPA-KING/10eb6771e670efc5dfdc0e</MsgId>
+      <MsgId>MSG/10eb6771e670efc5dfdc0eabcdef</MsgId>
       <CreDtTm>2026-04-03T23:22:32+02:00</CreDtTm>
       <NbOfTxs>1</NbOfTxs>
       <CtrlSum>39.99</CtrlSum>
@@ -18,7 +18,7 @@
       </InitgPty>
     </GrpHdr>
     <PmtInf>
-      <PmtInfId>SEPA-KING/10eb6771e670efc5dfdc0e/1</PmtInfId>
+      <PmtInfId>MSG/10eb6771e670efc5dfdc0eabcdef/1</PmtInfId>
       <PmtMtd>DD</PmtMtd>
       <BtchBookg>true</BtchBookg>
       <NbOfTxs>1</NbOfTxs>

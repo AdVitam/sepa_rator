@@ -10,7 +10,7 @@ module SEPA
 
       attributes.each do |attribute|
         define_method "#{attribute}=" do |value|
-          instance_variable_set("@#{attribute}", send(method_name, value))
+          instance_variable_set("@#{attribute}", public_send(method_name, value))
         end
       end
     end
@@ -22,6 +22,7 @@ module SEPA
         # Replace special characters (EPC Best Practices, Chapter 6.2)
         # http://www.europeanpaymentscouncil.eu/index.cfm/knowledge-bank/epc-documents/sepa-requirements-for-an-extended-character-set-unicode-subset-best-practices/
         value.to_s
+             .encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')
              .tr('€', 'E')
              .gsub('@', '(at)')
              .tr('_', '-')
