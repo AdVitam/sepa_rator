@@ -13,7 +13,7 @@ RSpec.describe SEPA::CreditorAccount do
 
   describe :creditor_identifier do
     it 'should accept valid value' do
-      expect(SEPA::CreditorAccount).to accept('DE98ZZZ09999999999', 'AT12ZZZ00000000001', 'IT97ZZZA1B2C3D4E5F6G7H8', 'NL97ZZZ123456780001', 'FR12ZZZ123456', for: :creditor_identifier)
+      expect(SEPA::CreditorAccount).to accept('DE98ZZZ09999999999', 'AT88ZZZ00000000001', 'IT66ZZZA1B2C3D4E5F6G7H8', 'NL42ZZZ123456780001', 'FR72ZZZ123456', for: :creditor_identifier)
     end
 
     it 'should not accept invalid value' do

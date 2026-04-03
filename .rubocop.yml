@@ -1,0 +1,63 @@
+plugins:
+  - rubocop-performance
+
+AllCops:
+  TargetRubyVersion: 3.1
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - 'vendor/**/*'
+    - 'gemfiles/**/*'
+    - 'coverage/**/*'
+
+# Gem-appropriate settings
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: true
+  EnforcedStyle: always
+
+Metrics/BlockLength:
+  Max: 60
+  Exclude:
+    - 'spec/**/*'
+    - '*.gemspec'
+
+Metrics/MethodLength:
+  Max: 60
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/AbcSize:
+  Max: 60
+  Exclude:
+    - 'spec/**/*'
+
+Metrics/ClassLength:
+  Max: 180
+
+Metrics/CyclomaticComplexity:
+  Max: 15
+
+Metrics/PerceivedComplexity:
+  Max: 15
+
+Layout/LineLength:
+  Max: 170
+  Exclude:
+    - 'spec/**/*'
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - t
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/IfInsideElse:
+  Enabled: false
+
+# XML builder methods use String#% for consistent decimal formatting
+Style/FormatString:
+  Enabled: false

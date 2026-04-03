@@ -369,8 +369,8 @@ RSpec.describe SEPA::DirectDebit do
         end
 
         it 'should contain <Dbtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann & Söhne GbR')
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier & Schulze oHG')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann + Söhne GbR')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier + Schulze oHG')
         end
 
         it 'should contain <DbtrAcct>' do
@@ -572,8 +572,8 @@ RSpec.describe SEPA::DirectDebit do
           sct
         end
 
-        it 'should fail as the payment identification becomes too large' do
-          expect { subject.to_xml }.to raise_error(SEPA::Error, /The value has a length of '37'; this exceeds the allowed maximum length of '35'/)
+        it 'should truncate the payment identification to 35 characters' do
+          expect { subject.to_xml }.not_to raise_error
         end
       end
 

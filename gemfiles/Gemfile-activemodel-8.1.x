@@ -4,7 +4,7 @@ source 'https://rubygems.org'
 
 gemspec path: '..'
 
-gem 'activemodel', '~> 6.1.4'
+gem 'activemodel', '~> 8.1.0'
 
 group :development, :test do
   gem 'rake'

@@ -1,20 +1,20 @@
-# encoding: utf-8
+# frozen_string_literal: true
 
 module SEPA
   class CreditTransfer < Message
     self.account_class = DebtorAccount
     self.transaction_class = CreditTransferTransaction
     self.xml_main_tag = 'CstmrCdtTrfInitn'
-    self.known_schemas = [ PAIN_001_001_03, PAIN_001_001_03_CH_02, PAIN_001_001_09, PAIN_001_001_13, PAIN_001_003_03, PAIN_001_002_03 ]
+    self.known_schemas = [PAIN_001_001_03, PAIN_001_001_03_CH_02, PAIN_001_001_09, PAIN_001_001_13, PAIN_001_003_03, PAIN_001_002_03]
 
-  private
+    private
+
     # Find groups of transactions which share the same values of some attributes
     def transaction_group(transaction)
       { requested_date: transaction.requested_date,
-        batch_booking:  transaction.batch_booking,
-        service_level:  transaction.service_level,
-        category_purpose: transaction.category_purpose
-      }
+        batch_booking: transaction.batch_booking,
+        service_level: transaction.service_level,
+        category_purpose: transaction.category_purpose }
     end
 
     def build_payment_informations(builder, schema_name)
@@ -71,9 +71,7 @@ module SEPA
               end
             end
           end
-          if group[:service_level]
-            builder.ChrgBr('SLEV')
-          end
+          builder.ChrgBr('SLEV') if group[:service_level]
 
           transactions.each do |transaction|
             build_transaction(builder, transaction, schema_name)
@@ -85,9 +83,7 @@ module SEPA
     def build_transaction(builder, transaction, schema_name)
       builder.CdtTrfTxInf do
         builder.PmtId do
-          if transaction.instruction.present?
-            builder.InstrId(transaction.instruction)
-          end
+          builder.InstrId(transaction.instruction) if transaction.instruction.present?
           builder.EndToEndId(transaction.reference)
         end
         builder.Amt do
@@ -113,9 +109,22 @@ module SEPA
             builder.IBAN(transaction.iban)
           end
         end
-        if transaction.remittance_information
+        if transaction.remittance_information || transaction.structured_remittance_information
           builder.RmtInf do
-            builder.Ustrd(transaction.remittance_information)
+            if transaction.structured_remittance_information
+              builder.Strd do
+                builder.CdtrRefInf do
+                  builder.Tp do
+                    builder.CdOrPrtry do
+                      builder.Cd('SCOR')
+                    end
+                  end
+                  builder.Ref(transaction.structured_remittance_information)
+                end
+              end
+            else
+              builder.Ustrd(transaction.remittance_information)
+            end
           end
         end
       end

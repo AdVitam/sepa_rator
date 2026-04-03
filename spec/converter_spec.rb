@@ -13,7 +13,14 @@ RSpec.describe SEPA::Converter do
 
     it 'should not change allowed special character' do
       expect(convert_text('üöäÜÖÄß')).to eq('üöäÜÖÄß')
-      expect(convert_text('&*$%')).to eq('&*$%')
+    end
+
+    it 'should convert & to +' do
+      expect(convert_text('A&B')).to eq('A+B')
+    end
+
+    it 'should remove non-SEPA special characters' do
+      expect(convert_text('*$%')).to eq('')
     end
 
     it 'should convert line breaks' do

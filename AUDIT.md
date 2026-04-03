@@ -111,7 +111,7 @@ builder.BIC(group[:account].bic)
 - **Issue**: `message: "%{value} is invalid"` exposes the actual IBAN/BIC in error messages. If logged to Sentry, financial data may leak.
 - **Fix**: Use `message: "is invalid"` instead
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M2 — Ruby 3.4 and ActiveModel 8.x not tested in CI
 
@@ -119,14 +119,14 @@ builder.BIC(group[:account].bic)
 - **Issue**: CI tests Ruby 3.0–3.3, ActiveModel 6.1–7.1. api-advitam uses Ruby 3.4.7 and Rails 8.1.
 - **Fix**: Add Ruby 3.4 to the matrix, add `gemfiles/Gemfile-activemodel-8.1.x`
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M3 — Missing `frozen_string_literal: true`
 
 - **Issue**: No file has the pragma. All have obsolete `# encoding: utf-8` (unnecessary since Ruby 2.0).
 - **Fix**: Replace `# encoding: utf-8` with `# frozen_string_literal: true` in all files
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M4 — Inconsistent `send` vs `public_send`
 
@@ -134,7 +134,7 @@ builder.BIC(group[:account].bic)
 - **Issue**: `Transaction#initialize` uses `send("#{name}=", value)` while `Account#initialize` uses `public_send`. `send` can invoke private methods.
 - **Fix**: Use `public_send`
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M5 — `creditor_address` declared twice
 
@@ -142,7 +142,7 @@ builder.BIC(group[:account].bic)
 - **Issue**: `attr_accessor :creditor_address` exists on both parent and child. The child silently overrides the parent accessor.
 - **Fix**: Remove the duplicate declaration from `CreditTransferTransaction`
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M6 — XSD schema read/parsed on every `to_xml`
 
@@ -158,7 +158,7 @@ def validate_final_document!(document, schema_name)
 end
 ```
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M7 — `transactions` recomputed on every call
 
@@ -166,7 +166,7 @@ end
 - **Issue**: `transactions` does `grouped_transactions.values.flatten` on every call (4+ times during `to_xml`). No memoization.
 - **Fix**: Memoize with invalidation in `add_transaction`
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M8 — Double `transaction_group()` call in `add_transaction`
 
@@ -174,7 +174,7 @@ end
 - **Issue**: `transaction_group(transaction)` is called twice, creating two identical temporary hashes.
 - **Fix**: `group = transaction_group(transaction)` then reuse
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M9 — `convert_decimal` fails silently
 
@@ -182,7 +182,7 @@ end
 - **Issue**: `BigDecimal(value.to_s)` inside `rescue ArgumentError` returns `nil` silently. The follow-up validation error (“is not a number”) hides the root cause.
 - **Fix**: Log or raise an explicit error
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M10 — No address validation on Transaction
 
@@ -190,7 +190,7 @@ end
 - **Issue**: `debtor_address` and `creditor_address` are never validated. An invalid address (e.g. 5-char `country_code`) reaches final XSD validation with a cryptic error.
 - **Fix**: Validate addresses in `Transaction#valid?`
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M11 — Non-SEPA characters in `convert_text`
 
@@ -198,7 +198,7 @@ end
 - **Issue**: The whitelist includes `&*$%`, which are not in the basic SEPA character set (`a-z A-Z 0-9 / - ? : ( ) . , ' + space`). Banks may reject them.
 - **Fix**: Remove `&*$%` from the whitelist or replace them
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M12 — No mod-97 validation on creditor identifier
 
@@ -206,14 +206,14 @@ end
 - **Issue**: Creditor identifier includes an ISO 7064 mod-97 check digit that is not verified. Only the regex is applied.
 - **Fix**: Add mod-97 check (similar to IBAN)
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M13 — No structured remittance information (Strd)
 
 - **Issue**: Only `RmtInf/Ustrd` (free text) is supported. No `RmtInf/Strd/CdtrRefInf` (ISO 11649 creditor reference). Required by some institutional creditors.
 - **Fix**: Add optional `structured_remittance_information` support
 
-- [ ] Fixed
+- [x] Fixed
 
 ### M14 — `PmtInfId` can exceed 35 characters
 
@@ -221,7 +221,7 @@ end
 - **Issue**: `PmtInfId` = `"#{message_identification}/#{index+1}"`. If MsgId is 30 chars and index > 9, length exceeds XSD’s 35 chars.
 - **Fix**: Truncate or validate length
 
-- [ ] Fixed
+- [x] Fixed
 
 ---
 
@@ -239,21 +239,21 @@ end
 - **File**: `sepa_king.gemspec`
 - Ruby 2.7 has been EOL since 2023. Move to `>= 3.1`.
 
-- [ ] Fixed
+- [x] Fixed (H1)
 
 ### B3 — Outdated `actions/checkout@v3` in CI
 
 - **File**: `.github/workflows/main.yml`
 - v3 uses Node.js 16 (EOL). Upgrade to v4.
 
-- [ ] Fixed
+- [x] Fixed (M2)
 
 ### B4 — Deprecated `add_development_dependency`
 
 - **File**: `sepa_king.gemspec`
 - Deprecated in favor of `Gemfile` since Bundler 2.x.
 
-- [ ] Fixed
+- [x] Fixed (rubocop commit)
 
 ### B5 — No XML injection tests
 
@@ -292,7 +292,7 @@ end
 - **File**: `lib/sepa_king/validator.rb:51`
 - `if ok = creditor_identifier.to_s.match?(REGEX)` — code smell; RuboCop would flag it.
 
-- [ ] Fixed
+- [x] Fixed (M12)
 
 ---
 

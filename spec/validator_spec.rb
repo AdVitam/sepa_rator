@@ -63,15 +63,15 @@ RSpec.describe SEPA::CreditorIdentifierValidator do
   it 'should accept valid creditor_identifier' do
     expect(Validatable).to accept(
       'DE98ZZZ09999999999',
-      'CH0712300000012345',
-      'SE97ZZZ1234567890',
-      'PL97ZZZ0123456789',
-      'NO97ZZZ123456785',
+      'CH1312300000012345',
+      'SE41ZZZ1234567890',
+      'PL18ZZZ0123456789',
+      'NO38ZZZ123456785',
       'HU74111A12345676',
-      'BG32ZZZ100064095',
-      'AT12ZZZ00000000001',
-      'FR12ZZZ123456',
-      'NL97ZZZ123456780001',
+      'BG07ZZZ100064095',
+      'AT88ZZZ00000000001',
+      'FR72ZZZ123456',
+      'NL42ZZZ123456780001',
       for: [:creditor_identifier, :crid]
     )
   end
