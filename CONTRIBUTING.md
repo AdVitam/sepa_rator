@@ -13,7 +13,6 @@ a test!
 
 5. Push to your fork and submit a pull request.
 
-
 At this point you're waiting on us. We like to at least comment on, if not
 accept, pull requests within three business days (and, typically, one business
 day). We may suggest some changes or improvements or alternatives.

@@ -15,6 +15,18 @@ RSpec.describe SEPA::Converter do
       expect(convert_text('üöäÜÖÄß')).to eq('üöäÜÖÄß')
     end
 
+    it 'should accept French accented characters' do
+      expect(convert_text('àâéèêëïîôùûüÿçœæ')).to eq('àâéèêëïîôùûüÿçœæ')
+    end
+
+    it 'should accept Spanish accented characters' do
+      expect(convert_text('áéíóúñÑ')).to eq('áéíóúñÑ')
+    end
+
+    it 'should strip non-Latin characters (CJK, Arabic, Cyrillic)' do
+      expect(convert_text('Test你好мирعربي')).to eq('Test')
+    end
+
     it 'should convert & to +' do
       expect(convert_text('A&B')).to eq('A+B')
     end
@@ -44,6 +56,24 @@ RSpec.describe SEPA::Converter do
 
     it 'should not touch nil' do
       expect(convert_text(nil)).to eq(nil)
+    end
+
+    context 'XML injection protection' do
+      it 'should strip HTML/XML tags' do
+        expect(convert_text('<script>alert(1)</script>')).to eq('scriptalert(1)/script')
+      end
+
+      it 'should strip CDATA markers' do
+        expect(convert_text('test]]><![CDATA[injected')).to eq('testCDATAinjected')
+      end
+
+      it 'should strip XML entity references' do
+        expect(convert_text('a&#x0;b&#60;c')).to eq('a+x0b+60c')
+      end
+
+      it 'should strip null bytes' do
+        expect(convert_text("test\x00injection")).to eq('testinjection')
+      end
     end
   end
 

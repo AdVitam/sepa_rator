@@ -62,6 +62,8 @@ RSpec.describe SEPA::DirectDebitTransaction do
   end
 
   context 'Mandate Date of Signature' do
+    around(:each) { |example| travel_to(Time.new(2025, 6, 15, 12, 0, 0)) { example.run } }
+
     it 'should accept valid value' do
       expect(SEPA::DirectDebitTransaction).to accept(Date.today, Date.today - 1, for: :mandate_date_of_signature)
     end
@@ -72,6 +74,8 @@ RSpec.describe SEPA::DirectDebitTransaction do
   end
 
   context 'Requested date' do
+    around(:each) { |example| travel_to(Time.new(2025, 6, 15, 12, 0, 0)) { example.run } }
+
     it 'should allow valid value' do
       expect(SEPA::DirectDebitTransaction).to accept(nil, Date.new(1999, 1, 1), Date.today.next, Date.today + 2, for: :requested_date)
     end

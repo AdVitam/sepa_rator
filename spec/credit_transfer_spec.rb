@@ -565,5 +565,19 @@ RSpec.describe SEPA::CreditTransfer do
         end
       end
     end
+
+    context 'with potentially malicious input' do
+      it 'should generate valid XML with injection attempts in name' do
+        sct = SEPA::CreditTransfer.new(name: 'Legitimate Business', iban: 'DE87200500001234567890', bic: 'BANKDEFFXXX')
+        sct.add_transaction(
+          name: '<script>alert("xss")</script>',
+          iban: 'DE21500500009876543210',
+          bic: 'SPUEDE2UXXX',
+          amount: 100.00,
+          remittance_information: ']]><Injected>data</Injected>'
+        )
+        expect(sct.to_xml).to validate_against('pain.001.001.03.xsd')
+      end
+    end
   end
 end

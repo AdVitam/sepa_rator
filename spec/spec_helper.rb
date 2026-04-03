@@ -15,6 +15,7 @@ SimpleCov.start do
 end
 
 require 'sepa_king'
+require 'active_support/testing/time_helpers'
 
 # Requires supporting ruby files with custom matchers and macros, etc,
 # in spec/support/ and its subdirectories.
@@ -22,6 +23,7 @@ Dir[File.expand_path(File.join(__dir__, 'support', '**', '*.rb'))].each {|f| req
 
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
+  config.include ActiveSupport::Testing::TimeHelpers
   config.run_all_when_everything_filtered = true
   config.filter_run :focus
   config.disable_monkey_patching!

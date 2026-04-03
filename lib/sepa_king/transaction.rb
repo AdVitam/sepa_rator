@@ -5,6 +5,9 @@ module SEPA
     include ActiveModel::Validations
     extend Converter
 
+    # Convention SEPA: 1999-01-01 signifies "execute as soon as possible" (ASAP).
+    # When no specific date is requested, this sentinel value tells the bank
+    # to process the payment at the earliest opportunity.
     DEFAULT_REQUESTED_DATE = Date.new(1999, 1, 1).freeze
 
     attr_accessor :name,
@@ -65,6 +68,9 @@ module SEPA
 
     protected
 
+    # Note: This validation only checks that the date is not in the past.
+    # It does NOT validate against the TARGET2 business calendar (weekends, holidays).
+    # Callers should ensure the requested date falls on a TARGET2 business day.
     def validate_requested_date_after(min_requested_date)
       return unless requested_date.is_a?(Date)
 
