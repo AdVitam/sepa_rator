@@ -23,7 +23,6 @@ module SEPA
     end
 
     def build_payment_informations(builder, schema_name)
-      # Build a PmtInf block for every group of transactions
       grouped_transactions.each do |group, transactions|
         builder.PmtInf do
           builder.PmtInfId(payment_information_identification(group))
@@ -31,43 +30,53 @@ module SEPA
           builder.BtchBookg(group[:batch_booking])
           builder.NbOfTxs(transactions.length)
           builder.CtrlSum(format_amount(amount_total(transactions)))
-          builder.PmtTpInf do
-            builder.SvcLvl do
-              builder.Cd('SEPA')
-            end
-            builder.LclInstrm do
-              builder.Cd(group[:local_instrument])
-            end
-            builder.SeqTp(group[:sequence_type])
-          end
-          builder.ReqdColltnDt(group[:requested_date].iso8601)
-          builder.Cdtr do
-            builder.Nm(group[:account].name)
-          end
-          builder.CdtrAcct do
-            builder.Id do
-              builder.IBAN(group[:account].iban)
-            end
-          end
-          builder.CdtrAgt do
-            build_agent_bic(builder, group[:account].bic, schema_name)
-          end
-          builder.ChrgBr('SLEV')
-          builder.CdtrSchmeId do
-            builder.Id do
-              builder.PrvtId do
-                builder.Othr do
-                  builder.Id(group[:account].creditor_identifier)
-                  builder.SchmeNm do
-                    builder.Prtry('SEPA')
-                  end
-                end
+          build_payment_type_information(builder, group)
+          build_creditor_info(builder, group, schema_name)
+          build_creditor_scheme_identification(builder, group)
+
+          transactions.each { |transaction| build_transaction(builder, transaction, schema_name) }
+        end
+      end
+    end
+
+    def build_payment_type_information(builder, group)
+      builder.PmtTpInf do
+        builder.SvcLvl do
+          builder.Cd('SEPA')
+        end
+        builder.LclInstrm do
+          builder.Cd(group[:local_instrument])
+        end
+        builder.SeqTp(group[:sequence_type])
+      end
+    end
+
+    def build_creditor_info(builder, group, schema_name)
+      builder.ReqdColltnDt(group[:requested_date].iso8601)
+      builder.Cdtr do
+        builder.Nm(group[:account].name)
+      end
+      builder.CdtrAcct do
+        builder.Id do
+          builder.IBAN(group[:account].iban)
+        end
+      end
+      builder.CdtrAgt do
+        build_agent_bic(builder, group[:account].bic, schema_name)
+      end
+      builder.ChrgBr('SLEV')
+    end
+
+    def build_creditor_scheme_identification(builder, group)
+      builder.CdtrSchmeId do
+        builder.Id do
+          builder.PrvtId do
+            builder.Othr do
+              builder.Id(group[:account].creditor_identifier)
+              builder.SchmeNm do
+                builder.Prtry('SEPA')
               end
             end
-          end
-
-          transactions.each do |transaction|
-            build_transaction(builder, transaction, schema_name)
           end
         end
       end

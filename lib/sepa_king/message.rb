@@ -13,7 +13,19 @@ module SEPA
   PAIN_001_003_03 = 'pain.001.003.03'
   PAIN_001_001_03_CH_02 = 'pain.001.001.03.ch.02'
 
-  BICFI_SCHEMAS = [PAIN_001_001_09, PAIN_001_001_13, PAIN_008_001_08, PAIN_008_001_12].freeze
+  SCHEMA_FEATURES = {
+    PAIN_001_001_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false },
+    PAIN_001_001_09 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false },
+    PAIN_001_001_13 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false },
+    PAIN_001_002_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true },
+    PAIN_001_003_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false },
+    PAIN_001_001_03_CH_02 => { bic_tag: :BIC, wrap_date: false, swiss: true, requires_bic: false },
+    PAIN_008_001_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false },
+    PAIN_008_001_08 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false },
+    PAIN_008_001_12 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false },
+    PAIN_008_002_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true },
+    PAIN_008_003_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false }
+  }.each_value(&:freeze).freeze
 
   class Message
     include ActiveModel::Validations
@@ -51,7 +63,7 @@ module SEPA
       raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
       raise SEPA::SchemaValidationError, "Incompatible with schema #{schema_name}!" unless schema_compatible?(schema_name)
 
-      builder = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |builder|
+      xml_builder = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |builder|
         builder.Document(xml_schema(schema_name)) do
           builder.__send__(xml_main_tag) do
             build_group_header(builder)
@@ -60,8 +72,8 @@ module SEPA
         end
       end
 
-      validate_final_document!(builder.doc, schema_name)
-      builder.to_xml
+      validate_final_document!(xml_builder.doc, schema_name)
+      xml_builder.to_xml
     end
 
     def amount_total(selected_transactions = transactions)
@@ -71,12 +83,10 @@ module SEPA
     def schema_compatible?(schema_name)
       raise ArgumentError, "Schema #{schema_name} is unknown!" unless known_schemas.include?(schema_name)
 
-      case schema_name
-      when PAIN_001_002_03, PAIN_008_002_02
-        account.bic.present? && transactions.all? { |t| t.schema_compatible?(schema_name) }
-      when PAIN_001_001_03, PAIN_001_001_09, PAIN_001_001_13, PAIN_001_001_03_CH_02, PAIN_001_003_03, PAIN_008_003_02, PAIN_008_001_02, PAIN_008_001_08, PAIN_008_001_12
-        transactions.all? { |t| t.schema_compatible?(schema_name) }
-      end
+      features = schema_features(schema_name)
+      return false if features[:requires_bic] && account.bic.blank?
+
+      transactions.all? { |t| t.schema_compatible?(schema_name) }
     end
 
     # Set unique identifer for the message
@@ -116,19 +126,26 @@ module SEPA
       grouped_transactions.each do |group, transactions|
         return payment_information_identification(group) if transactions.any? { |transaction| transaction.reference == transaction_reference }
       end
+      nil
     end
 
     def batches
       grouped_transactions.keys.map { |group| payment_information_identification(group) }
     end
 
-    SCHEMA_CACHE = {} # rubocop:disable Style/MutableConstant
+    def self.schema_cache
+      @schema_cache ||= {}
+    end
 
     private
 
+    def schema_features(schema_name)
+      SCHEMA_FEATURES.fetch(schema_name) { raise ArgumentError, "Schema #{schema_name} is unknown!" }
+    end
+
     # @return {Hash<Symbol=>String>} xml schema information used in output xml
     def xml_schema(schema_name)
-      if schema_name == PAIN_001_001_03_CH_02
+      if schema_features(schema_name)[:swiss]
         {
           xmlns: 'http://www.six-interbank-clearing.com/de/pain.001.001.03.ch.02.xsd',
           'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -183,11 +200,7 @@ module SEPA
     def build_agent_bic(builder, bic, schema_name, fallback: true)
       builder.FinInstnId do
         if bic
-          if BICFI_SCHEMAS.include?(schema_name)
-            builder.BICFI(bic)
-          else
-            builder.BIC(bic)
-          end
+          builder.__send__(schema_features(schema_name)[:bic_tag], bic)
         elsif fallback
           builder.Othr do
             builder.Id('NOTPROVIDED')
@@ -222,7 +235,7 @@ module SEPA
     end
 
     def validate_final_document!(document, schema_name)
-      xsd = SCHEMA_CACHE[schema_name] ||= Nokogiri::XML::Schema(
+      xsd = self.class.schema_cache[schema_name] ||= Nokogiri::XML::Schema(
         File.read(File.expand_path("../../lib/schema/#{schema_name}.xsd", __dir__))
       )
       errors = xsd.validate(document).map(&:message)

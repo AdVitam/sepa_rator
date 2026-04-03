@@ -41,7 +41,7 @@
 | D1  | **High**   | BIC/BICFI schema branching duplicated 4x across 3 files                                               | `credit_transfer.rb:62,95`, `direct_debit.rb:55,143` | [x]    |
 | D2  | **High**   | `RmtInf` (remittance info) block copy-pasted between credit_transfer and direct_debit                 | `credit_transfer.rb:112-129`, `direct_debit.rb:164-182` | [x]    |
 | D3  | Medium     | `NOTPROVIDED` fallback BIC pattern duplicated 3x                                                      | `credit_transfer.rb:68`, `direct_debit.rb:61,149`    | [x]    |
-| D4  | Medium     | Identical `initialize` attribute assignment in 3 classes                                               | `account.rb:15`, `address.rb:32`, `transaction.rb:58` | [~]    |
+| D4  | Medium     | Identical `initialize` attribute assignment in 3 classes                                               | `account.rb:15`, `address.rb:32`, `transaction.rb:58` | [—]    |
 | D5  | Low        | `'%.2f' % amount` formatting repeated 4x                                                              | `credit_transfer.rb:29`, `direct_debit.rb:33,132`, `message.rb:149` | [x]    |
 
 **Recommended extractions in `Message` base class:**
@@ -55,9 +55,9 @@
 
 | ID  | Severity   | Principle     | Description                                                                 | File(s)                     | Status |
 |-----|------------|---------------|-----------------------------------------------------------------------------|-----------------------------|--------|
-| O1  | **High**   | Open/Closed   | Schema-specific behavior scattered via `if/include?` conditionals           | `credit_transfer.rb`, `direct_debit.rb`, `message.rb` | [~]    |
+| O1  | **High**   | Open/Closed   | Schema-specific behavior scattered via `if/include?` conditionals           | `credit_transfer.rb`, `direct_debit.rb`, `message.rb` | [x]    |
 | O2  | Medium     | Single Resp.  | `build_group_header` type-checks `respond_to?(:creditor_identifier)`        | `message.rb:150-161`        | [x]    |
-| O3  | Low        | Dep. Inversion| XSD path hardcoded in `validate_final_document!`                            | `message.rb:191`            | [ ]    |
+| O3  | Low        | Dep. Inversion| XSD path hardcoded in `validate_final_document!`                            | `message.rb:191`            | [—]    |
 
 **Recommended**: Introduce a schema feature map or descriptor object:
 
@@ -73,11 +73,11 @@ SCHEMA_FEATURES = {
 
 | ID  | Severity | Description                                                          | File(s)                                    | Status |
 |-----|----------|----------------------------------------------------------------------|--------------------------------------------|--------|
-| CS1 | **High** | `build_payment_informations` is 60 lines in both subclasses          | `credit_transfer.rb:20-81`, `direct_debit.rb:25-86` | [ ]    |
+| CS1 | **High** | `build_payment_informations` is 60 lines in both subclasses          | `credit_transfer.rb:20-81`, `direct_debit.rb:25-86` | [x]    |
 | CS2 | Medium   | Feature envy: `build_group_header` reaches into account internals    | `message.rb:144-163`                       | [x]    |
-| CS3 | Medium   | Primitive obsession: `schema_name` as raw string everywhere          | Multiple files                             | [ ]    |
-| CS4 | Low      | Transaction group keys are plain hashes — could be value objects     | `transaction.rb`                           | [ ]    |
-| CS5 | Low      | `SCHEMA_CACHE` mutable constant with rubocop disable                 | `message.rb:123`                           | [ ]    |
+| CS3 | Medium   | Primitive obsession: `schema_name` as raw string everywhere          | Multiple files                             | [x]    |
+| CS4 | Low      | Transaction group keys are plain hashes — could be value objects     | `transaction.rb`                           | [—]    |
+| CS5 | Low      | `SCHEMA_CACHE` mutable constant with rubocop disable                 | `message.rb:123`                           | [x]    |
 
 ### 2.4 Ruby Idioms
 
@@ -92,15 +92,15 @@ SCHEMA_FEATURES = {
 
 | ID  | Severity | Description                                                            | File(s)           | Status |
 |-----|----------|------------------------------------------------------------------------|-------------------|--------|
-| E1  | Medium   | `batch_id` returns nil silently when reference not found               | `message.rb:113`  | [ ]    |
-| E2  | Low      | Message-level validation deferred to `to_xml` time (asymmetry)         | `message.rb`      | [ ]    |
+| E1  | Medium   | `batch_id` returns nil silently when reference not found               | `message.rb:113`  | [x]    |
+| E2  | Low      | Message-level validation deferred to `to_xml` time (asymmetry)         | `message.rb`      | [—]    |
 
 ### 2.6 Naming
 
 | ID  | Severity | Description                                                         | File(s)                    | Status |
 |-----|----------|---------------------------------------------------------------------|----------------------------|--------|
 | N1  | Medium   | Factory typo: `direct_debt_transaction` → `direct_debit_transaction` | `spec/support/factories.rb` | [x]    |
-| N2  | Low      | Variable shadowing: outer `builder` vs block param `builder`         | `message.rb:52`            | [ ]    |
+| N2  | Low      | Variable shadowing: outer `builder` vs block param `builder`         | `message.rb:52`            | [x]    |
 
 ### 2.7 Rubocop
 
@@ -195,8 +195,8 @@ Recommended execution order. Each item groups related audit findings.
 
 ### Phase 5 — Refactoring
 
-- [ ] **Decompose `build_payment_informations`** (CS1): extract sub-methods
-- [~] **Introduce schema feature map** (O1, CS3): deferred — BICFI_SCHEMAS constant addresses main duplication, remaining checks are unique
+- [x] **Decompose `build_payment_informations`** (CS1): extracted sub-methods in both subclasses
+- [x] **Introduce SCHEMA_FEATURES** (O1, CS3): frozen hash replaces scattered conditionals
 - [x] **Polymorphic identity in Account** (O2, CS2): move creditor_identifier rendering to CreditorAccount
 - [ ] **`send` → `public_send`** in converter (S1)
 
