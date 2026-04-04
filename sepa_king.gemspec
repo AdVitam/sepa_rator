@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
   s.files         = Dir['lib/**/*', 'LICENSE.txt', 'README.md']
   s.require_paths = ['lib']
 
-  s.required_ruby_version = '>= 3.1'
+  s.required_ruby_version = '>= 3.2'
 
   s.add_dependency 'activemodel', '>= 7.0', '< 9'
   s.add_dependency 'iban-tools'

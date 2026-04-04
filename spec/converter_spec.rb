@@ -61,14 +61,14 @@ RSpec.describe SEPA::Converter do
 
     context 'encoding handling' do
       it 'should handle ISO-8859-1 encoded strings' do
-        iso_string = 'Stra\xDFe'.dup.force_encoding('ISO-8859-1')
+        iso_string = (+'Stra\xDFe').force_encoding('ISO-8859-1')
         result = convert_text(iso_string)
         expect(result.encoding).to eq(Encoding::UTF_8)
         expect(result).to include('Stra')
       end
 
       it 'should replace invalid byte sequences' do
-        invalid_string = "test\xFF\xFEdata".dup.force_encoding('UTF-8')
+        invalid_string = (+"test\xFF\xFEdata").force_encoding('UTF-8')
         result = convert_text(invalid_string)
         expect(result.encoding).to eq(Encoding::UTF_8)
         expect(result).to include('test')

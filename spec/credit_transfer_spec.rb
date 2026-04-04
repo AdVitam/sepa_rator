@@ -434,6 +434,40 @@ RSpec.describe SEPA::CreditTransfer do
         end
       end
 
+      context 'with INST category purpose (SCT Inst)' do
+        subject do
+          sct = credit_transfer
+
+          sct.add_transaction credit_transfer_transaction.merge(category_purpose: 'INST')
+
+          sct.to_xml
+        end
+
+        it 'should create valid XML file' do
+          expect(subject).to validate_against('pain.001.001.03.xsd')
+        end
+
+        it 'should contain CtgyPurp with INST' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/PmtTpInf/CtgyPurp/Cd', 'INST')
+        end
+
+        it 'should contain SvcLvl SEPA' do
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/PmtTpInf/SvcLvl/Cd', 'SEPA')
+        end
+
+        it 'should validate against pain.001.001.09' do
+          expect(credit_transfer.tap do |sct|
+            sct.add_transaction credit_transfer_transaction.merge(category_purpose: 'INST')
+          end.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+        end
+
+        it 'should validate against pain.001.001.13' do
+          expect(credit_transfer.tap do |sct|
+            sct.add_transaction credit_transfer_transaction.merge(category_purpose: 'INST')
+          end.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+        end
+      end
+
       context 'with instruction given' do
         subject do
           sct = credit_transfer

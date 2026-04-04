@@ -3,6 +3,7 @@
 module SEPA
   class Transaction
     include ActiveModel::Validations
+    include AttributeInitializer
     extend Converter
 
     # Convention SEPA: 1999-01-01 signifies "execute as soon as possible" (ASAP).
@@ -60,13 +61,7 @@ module SEPA
     end
 
     def initialize(attributes = {})
-      attributes.each do |name, value|
-        setter = "#{name}="
-        raise ArgumentError, "Unknown attribute: #{name}" unless respond_to?(setter)
-
-        public_send(setter, value)
-      end
-
+      super
       self.requested_date ||= DEFAULT_REQUESTED_DATE
       self.reference ||= 'NOTPROVIDED'
       self.batch_booking = true if batch_booking.nil?

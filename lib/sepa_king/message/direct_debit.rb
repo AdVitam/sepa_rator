@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 module SEPA
+  DirectDebitGroup = Data.define(:requested_date, :local_instrument, :sequence_type, :batch_booking, :account, :instruction_priority)
+
   class DirectDebit < Message
     self.account_class = CreditorAccount
     self.transaction_class = DirectDebitTransaction
@@ -15,12 +17,14 @@ module SEPA
 
     # Find groups of transactions which share the same values of some attributes
     def transaction_group(transaction)
-      { requested_date: transaction.requested_date,
+      DirectDebitGroup.new(
+        requested_date: transaction.requested_date,
         local_instrument: transaction.local_instrument,
         sequence_type: transaction.sequence_type,
         batch_booking: transaction.batch_booking,
         account: transaction.creditor_account || account,
-        instruction_priority: transaction.instruction_priority }
+        instruction_priority: transaction.instruction_priority
+      )
     end
 
     def build_payment_informations(builder, schema_name)
@@ -28,7 +32,7 @@ module SEPA
         builder.PmtInf do
           builder.PmtInfId(payment_information_identification(group))
           builder.PmtMtd('DD')
-          builder.BtchBookg(group[:batch_booking])
+          builder.BtchBookg(group.batch_booking)
           builder.NbOfTxs(transactions.length)
           builder.CtrlSum(format_amount(amount_total(transactions)))
           build_payment_type_information(builder, group)
@@ -42,29 +46,25 @@ module SEPA
 
     def build_payment_type_information(builder, group)
       builder.PmtTpInf do
-        builder.InstrPrty(group[:instruction_priority]) if group[:instruction_priority]
+        builder.InstrPrty(group.instruction_priority) if group.instruction_priority
         builder.SvcLvl do
           builder.Cd('SEPA')
         end
         builder.LclInstrm do
-          builder.Cd(group[:local_instrument])
+          builder.Cd(group.local_instrument)
         end
-        builder.SeqTp(group[:sequence_type])
+        builder.SeqTp(group.sequence_type)
       end
     end
 
     def build_creditor_info(builder, group, schema_name)
-      builder.ReqdColltnDt(group[:requested_date].iso8601)
+      builder.ReqdColltnDt(group.requested_date.iso8601)
       builder.Cdtr do
-        builder.Nm(group[:account].name)
+        builder.Nm(group.account.name)
       end
-      builder.CdtrAcct do
-        builder.Id do
-          builder.IBAN(group[:account].iban)
-        end
-      end
+      build_iban_account(builder, :CdtrAcct, group.account.iban)
       builder.CdtrAgt do
-        build_agent_bic(builder, group[:account].bic, schema_name)
+        build_agent_bic(builder, group.account.bic, schema_name)
       end
       builder.ChrgBr('SLEV')
     end
@@ -74,7 +74,7 @@ module SEPA
         builder.Id do
           builder.PrvtId do
             builder.Othr do
-              builder.Id(group[:account].creditor_identifier)
+              builder.Id(group.account.creditor_identifier)
               builder.SchmeNm do
                 builder.Prtry('SEPA')
               end
@@ -88,11 +88,7 @@ module SEPA
       builder.AmdmntInd(true)
       builder.AmdmntInfDtls do
         if transaction.original_debtor_account
-          builder.OrgnlDbtrAcct do
-            builder.Id do
-              builder.IBAN(transaction.original_debtor_account)
-            end
-          end
+          build_iban_account(builder, :OrgnlDbtrAcct, transaction.original_debtor_account)
         elsif transaction.same_mandate_new_debtor_agent
           builder.OrgnlDbtrAgt do
             builder.FinInstnId do
@@ -124,11 +120,7 @@ module SEPA
 
     def build_transaction(builder, transaction, schema_name)
       builder.DrctDbtTxInf do
-        builder.PmtId do
-          builder.InstrId(transaction.instruction) if transaction.instruction.present?
-          builder.EndToEndId(transaction.reference)
-          builder.UETR(transaction.uetr) if transaction.uetr.present?
-        end
+        build_payment_identification(builder, transaction)
         builder.InstdAmt(format_amount(transaction.amount), Ccy: transaction.currency)
         builder.DrctDbtTx do
           builder.MndtRltdInf do
@@ -144,11 +136,7 @@ module SEPA
           builder.Nm(transaction.name)
           build_postal_address(builder, transaction.debtor_address) if transaction.debtor_address
         end
-        builder.DbtrAcct do
-          builder.Id do
-            builder.IBAN(transaction.iban)
-          end
-        end
+        build_iban_account(builder, :DbtrAcct, transaction.iban)
         build_remittance_information(builder, transaction)
       end
     end

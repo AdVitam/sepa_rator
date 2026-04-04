@@ -115,7 +115,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
   context 'Category Purpose' do
     it 'should allow valid value' do
-      expect(SEPA::CreditTransferTransaction).to accept(nil, 'SALA', 'X' * 4, for: :category_purpose)
+      expect(SEPA::CreditTransferTransaction).to accept(nil, 'SALA', 'INST', 'X' * 4, for: :category_purpose)
     end
 
     it 'should not allow invalid value' do

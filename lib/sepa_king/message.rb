@@ -52,6 +52,7 @@ module SEPA
 
   class Message
     include ActiveModel::Validations
+    include SchemaValidation
 
     attr_reader :account, :grouped_transactions
 
@@ -112,7 +113,9 @@ module SEPA
       transactions.all? { |t| t.schema_compatible?(schema_name) }
     end
 
-    # Set unique identifer for the message
+    # Set unique identifer for the message.
+    # Validates and assigns immediately (fail-fast) rather than deferring to ActiveModel,
+    # because this field has a lazy default and must always be in a valid state once assigned.
     def message_identification=(value)
       raise ArgumentError, 'message_identification must be a string!' unless value.is_a?(String)
 
@@ -127,7 +130,9 @@ module SEPA
       @message_identification ||= "MSG/#{SecureRandom.hex(14)}"
     end
 
-    # Set creation date time for the message
+    # Set creation date time for the message.
+    # Validates and assigns immediately (fail-fast) rather than deferring to ActiveModel,
+    # because this field has a lazy default and must always be in a valid state once assigned.
     # p.s. Rabobank in the Netherlands only accepts the more restricted format [0-9]{4}[-][0-9]{2,2}[-][0-9]{2,2}[T][0-9]{2,2}[:][0-9]{2,2}[:][0-9]{2,2}
     def creation_date_time=(value)
       raise ArgumentError, 'creation_date_time must be a string!' unless value.is_a?(String)
@@ -154,12 +159,6 @@ module SEPA
 
     def batches
       grouped_transactions.keys.map { |group| payment_information_identification(group) }
-    end
-
-    SCHEMA_CACHE_MUTEX = Mutex.new
-
-    def self.schema_cache
-      @schema_cache ||= {}
     end
 
     private
@@ -252,19 +251,24 @@ module SEPA
       end
     end
 
-    def format_amount(value)
-      format('%.2f', value)
+    def build_payment_identification(builder, transaction)
+      builder.PmtId do
+        builder.InstrId(transaction.instruction) if transaction.instruction.present?
+        builder.EndToEndId(transaction.reference)
+        builder.UETR(transaction.uetr) if transaction.uetr.present?
+      end
     end
 
-    def validate_final_document!(document, schema_name)
-      xsd = self.class.schema_cache[schema_name] || begin
-        schema = Nokogiri::XML::Schema(
-          File.read(File.expand_path("../../lib/schema/#{schema_name}.xsd", __dir__))
-        )
-        SCHEMA_CACHE_MUTEX.synchronize { self.class.schema_cache[schema_name] ||= schema }
+    def build_iban_account(builder, tag, iban)
+      builder.__send__(tag) do
+        builder.Id do
+          builder.IBAN(iban)
+        end
       end
-      errors = xsd.validate(document).map(&:message)
-      raise SEPA::SchemaValidationError, "Incompatible with schema #{schema_name}: #{errors.join(', ')}" if errors.any?
+    end
+
+    def format_amount(value)
+      format('%.2f', value)
     end
   end
 end

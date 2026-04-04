@@ -3,6 +3,7 @@
 module SEPA
   class Address
     include ActiveModel::Validations
+    include AttributeInitializer
     extend Converter
 
     # PostalAddress6 fields (all schemas)
@@ -66,14 +67,5 @@ module SEPA
     validates_length_of :country_sub_division, maximum: 35,  allow_nil: true
     validates_length_of :care_of,              maximum: 140, allow_nil: true
     validates_length_of :unit_number,          maximum: 16,  allow_nil: true
-
-    def initialize(attributes = {})
-      attributes.each do |name, value|
-        setter = "#{name}="
-        raise ArgumentError, "Unknown attribute: #{name}" unless respond_to?(setter)
-
-        public_send(setter, value)
-      end
-    end
   end
 end
