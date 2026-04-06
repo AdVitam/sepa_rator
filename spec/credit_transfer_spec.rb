@@ -941,6 +941,23 @@ RSpec.describe SEPA::CreditTransfer do
       end
     end
 
+    context 'with ultimate_debtor_name' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(ultimate_debtor_name: 'Original Debtor GmbH')
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'contains UltmtDbtr element' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03))
+          .to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/UltmtDbtr/Nm', 'Original Debtor GmbH')
+      end
+    end
+
     context 'with initiating_party_identifier' do
       subject do
         sct = SEPA::CreditTransfer.new(name: 'Schuldner GmbH',

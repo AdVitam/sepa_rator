@@ -87,6 +87,7 @@ module SEPA
         builder.Amt do
           builder.InstdAmt(format_amount(transaction.amount), Ccy: transaction.currency)
         end
+        build_ultimate_party(builder, :UltmtDbtr, transaction.ultimate_debtor_name)
         if transaction.bic
           builder.CdtrAgt do
             build_agent_bic(builder, transaction.bic, schema_name, fallback: false)
