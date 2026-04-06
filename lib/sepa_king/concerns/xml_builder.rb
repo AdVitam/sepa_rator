@@ -14,11 +14,13 @@ module SEPA
     end
 
     def build_agent_bic(builder, bic, schema_name, fallback: true, lei: nil)
+      lei_emitted = lei && LEI_SCHEMAS.include?(schema_name)
+
       builder.FinInstnId do
         # XSD sequence: BICFI/BIC → ClrSysMmbId → LEI → Nm → PstlAdr → Othr
         builder.__send__(schema_features(schema_name)[:bic_tag], bic) if bic
-        builder.LEI(lei) if lei && LEI_SCHEMAS.include?(schema_name)
-        if !bic && !lei && fallback
+        builder.LEI(lei) if lei_emitted
+        if !bic && !lei_emitted && fallback
           builder.Othr do
             builder.Id('NOTPROVIDED')
           end

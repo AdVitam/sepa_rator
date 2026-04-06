@@ -311,6 +311,14 @@ RSpec.describe SEPA::CreditTransferTransaction do
       expect(txn.errors_on(:regulatory_reportings).join).to match(/amount currency invalid/)
     end
 
+    it 'validates detail amount value is numeric' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ amount: { value: 'abc', currency: 'EUR' } }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount value must be numeric/)
+    end
+
     it 'validates type and type_proprietary are mutually exclusive' do
       txn = SEPA::CreditTransferTransaction.new(
         name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
