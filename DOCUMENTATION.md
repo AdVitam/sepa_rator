@@ -11,6 +11,11 @@
 - [Purpose Code](#purpose-code)
 - [Ultimate Parties](#ultimate-parties)
 - [Mandate Amendments](#mandate-amendments)
+- [Initiation Source](#initiation-source)
+- [Instructions for Agents](#instructions-for-agents)
+- [Credit Transfer Mandate](#credit-transfer-mandate)
+- [Regulatory Reporting](#regulatory-reporting)
+- [Remittance Information](#remittance-information)
 - [Validators](#validators)
 - [Supported Schemas](#supported-schemas)
 
@@ -72,7 +77,27 @@ sct.add_transaction(
     country_code: 'CH',
     address_line1: 'Musterstrasse 123a',
     address_line2: '1234 Musterstadt'
-  )
+  ),
+
+  # Optional: instructions for agents (see Instructions for Agents section)
+  debtor_agent_instruction: 'Process urgently',                          # .09/.13 only, PmtInf level, max 140 chars
+  instruction_for_debtor_agent: 'Note for agent',                        # all versions, txn level
+  instruction_for_debtor_agent_code: 'URGP',                             # .13 only, 1-4 chars
+  instructions_for_creditor_agent: [{ code: 'HOLD', instruction_info: 'Hold for pickup' }],
+
+  # Optional: credit transfer mandate (see Credit Transfer Mandate section)
+  credit_transfer_mandate_id: 'MNDT-2024-001',                          # .13 only, max 35 chars
+  credit_transfer_mandate_date_of_signature: Date.new(2024, 1, 15),     # .13 only
+  credit_transfer_mandate_frequency: 'MNTH',                            # .13 only (Frequency6Code)
+
+  # Optional: regulatory reporting (see Regulatory Reporting section)
+  regulatory_reportings: [{ indicator: 'CRED', details: [{ code: 'ABC', information: ['Transfer info'] }] }],
+
+  # Optional: structured remittance (see Remittance Information section)
+  structured_remittance_information: 'RF712348231',                      # max 35 chars, mutually exclusive with remittance_information
+  structured_remittance_reference_type: 'SCOR',                          # max 4 chars (default: 'SCOR')
+  structured_remittance_issuer: 'Bank GmbH',                             # max 35 chars
+  additional_remittance_information: ['Invoice 2024-001']                 # max 3 items, max 140 chars each
 )
 ```
 
@@ -297,6 +322,110 @@ These can be combined. `OrgnlMndtId` is always emitted first in the XML (per XSD
 
 ---
 
+## Initiation Source
+
+The `initiation_source_name` and `initiation_source_provider` attributes identify the software that created the message. Set on the message object (not the transaction).
+
+- **Schema support**: `pain.001.001.13` only
+- `initiation_source_name` — Required when used, max 140 chars (`InitnSrc/Nm`)
+- `initiation_source_provider` — Optional, max 35 chars (`InitnSrc/Prvdr`)
+
+```ruby
+sct = SEPA::CreditTransfer.new(name: 'Debtor Inc.', iban: 'DE87200500001234567890')
+sct.initiation_source_name = 'MyPaymentApp'
+sct.initiation_source_provider = 'Advitam'
+```
+
+Using these attributes with non-v13 schemas raises `SEPA::SchemaValidationError`.
+
+---
+
+## Instructions for Agents
+
+### InstrForDbtrAgt (PmtInf level)
+
+Instruction for the debtor's agent, emitted in the `PmtInf` block. Transactions sharing the same value are grouped together.
+
+- **Schema support**: `pain.001.001.09` and `pain.001.001.13` only
+- **Type**: `Max140Text`
+- **Attribute**: `debtor_agent_instruction`
+
+### InstrForCdtrAgt (transaction level)
+
+Instructions for the creditor's agent, emitted per transaction. Unbounded (multiple instructions allowed).
+
+- **Schema support**: all versions
+- **Attribute**: `instructions_for_creditor_agent` — Array of Hashes
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `code` | String | v03/v09: `CHQB`, `HOLD`, `PHOB`, `TELB`. v13: any 1-4 char code |
+| `instruction_info` | String | Free text, max 140 chars |
+
+### InstrForDbtrAgt (transaction level)
+
+Instruction for the debtor's agent, emitted per transaction.
+
+- **v03/v09**: simple text (`Max140Text`) — use `instruction_for_debtor_agent`
+- **v13**: structured with code + text — use `instruction_for_debtor_agent` (text) and `instruction_for_debtor_agent_code` (1-4 chars, v13 only)
+
+---
+
+## Credit Transfer Mandate
+
+Support for `MndtRltdInf` (`CreditTransferMandateData1`) on credit transfer transactions.
+
+- **Schema support**: `pain.001.001.13` only
+
+| Attribute | Type | XSD element |
+|-----------|------|-------------|
+| `credit_transfer_mandate_id` | String, max 35 | `MndtId` |
+| `credit_transfer_mandate_date_of_signature` | Date | `DtOfSgntr` |
+| `credit_transfer_mandate_frequency` | String | `Frqcy/Tp` (Frequency6Code) |
+
+**Frequency6Code values**: `YEAR`, `MNTH`, `QURT`, `MIAN`, `WEEK`, `DAIL`, `ADHO`, `INDA`, `FRTN`
+
+---
+
+## Regulatory Reporting
+
+Support for `RgltryRptg` on credit transfer transactions. Max 10 entries per transaction.
+
+- **Schema support**: all versions (structure differs between v03/v09 and v13)
+- **Attribute**: `regulatory_reportings` — Array of Hashes
+
+| Key | Type | Notes |
+|-----|------|-------|
+| `indicator` | String | `CRED`, `DEBT`, or `BOTH`. **Required** in v13 |
+| `details` | Array<Hash> | Structured reporting details |
+| `details[].code` | String | Max 10 chars. Emitted as `Cd` (v03/v09) or `RptgCd` (v13) |
+| `details[].information` | Array<String> | Max 35 chars each, emitted as `Inf` elements |
+
+---
+
+## Remittance Information
+
+Two modes (mutually exclusive):
+
+### Unstructured
+
+```ruby
+remittance_information: 'Invoice 123'  # max 140 chars, emitted as RmtInf/Ustrd
+```
+
+### Structured
+
+```ruby
+structured_remittance_information: 'RF712348231',      # max 35 chars, emitted as CdtrRefInf/Ref
+structured_remittance_reference_type: 'SCOR',           # max 4 chars (default: 'SCOR'), emitted as CdtrRefInf/Tp/CdOrPrtry/Cd
+structured_remittance_issuer: 'Bank GmbH',              # max 35 chars, emitted as CdtrRefInf/Tp/Issr
+additional_remittance_information: ['Invoice 2024-001'] # max 3 items x 140 chars, emitted as AddtlRmtInf
+```
+
+`structured_remittance_information` and `remittance_information` cannot be used together. `additional_remittance_information` belongs to the structured remittance block.
+
+---
+
 ## Validators
 
 Reuse SEPA validators in your own ActiveModel classes:
@@ -320,8 +449,8 @@ validates_with SEPA::CreditorIdentifierValidator            # validates :credito
 | Schema | Type | Notes |
 |--------|------|-------|
 | `pain.001.001.03` | ISO generic | Default. PostalAddress6 |
-| `pain.001.001.09` | ISO 2019 | PostalAddress24, BICFI, UETR |
-| `pain.001.001.13` | ISO latest | PostalAddress27, BICFI, UETR |
+| `pain.001.001.09` | ISO 2019 | PostalAddress24, BICFI, UETR, InstrForDbtrAgt (PmtInf) |
+| `pain.001.001.13` | ISO latest | PostalAddress27, BICFI, UETR, InitnSrc, MndtRltdInf, structured InstrForDbtrAgt, RegulatoryReporting10 |
 | `pain.001.002.03` | EPC/SEPA | EUR only, BIC required, ChrgBr=SLEV only |
 | `pain.001.003.03` | German DK | EUR only |
 | `pain.001.001.03.ch.02` | Swiss SIX | CHF only |
