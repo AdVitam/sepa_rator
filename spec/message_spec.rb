@@ -20,11 +20,11 @@ RSpec.describe SEPA::Message do
       message
     end
 
-    it 'should sum up all transactions' do
+    it 'sums up all transactions' do
       expect(subject.amount_total).to eq(3.3)
     end
 
-    it 'should sum up selected transactions' do
+    it 'sums up selected transactions' do
       expect(subject.amount_total([subject.transactions[0]])).to eq(1.1)
     end
   end
@@ -32,12 +32,12 @@ RSpec.describe SEPA::Message do
   describe 'validation' do
     subject { DummyMessage.new }
 
-    it 'should fail with invalid account' do
+    it 'fails with invalid account' do
       expect(subject).not_to be_valid
       expect(subject.errors_on(:account).size).to eq(2)
     end
 
-    it 'should fail without transactions' do
+    it 'fails without transactions' do
       expect(subject).not_to be_valid
       expect(subject.errors_on(:transactions).size).to eq(1)
     end
@@ -47,13 +47,13 @@ RSpec.describe SEPA::Message do
     subject { DummyMessage.new }
 
     describe 'getter' do
-      it 'should return prefixed random hex string' do
+      it 'returns prefixed random hex string' do
         expect(subject.message_identification).to match(%r{MSG/([a-f0-9]{2}){14}})
       end
     end
 
     describe 'setter' do
-      it 'should accept valid ID' do
+      it 'accepts valid ID' do
         ['gid://myMoneyApp/Payment/15108', # for example, Rails Global ID could be a candidate
          Time.now.to_f.to_s].each do |valid_msgid| # or a time based string
           subject.message_identification = valid_msgid
@@ -61,7 +61,7 @@ RSpec.describe SEPA::Message do
         end
       end
 
-      it 'should deny invalid string' do
+      it 'denies invalid string' do
         ['my_MESSAGE_ID/123', # contains underscore
          '',                  # blank string
          'üöäß',              # non-ASCII chars
@@ -72,7 +72,7 @@ RSpec.describe SEPA::Message do
         end
       end
 
-      it 'should deny argument other than String' do
+      it 'denies argument other than String' do
         [123,
          nil,
          :foo].each do |arg|
@@ -88,7 +88,7 @@ RSpec.describe SEPA::Message do
     subject { DummyMessage.new }
 
     describe 'getter' do
-      it 'should return Time.now.iso8601' do
+      it 'returns Time.now.iso8601' do
         freeze_time do
           expect(subject.creation_date_time).to eq(Time.now.iso8601)
         end
@@ -96,14 +96,14 @@ RSpec.describe SEPA::Message do
     end
 
     describe 'setter' do
-      it 'should accept date time strings' do
+      it 'accepts date time strings' do
         ['2017-01-05T12:28:52', '2017-01-05T12:28:52Z', '2017-01-05 12:28:52', '2017-01-05T12:28:52+01:00'].each do |valid_dt|
           subject.creation_date_time = valid_dt
           expect(subject.creation_date_time).to eq(valid_dt)
         end
       end
 
-      it 'should deny invalid string' do
+      it 'denies invalid string' do
         ['an arbitrary string',
          ''].each do |arg|
           expect do
@@ -112,7 +112,7 @@ RSpec.describe SEPA::Message do
         end
       end
 
-      it 'should deny argument other than String' do
+      it 'denies argument other than String' do
         [123,
          nil,
          :foo].each do |arg|

@@ -1,5 +1,49 @@
 plugins:
   - rubocop-performance
+  - rubocop-rspec
+
+RSpec/ExampleLength:
+  Max: 20
+
+RSpec/MultipleExpectations:
+  Max: 10
+
+RSpec/NestedGroups:
+  Max: 5
+
+RSpec/DescribeClass:
+  Exclude:
+    - 'spec/message_spec.rb'
+    - 'spec/validation_spec.rb'
+
+# Non-autocorrectable cops that require significant manual rework of existing tests.
+# These are acceptable in test files per project guidelines.
+RSpec/DescribeSymbol:
+  Enabled: false
+
+RSpec/SpecFilePathFormat:
+  Enabled: false
+
+RSpec/ContextWording:
+  Enabled: false
+
+RSpec/NamedSubject:
+  Enabled: false
+
+RSpec/MultipleDescribes:
+  Enabled: false
+
+RSpec/RepeatedDescription:
+  Enabled: false
+
+RSpec/ExpectActual:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/DescribedClass:
+  Enabled: false
 
 AllCops:
   TargetRubyVersion: 3.2

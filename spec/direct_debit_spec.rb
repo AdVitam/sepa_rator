@@ -13,15 +13,15 @@ RSpec.describe SEPA::DirectDebit do
   end
 
   describe :new do
-    it 'should accept missing options' do
+    it 'accepts missing options' do
       expect do
         SEPA::DirectDebit.new
-      end.to_not raise_error
+      end.not_to raise_error
     end
   end
 
   describe :add_transaction do
-    it 'should add valid transactions' do
+    it 'adds valid transactions' do
       3.times do
         direct_debit.add_transaction(direct_debit_transaction)
       end
@@ -29,7 +29,7 @@ RSpec.describe SEPA::DirectDebit do
       expect(direct_debit.transactions.size).to eq(3)
     end
 
-    it 'should fail for invalid transaction' do
+    it 'fails for invalid transaction' do
       expect do
         direct_debit.add_transaction name: ''
       end.to raise_error(SEPA::ValidationError)
@@ -68,7 +68,7 @@ RSpec.describe SEPA::DirectDebit do
 
   describe :to_xml do
     context 'for invalid creditor' do
-      it 'should fail' do
+      it 'fails' do
         expect do
           SEPA::DirectDebit.new.to_xml
         end.to raise_error(SEPA::Error, /Name is too short/)
@@ -98,15 +98,15 @@ RSpec.describe SEPA::DirectDebit do
         sdd
       end
 
-      it 'should validate against pain.008.003.02' do
+      it 'validates against pain.008.003.02' do
         expect(subject.to_xml(SEPA::PAIN_008_003_02)).to validate_against('pain.008.003.02.xsd')
       end
 
-      it 'should validate against pain.008.001.08' do
+      it 'validates against pain.008.001.08' do
         expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
       end
 
-      it 'should validate against pain.008.001.12' do
+      it 'validates against pain.008.001.12' do
         expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
       end
     end
@@ -136,15 +136,15 @@ RSpec.describe SEPA::DirectDebit do
         sdd
       end
 
-      it 'should validate against pain.008.001.02' do
+      it 'validates against pain.008.001.02' do
         expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
       end
 
-      it 'should validate against pain.008.001.08' do
+      it 'validates against pain.008.001.08' do
         expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
       end
 
-      it 'should validate against pain.008.001.12' do
+      it 'validates against pain.008.001.12' do
         expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
       end
     end
@@ -168,25 +168,25 @@ RSpec.describe SEPA::DirectDebit do
           sdd
         end
 
-        it 'should validate against pain.008.003.02' do
+        it 'validates against pain.008.003.02' do
           expect(subject.to_xml(SEPA::PAIN_008_003_02)).to validate_against('pain.008.003.02.xsd')
         end
 
-        it 'should fail for pain.008.002.02' do
+        it 'fails for pain.008.002.02' do
           expect do
             subject.to_xml(SEPA::PAIN_008_002_02)
           end.to raise_error(SEPA::Error, /Incompatible with schema/)
         end
 
-        it 'should validate against pain.008.001.02' do
+        it 'validates against pain.008.001.02' do
           expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
         end
 
-        it 'should validate against pain.008.001.08' do
+        it 'validates against pain.008.001.08' do
           expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
         end
 
-        it 'should validate against pain.008.001.12' do
+        it 'validates against pain.008.001.12' do
           expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
         end
       end
@@ -207,23 +207,23 @@ RSpec.describe SEPA::DirectDebit do
           sdd
         end
 
-        it 'should validate against pain.008.001.02' do
+        it 'validates against pain.008.001.02' do
           expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
         end
 
-        it 'should validate against pain.008.002.02' do
+        it 'validates against pain.008.002.02' do
           expect(subject.to_xml(SEPA::PAIN_008_002_02)).to validate_against('pain.008.002.02.xsd')
         end
 
-        it 'should validate against pain.008.003.02' do
+        it 'validates against pain.008.003.02' do
           expect(subject.to_xml(SEPA::PAIN_008_003_02)).to validate_against('pain.008.003.02.xsd')
         end
 
-        it 'should validate against pain.008.001.08' do
+        it 'validates against pain.008.001.08' do
           expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
         end
 
-        it 'should validate against pain.008.001.12' do
+        it 'validates against pain.008.001.12' do
           expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
         end
       end
@@ -244,22 +244,22 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml(SEPA::PAIN_008_001_08)
         end
 
-        it 'should use BICFI instead of BIC for creditor agent' do
+        it 'uses BICFI instead of BIC for creditor agent' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC')
         end
 
-        it 'should use BICFI instead of BIC for debtor agent' do
+        it 'uses BICFI instead of BIC for debtor agent' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BICFI', 'SPUEDE2UXXX')
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BIC')
         end
 
-        it 'should NOT wrap ReqdColltnDt in Dt' do
+        it 'does not wrap ReqdColltnDt in Dt' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt')
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt/Dt')
         end
 
-        it 'should use correct namespace' do
+        it 'uses correct namespace' do
           expect(subject).to include('urn:iso:std:iso:20022:tech:xsd:pain.008.001.08')
         end
       end
@@ -280,22 +280,22 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml(SEPA::PAIN_008_001_12)
         end
 
-        it 'should use BICFI instead of BIC' do
+        it 'uses BICFI instead of BIC' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC')
         end
 
-        it 'should NOT wrap ReqdColltnDt in Dt' do
+        it 'does not wrap ReqdColltnDt in Dt' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt')
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt/Dt')
         end
 
-        it 'should use correct namespace' do
+        it 'uses correct namespace' do
           expect(subject).to include('urn:iso:std:iso:20022:tech:xsd:pain.008.001.12')
         end
       end
 
-      context 'with BIC and debtor address ' do
+      context 'with BIC and debtor address' do
         subject do
           sdd = direct_debit
 
@@ -318,23 +318,23 @@ RSpec.describe SEPA::DirectDebit do
           sdd
         end
 
-        it 'should validate against pain.008.001.02' do
+        it 'validates against pain.008.001.02' do
           expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
         end
 
-        it 'should validate against pain.008.002.02' do
+        it 'validates against pain.008.002.02' do
           expect(subject.to_xml(SEPA::PAIN_008_002_02)).to validate_against('pain.008.002.02.xsd')
         end
 
-        it 'should validate against pain.008.003.02' do
+        it 'validates against pain.008.003.02' do
           expect(subject.to_xml(SEPA::PAIN_008_003_02)).to validate_against('pain.008.003.02.xsd')
         end
 
-        it 'should validate against pain.008.001.08' do
+        it 'validates against pain.008.001.08' do
           expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
         end
 
-        it 'should validate against pain.008.001.12' do
+        it 'validates against pain.008.001.12' do
           expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
         end
       end
@@ -363,90 +363,90 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should create valid XML file' do
+        it 'creates valid XML file' do
           expect(subject).to validate_against('pain.008.001.02.xsd')
         end
 
-        it 'should have creditor identifier' do
+        it 'has creditor identifier' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/GrpHdr/InitgPty/Id/OrgId/Othr/Id', direct_debit.account.creditor_identifier)
         end
 
-        it 'should contain <PmtInfId>' do
+        it 'contains <PmtInfId>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtInfId', %r{#{message_id_regex}/1})
         end
 
-        it 'should contain <ReqdColltnDt>' do
+        it 'contains <ReqdColltnDt>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/ReqdColltnDt', Date.new(1999, 1, 1).iso8601)
         end
 
-        it 'should contain <PmtMtd>' do
+        it 'contains <PmtMtd>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtMtd', 'DD')
         end
 
-        it 'should contain <BtchBookg>' do
+        it 'contains <BtchBookg>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/BtchBookg', 'true')
         end
 
-        it 'should contain <NbOfTxs>' do
+        it 'contains <NbOfTxs>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/NbOfTxs', '2')
         end
 
-        it 'should contain <CtrlSum>' do
+        it 'contains <CtrlSum>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CtrlSum', '789.99')
         end
 
-        it 'should contain <Cdtr>' do
+        it 'contains <Cdtr>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Gläubiger GmbH')
         end
 
-        it 'should contain <CdtrAcct>' do
+        it 'contains <CdtrAcct>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAcct/Id/IBAN', 'DE87200500001234567890')
         end
 
-        it 'should contain <CdtrAgt>' do
+        it 'contains <CdtrAgt>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC', 'BANKDEFFXXX')
         end
 
-        it 'should contain <CdtrAgt>' do
+        it 'contains <CdtrAgt>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrSchmeId/Id/PrvtId/Othr/Id', 'DE98ZZZ09999999999')
         end
 
-        it 'should contain <EndToEndId>' do
+        it 'contains <EndToEndId>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/PmtId/EndToEndId', 'XYZ/2013-08-ABO/12345')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/PmtId/EndToEndId', 'XYZ/2013-08-ABO/6789')
         end
 
-        it 'should contain <InstdAmt>' do
+        it 'contains <InstdAmt>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/InstdAmt', '39.99')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/InstdAmt', '750.00')
         end
 
-        it 'should contain <MndtId>' do
+        it 'contains <MndtId>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DrctDbtTx/MndtRltdInf/MndtId', 'K-02-2011-12345')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/MndtId', 'K-08-2010-42123')
         end
 
-        it 'should contain <DtOfSgntr>' do
+        it 'contains <DtOfSgntr>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DrctDbtTx/MndtRltdInf/DtOfSgntr', '2011-01-25')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/DtOfSgntr', '2010-07-25')
         end
 
-        it 'should contain <DbtrAgt>' do
+        it 'contains <DbtrAgt>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DbtrAgt/FinInstnId/BIC', 'SPUEDE2UXXX')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DbtrAgt/FinInstnId/Othr/Id', 'NOTPROVIDED')
         end
 
-        it 'should contain <Dbtr>' do
+        it 'contains <Dbtr>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm', 'Zahlemann + Söhne GbR')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier + Schulze oHG')
         end
 
-        it 'should contain <DbtrAcct>' do
+        it 'contains <DbtrAcct>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DbtrAcct/Id/IBAN', 'DE21500500009876543210')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DbtrAcct/Id/IBAN', 'DE68210501700012345678')
         end
 
-        it 'should contain <RmtInf>' do
+        it 'contains <RmtInf>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/RmtInf/Ustrd', 'Unsere Rechnung vom 10.08.2013')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/RmtInf/Ustrd', 'Vielen Dank für Ihren Einkauf')
         end
@@ -463,14 +463,14 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should contain two payment_informations with <ReqdColltnDt>' do
+        it 'contains two payment_informations with <ReqdColltnDt>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/ReqdColltnDt', (Date.today + 1).iso8601)
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/ReqdColltnDt', (Date.today + 2).iso8601)
 
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[3]')
         end
 
-        it 'should contain two payment_informations with different <PmtInfId>' do
+        it 'contains two payment_informations with different <PmtInfId>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/PmtInfId', %r{#{message_id_regex}/1})
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/PmtInfId', %r{#{message_id_regex}/2})
         end
@@ -486,11 +486,11 @@ RSpec.describe SEPA::DirectDebit do
           sdd
         end
 
-        it 'should have errors' do
+        it 'has errors' do
           expect(subject.errors_on(:base).size).to eq(1)
         end
 
-        it 'should raise error on XML generation' do
+        it 'raises error on XML generation' do
           expect do
             subject.to_xml
           end.to raise_error(SEPA::Error, /CORE, COR1 AND B2B must not be mixed in one message/)
@@ -508,7 +508,7 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should contain two payment_informations with <LclInstrm>' do
+        it 'contains two payment_informations with <LclInstrm>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/PmtTpInf/SeqTp', 'OOFF')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/PmtTpInf/SeqTp', 'FRST')
 
@@ -527,7 +527,7 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should contain two payment_informations with <BtchBookg>' do
+        it 'contains two payment_informations with <BtchBookg>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/BtchBookg', 'false')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/BtchBookg', 'true')
 
@@ -547,7 +547,7 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should contain multiple payment_informations' do
+        it 'contains multiple payment_informations' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/ReqdColltnDt', (Date.today + 1).iso8601)
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/PmtTpInf/SeqTp', 'OOFF')
 
@@ -561,7 +561,7 @@ RSpec.describe SEPA::DirectDebit do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[4]/PmtTpInf/SeqTp', 'FNAL')
         end
 
-        it 'should have multiple control sums' do
+        it 'has multiple control sums' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/CtrlSum', '1.00')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/CtrlSum', '2.00')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[3]/CtrlSum', '4.00')
@@ -584,7 +584,7 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should contain two payment_informations with <Cdtr>' do
+        it 'contains two payment_informations with <Cdtr>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/Cdtr/Nm', 'Gläubiger GmbH')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/Cdtr/Nm', 'Creditor Inc.')
         end
@@ -600,13 +600,13 @@ RSpec.describe SEPA::DirectDebit do
           sdd.to_xml
         end
 
-        it 'should include amendment indicator' do
+        it 'includes amendment indicator' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DrctDbtTx/MndtRltdInf/AmdmntInd', 'true')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/AmdmntInd', 'true')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[3]/DrctDbtTx/MndtRltdInf/AmdmntInd', 'true')
         end
 
-        it 'should include amendment information details' do
+        it 'includes amendment information details' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlDbtrAcct/Id/IBAN', 'NL08RABO0135742099')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlDbtrAgt/FinInstnId/Othr/Id', 'SMNDA')
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[3]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlCdtrSchmeId/Nm', 'Creditor Inc.')
@@ -623,11 +623,11 @@ RSpec.describe SEPA::DirectDebit do
           sct.to_xml
         end
 
-        it 'should create valid XML file' do
+        it 'creates valid XML file' do
           expect(subject).to validate_against('pain.008.001.02.xsd')
         end
 
-        it 'should contain <InstrId>' do
+        it 'contains <InstrId>' do
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/PmtId/InstrId', '1234/ABC')
         end
       end
@@ -640,7 +640,7 @@ RSpec.describe SEPA::DirectDebit do
           sct
         end
 
-        it 'should truncate the payment identification to 35 characters' do
+        it 'truncates the payment identification to 35 characters' do
           expect { subject.to_xml }.not_to raise_error
         end
       end
@@ -654,26 +654,26 @@ RSpec.describe SEPA::DirectDebit do
           sct
         end
 
-        it 'should validate against pain.008.001.02' do
+        it 'validates against pain.008.001.02' do
           expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
         end
 
-        it 'should have a CHF Ccy' do
+        it 'has a CHF Ccy' do
           doc = Nokogiri::XML(subject.to_xml('pain.008.001.02'))
           doc.remove_namespaces!
 
           nodes = doc.xpath('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/InstdAmt')
-          expect(nodes.length).to eql(1)
+          expect(nodes.length).to be(1)
           expect(nodes.first.attribute('Ccy').value).to eql('SEK')
         end
 
-        it 'should fail for pain.008.002.02' do
+        it 'fails for pain.008.002.02' do
           expect do
             subject.to_xml(SEPA::PAIN_008_002_02)
           end.to raise_error(SEPA::Error, /Incompatible with schema/)
         end
 
-        it 'should fail for pain.008.003.02' do
+        it 'fails for pain.008.003.02' do
           expect do
             subject.to_xml(SEPA::PAIN_008_003_02)
           end.to raise_error(SEPA::Error, /Incompatible with schema/)
@@ -717,8 +717,8 @@ RSpec.describe SEPA::DirectDebit do
       context "when format is #{SEPA::PAIN_008_001_02}" do
         let(:format) { SEPA::PAIN_008_001_02 }
 
-        it 'should return correct header' do
-          is_expected.to start_with(xml_header)
+        it 'returns correct header' do
+          expect(subject).to start_with(xml_header)
         end
       end
 
@@ -748,16 +748,16 @@ RSpec.describe SEPA::DirectDebit do
           }
         end
 
-        it 'should return correct header' do
-          is_expected.to start_with(xml_header)
+        it 'returns correct header' do
+          expect(subject).to start_with(xml_header)
         end
       end
 
       context "when format is #{SEPA::PAIN_008_003_02}" do
         let(:format) { SEPA::PAIN_008_003_02 }
 
-        it 'should return correct header' do
-          is_expected.to start_with(xml_header)
+        it 'returns correct header' do
+          expect(subject).to start_with(xml_header)
         end
       end
     end
@@ -780,11 +780,11 @@ RSpec.describe SEPA::DirectDebit do
       sdd
     end
 
-    it 'should validate against pain.008.001.08' do
+    it 'validates against pain.008.001.08' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
     end
 
-    it 'should contain BldgNm element' do
+    it 'contains BldgNm element' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08))
         .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/PstlAdr/BldgNm', 'Tower A')
     end
@@ -807,11 +807,11 @@ RSpec.describe SEPA::DirectDebit do
       sdd
     end
 
-    it 'should validate against pain.008.001.12' do
+    it 'validates against pain.008.001.12' do
       expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
     end
 
-    it 'should contain CareOf element' do
+    it 'contains CareOf element' do
       expect(subject.to_xml(SEPA::PAIN_008_001_12))
         .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/PstlAdr/CareOf', 'c/o Max Mustermann')
     end
@@ -825,20 +825,20 @@ RSpec.describe SEPA::DirectDebit do
       sdd
     end
 
-    it 'should validate against pain.008.001.02' do
+    it 'validates against pain.008.001.02' do
       expect(subject.to_xml(SEPA::PAIN_008_001_02)).to validate_against('pain.008.001.02.xsd')
     end
 
-    it 'should validate against pain.008.001.08' do
+    it 'validates against pain.008.001.08' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
     end
 
-    it 'should contain InstrPrty element' do
+    it 'contains InstrPrty element' do
       expect(subject.to_xml(SEPA::PAIN_008_001_02))
         .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtTpInf/InstrPrty', 'HIGH')
     end
 
-    it 'should fail for pain.008.002.02' do
+    it 'fails for pain.008.002.02' do
       expect { subject.to_xml(SEPA::PAIN_008_002_02) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
     end
   end
@@ -851,20 +851,20 @@ RSpec.describe SEPA::DirectDebit do
       sdd
     end
 
-    it 'should validate against pain.008.001.08' do
+    it 'validates against pain.008.001.08' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
     end
 
-    it 'should validate against pain.008.001.12' do
+    it 'validates against pain.008.001.12' do
       expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
     end
 
-    it 'should contain UETR element' do
+    it 'contains UETR element' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08))
         .to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/PmtId/UETR', '550e8400-e29b-41d4-a716-446655440000')
     end
 
-    it 'should fail for pain.008.001.02' do
+    it 'fails for pain.008.001.02' do
       expect { subject.to_xml(SEPA::PAIN_008_001_02) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
     end
   end
@@ -877,19 +877,19 @@ RSpec.describe SEPA::DirectDebit do
       sdd
     end
 
-    it 'should validate against pain.008.001.08' do
+    it 'validates against pain.008.001.08' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
     end
 
-    it 'should validate against pain.008.001.12' do
+    it 'validates against pain.008.001.12' do
       expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
     end
 
-    it 'should contain RPRE in SeqTp' do
+    it 'contains RPRE in SeqTp' do
       expect(subject.to_xml(SEPA::PAIN_008_001_08)).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/PmtTpInf/SeqTp', 'RPRE')
     end
 
-    it 'should fail for pain.008.001.02' do
+    it 'fails for pain.008.001.02' do
       expect { subject.to_xml(SEPA::PAIN_008_001_02) }.to raise_error(SEPA::SchemaValidationError, /Incompatible/)
     end
   end

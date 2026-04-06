@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 RSpec.describe SEPA::DebtorAccount do
-  it 'should initialize a new account' do
+  it 'initializes a new account' do
     expect(
       SEPA::DebtorAccount.new(name: 'Gläubiger GmbH',
                               bic: 'BANKDEFFXXX',

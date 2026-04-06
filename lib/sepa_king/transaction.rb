@@ -24,13 +24,15 @@ module SEPA
                   :debtor_address,
                   :creditor_address,
                   :structured_remittance_information,
-                  :uetr
+                  :uetr,
+                  :instruction_priority
 
     convert :name, :instruction, :reference, :remittance_information, :structured_remittance_information, to: :text
     convert :amount, to: :decimal
 
     validates_length_of :name, within: 1..70
-    validates_length_of :currency, is: 3
+    validates_format_of :currency, with: /\A[A-Z]{3}\z/
+    validates_inclusion_of :instruction_priority, in: %w[HIGH NORM], allow_nil: true
     validates_length_of :instruction, within: 1..35, allow_nil: true
     validates_length_of :reference, within: 1..35, allow_nil: true
     validates_length_of :remittance_information, within: 1..140, allow_nil: true

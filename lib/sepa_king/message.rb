@@ -61,13 +61,17 @@ module SEPA
       record.errors.add(:account, record.account.errors.full_messages) unless record.account.valid?
     end
 
-    class_attribute :account_class, :transaction_class, :xml_main_tag, :known_schemas
+    class_attribute :account_class, :transaction_class, :xml_main_tag, :known_schemas, instance_writer: false
 
+    # @param account_options [Hash] attributes for the debtor/creditor account (:name, :iban, :bic)
     def initialize(account_options = {})
       @grouped_transactions = {}
       @account = account_class.new(account_options)
     end
 
+    # Add a transaction to the message. The transaction is validated immediately.
+    # @param options [Hash] transaction attributes (see {Transaction} subclasses for valid keys)
+    # @raise [SEPA::ValidationError] if the transaction is invalid
     def add_transaction(options)
       transaction = transaction_class.new(options)
       raise SEPA::ValidationError, transaction.errors.full_messages.join("\n") unless transaction.valid?
@@ -78,11 +82,16 @@ module SEPA
       @transactions = nil
     end
 
+    # @return [Array<Transaction>] all transactions across all groups
     def transactions
       @transactions ||= grouped_transactions.values.flatten
     end
 
-    # @return [String] xml
+    # Generate the SEPA XML document for the given schema.
+    # @param schema_name [String] one of {known_schemas} (defaults to the first)
+    # @return [String] UTF-8 encoded XML
+    # @raise [SEPA::ValidationError] if the message or account is invalid
+    # @raise [SEPA::SchemaValidationError] if transactions are incompatible or XML fails XSD validation
     def to_xml(schema_name = known_schemas.first)
       raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
       raise SEPA::SchemaValidationError, "Incompatible with schema #{schema_name}!" unless schema_compatible?(schema_name)
@@ -100,22 +109,30 @@ module SEPA
       xml_builder.to_xml
     end
 
+    # @param selected_transactions [Array<Transaction>] subset to sum (defaults to all)
+    # @return [BigDecimal] total amount
     def amount_total(selected_transactions = transactions)
       selected_transactions.sum(&:amount)
     end
 
+    # Check if all transactions are compatible with the given schema.
+    # @param schema_name [String] one of {known_schemas}
+    # @return [Boolean]
+    # @raise [ArgumentError] if the schema is unknown
     def schema_compatible?(schema_name)
       raise ArgumentError, "Schema #{schema_name} is unknown!" unless known_schemas.include?(schema_name)
 
       features = schema_features(schema_name)
-      return false if features[:requires_bic] && account.bic.blank?
+      return false if features[:requires_bic] && (account.bic.nil? || account.bic.empty?)
 
       transactions.all? { |t| t.schema_compatible?(schema_name) }
     end
 
-    # Set unique identifer for the message.
+    # Set unique identifier for the message (max 35 chars, alphanumeric + punctuation).
     # Validates and assigns immediately (fail-fast) rather than deferring to ActiveModel,
     # because this field has a lazy default and must always be in a valid state once assigned.
+    # @param value [String] unique message ID (1-35 chars)
+    # @raise [ArgumentError] if value is not a valid string
     def message_identification=(value)
       raise ArgumentError, 'message_identification must be a string!' unless value.is_a?(String)
 
@@ -125,15 +142,17 @@ module SEPA
       @message_identification = value
     end
 
-    # Get unique identifer for the message (with fallback to a random string)
+    # @return [String] unique message identifier (auto-generated if not set)
     def message_identification
       @message_identification ||= "MSG/#{SecureRandom.hex(14)}"
     end
 
-    # Set creation date time for the message.
+    # Set creation date time for the message (ISO 8601 format).
     # Validates and assigns immediately (fail-fast) rather than deferring to ActiveModel,
     # because this field has a lazy default and must always be in a valid state once assigned.
-    # p.s. Rabobank in the Netherlands only accepts the more restricted format [0-9]{4}[-][0-9]{2,2}[-][0-9]{2,2}[T][0-9]{2,2}[:][0-9]{2,2}[:][0-9]{2,2}
+    # @note Rabobank (NL) only accepts the strict format YYYY-MM-DDTHH:MM:SS
+    # @param value [String] ISO 8601 datetime
+    # @raise [ArgumentError] if value does not match the expected format
     def creation_date_time=(value)
       raise ArgumentError, 'creation_date_time must be a string!' unless value.is_a?(String)
 
@@ -143,13 +162,14 @@ module SEPA
       @creation_date_time = value
     end
 
-    # Get creation date time for the message (with fallback to Time.now.iso8601)
+    # @return [String] ISO 8601 creation datetime (auto-generated if not set)
     def creation_date_time
       @creation_date_time ||= Time.now.iso8601
     end
 
-    # Returns the id of the batch to which the given transaction belongs
-    # Identified based upon the reference of the transaction
+    # Find the PmtInf ID for the batch containing a transaction with the given reference.
+    # @param transaction_reference [String] the transaction's EndToEndId reference
+    # @return [String, nil] the payment information identification, or nil if not found
     def batch_id(transaction_reference)
       grouped_transactions.each do |group, transactions|
         return payment_information_identification(group) if transactions.any? { |transaction| transaction.reference == transaction_reference }
@@ -157,6 +177,7 @@ module SEPA
       nil
     end
 
+    # @return [Array<String>] list of all PmtInf IDs in the message
     def batches
       grouped_transactions.keys.map { |group| payment_information_identification(group) }
     end
@@ -253,9 +274,9 @@ module SEPA
 
     def build_payment_identification(builder, transaction)
       builder.PmtId do
-        builder.InstrId(transaction.instruction) if transaction.instruction.present?
+        builder.InstrId(transaction.instruction) if transaction.instruction && !transaction.instruction.empty?
         builder.EndToEndId(transaction.reference)
-        builder.UETR(transaction.uetr) if transaction.uetr.present?
+        builder.UETR(transaction.uetr) if transaction.uetr && !transaction.uetr.empty?
       end
     end
 

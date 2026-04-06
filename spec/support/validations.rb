@@ -1,29 +1,21 @@
 # frozen_string_literal: true
 
-# Borrowed from rspec-rails
-# https://github.com/rspec/rspec-rails/blob/master/lib/rspec/rails/extensions/active_record/base.rb
+# Test-only helper for checking validation errors on ActiveModel objects.
+# Included into ActiveModel::Validations via RSpec before(:suite) in spec_helper.rb.
+module SEPA
+  module TestValidationHelpers
+    # Returns an array of error messages for the given attribute after running validations.
+    #
+    # @param attribute [Symbol] the attribute to check errors on
+    # @param options [Hash] optional validation context
+    # @return [Array<String>] error messages
+    def errors_on(attribute, options = {})
+      valid_args = [options[:context]].compact
+      valid?(*valid_args)
 
-module ::ActiveModel::Validations
-  # Extension to enhance `to have` on AR Model instances.  Calls
-  # model.valid? in order to prepare the object's errors object. Accepts
-  # a :context option to specify the validation context.
-  #
-  # You can also use this to specify the content of the error messages.
-  #
-  # @example
-  #
-  #     expect(model).to have(:no).errors_on(:attribute)
-  #     expect(model).to have(1).error_on(:attribute)
-  #     expect(model).to have(n).errors_on(:attribute)
-  #     expect(model).to have(n).errors_on(:attribute, context: :create)
-  #
-  #     expect(model.errors_on(:attribute)).to include("can't be blank")
-  def errors_on(attribute, options = {})
-    valid_args = [options[:context]].compact
-    valid?(*valid_args)
+      [errors[attribute]].flatten.compact
+    end
 
-    [errors[attribute]].flatten.compact
+    alias error_on errors_on
   end
-
-  alias error_on errors_on
 end

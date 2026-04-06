@@ -4,7 +4,7 @@ require 'spec_helper'
 
 RSpec.describe SEPA::CreditTransferTransaction do
   describe :initialize do
-    it 'should initialize a valid transaction' do
+    it 'initializes a valid transaction' do
       expect(
         SEPA::CreditTransferTransaction.new(name: 'Telekomiker AG',
                                             iban: 'DE37112589611964645802',
@@ -18,21 +18,21 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
   describe :schema_compatible? do
     context 'for pain.001.003.03' do
-      it 'should succeed' do
+      it 'succeeds' do
         expect(SEPA::CreditTransferTransaction.new({})).to be_schema_compatible('pain.001.003.03')
       end
 
-      it 'should fail for invalid attributes' do
+      it 'fails for invalid attributes' do
         expect(SEPA::CreditTransferTransaction.new(currency: 'CHF')).not_to be_schema_compatible('pain.001.003.03')
       end
     end
 
     context 'pain.001.002.03' do
-      it 'should succeed for valid attributes' do
+      it 'succeeds for valid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA')).to be_schema_compatible('pain.001.002.03')
       end
 
-      it 'should fail for invalid attributes' do
+      it 'fails for invalid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).not_to be_schema_compatible('pain.001.002.03')
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'URGP')).not_to be_schema_compatible('pain.001.002.03')
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).not_to be_schema_compatible('pain.001.002.03')
@@ -40,51 +40,51 @@ RSpec.describe SEPA::CreditTransferTransaction do
     end
 
     context 'for pain.001.001.03' do
-      it 'should succeed for valid attributes' do
+      it 'succeeds for valid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.03')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.003.03')
       end
     end
 
     context 'for pain.001.001.03.ch.02' do
-      it 'should succeed for valid attributes' do
+      it 'succeeds for valid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.03.ch.02')
       end
     end
 
     context 'for pain.001.001.09' do
-      it 'should succeed for valid attributes' do
+      it 'succeeds for valid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX')).to be_schema_compatible('pain.001.001.09')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.001.09')
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.09')
       end
 
-      it 'should accept UETR' do
+      it 'accepts UETR' do
         expect(SEPA::CreditTransferTransaction.new(uetr: '550e8400-e29b-41d4-a716-446655440000'))
           .to be_schema_compatible('pain.001.001.09')
       end
     end
 
     context 'for pain.001.001.13' do
-      it 'should succeed for valid attributes' do
+      it 'succeeds for valid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX')).to be_schema_compatible('pain.001.001.13')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.001.13')
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.13')
       end
 
-      it 'should accept UETR' do
+      it 'accepts UETR' do
         expect(SEPA::CreditTransferTransaction.new(uetr: '550e8400-e29b-41d4-a716-446655440000'))
           .to be_schema_compatible('pain.001.001.13')
       end
     end
 
     context 'UETR schema compatibility' do
-      it 'should reject UETR for pain.001.001.03' do
+      it 'rejects UETR for pain.001.001.03' do
         expect(SEPA::CreditTransferTransaction.new(uetr: '550e8400-e29b-41d4-a716-446655440000'))
           .not_to be_schema_compatible('pain.001.001.03')
       end
 
-      it 'should reject UETR for pain.001.002.03' do
+      it 'rejects UETR for pain.001.002.03' do
         expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', uetr: '550e8400-e29b-41d4-a716-446655440000'))
           .not_to be_schema_compatible('pain.001.002.03')
       end
@@ -92,33 +92,33 @@ RSpec.describe SEPA::CreditTransferTransaction do
   end
 
   context 'Requested date' do
-    around(:each) { |example| travel_to(Time.new(2025, 6, 15, 12, 0, 0)) { example.run } }
+    around { |example| travel_to(Time.new(2025, 6, 15, 12, 0, 0)) { example.run } }
 
-    it 'should allow valid value' do
+    it 'allows valid value' do
       expect(SEPA::CreditTransferTransaction).to accept(nil, Date.new(1999, 1, 1), Date.today, Date.today.next, Date.today + 2, for: :requested_date)
     end
 
-    it 'should not allow invalid value' do
+    it 'does not allow invalid value' do
       expect(SEPA::CreditTransferTransaction).not_to accept(Date.new(1995, 12, 21), Date.today - 1, for: :requested_date)
     end
   end
 
   context 'Instruction Priority' do
-    it 'should allow valid value' do
+    it 'allows valid value' do
       expect(SEPA::CreditTransferTransaction).to accept(nil, 'HIGH', 'NORM', for: :instruction_priority)
     end
 
-    it 'should not allow invalid value' do
+    it 'does not allow invalid value' do
       expect(SEPA::CreditTransferTransaction).not_to accept('', 'LOW', 'high', for: :instruction_priority)
     end
   end
 
   context 'Category Purpose' do
-    it 'should allow valid value' do
+    it 'allows valid value' do
       expect(SEPA::CreditTransferTransaction).to accept(nil, 'SALA', 'INST', 'X' * 4, for: :category_purpose)
     end
 
-    it 'should not allow invalid value' do
+    it 'does not allow invalid value' do
       expect(SEPA::CreditTransferTransaction).not_to accept('', 'X' * 5, for: :category_purpose)
     end
   end

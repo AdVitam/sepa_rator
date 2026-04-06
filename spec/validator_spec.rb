@@ -39,12 +39,12 @@ MandateIdentifierValidatable = Class.new do
 end
 
 RSpec.describe SEPA::IBANValidator do
-  it 'should accept valid IBAN' do
+  it 'accepts valid IBAN' do
     expect(IBANValidatable).to accept('DE21500500009876543210', 'DE87200500001234567890',
                                       for: %i[iban iban_the_terrible])
   end
 
-  it 'should not accept an invalid IBAN' do
+  it 'does not accept an invalid IBAN' do
     expect(IBANValidatable).not_to accept('', 'xxx',                     # Oviously no IBAN
                                           'DE22500500009876543210',      # wrong checksum
                                           'DE2150050000987654321',       # too short
@@ -53,7 +53,7 @@ RSpec.describe SEPA::IBANValidator do
                                           for: %i[iban iban_the_terrible])
   end
 
-  it 'should customize error message' do
+  it 'customizes error message' do
     v = IBANValidatable.new(iban: 'xxx')
     v.valid?
     expect(v.errors[:iban]).to eq(['xxx seems wrong'])
@@ -61,15 +61,15 @@ RSpec.describe SEPA::IBANValidator do
 end
 
 RSpec.describe SEPA::BICValidator do
-  it 'should accept valid BICs' do
+  it 'accepts valid BICs' do
     expect(BICValidatable).to accept('DEUTDEDBDUE', 'DUSSDEDDXXX', for: %i[bic custom_bic])
   end
 
-  it 'should not accept an invalid BIC' do
+  it 'does not accept an invalid BIC' do
     expect(BICValidatable).not_to accept('', 'GENODE61HR', 'DEUTDEDBDUEDEUTDEDBDUE', for: %i[bic custom_bic])
   end
 
-  it 'should customize error message' do
+  it 'customizes error message' do
     v = BICValidatable.new(bic: 'xxx')
     v.valid?
     expect(v.errors[:bic]).to eq(['xxx seems wrong'])
@@ -77,7 +77,7 @@ RSpec.describe SEPA::BICValidator do
 end
 
 RSpec.describe SEPA::CreditorIdentifierValidator do
-  it 'should accept valid creditor_identifier' do
+  it 'accepts valid creditor_identifier' do
     expect(CreditorIdentifierValidatable).to accept(
       'DE98ZZZ09999999999',
       'CH1312300000012345',
@@ -93,7 +93,7 @@ RSpec.describe SEPA::CreditorIdentifierValidator do
     )
   end
 
-  it 'should not accept an invalid creditor_identifier' do
+  it 'does not accept an invalid creditor_identifier' do
     expect(CreditorIdentifierValidatable).not_to accept(
       '',
       'xxx',
@@ -103,7 +103,7 @@ RSpec.describe SEPA::CreditorIdentifierValidator do
     )
   end
 
-  it 'should customize error message' do
+  it 'customizes error message' do
     v = CreditorIdentifierValidatable.new(creditor_identifier: 'xxx')
     v.valid?
     expect(v.errors[:creditor_identifier]).to eq(['xxx seems wrong'])
@@ -111,15 +111,15 @@ RSpec.describe SEPA::CreditorIdentifierValidator do
 end
 
 RSpec.describe SEPA::MandateIdentifierValidator do
-  it 'should accept valid mandate_identifier' do
+  it 'accepts valid mandate_identifier' do
     expect(MandateIdentifierValidatable).to accept('XYZ-123', "+?/-:().,'", 'X' * 35, for: %i[mandate_id mid])
   end
 
-  it 'should not accept an invalid mandate_identifier' do
+  it 'does not accept an invalid mandate_identifier' do
     expect(MandateIdentifierValidatable).not_to accept(nil, '', 'X' * 36, '#/*', 'Ümläüt', for: %i[mandate_id mid])
   end
 
-  it 'should customize error message' do
+  it 'customizes error message' do
     v = MandateIdentifierValidatable.new(mandate_id: '*** 123')
     v.valid?
     expect(v.errors[:mandate_id]).to eq(['*** 123 seems wrong'])

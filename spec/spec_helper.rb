@@ -21,8 +21,11 @@ Dir[File.expand_path(File.join(__dir__, 'support', '**', '*.rb'))].each { |f| re
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 RSpec.configure do |config|
   config.include ActiveSupport::Testing::TimeHelpers
-  config.run_all_when_everything_filtered = true
-  config.filter_run :focus
+  config.filter_run_when_matching :focus
+
+  config.before(:suite) do
+    ActiveModel::Validations.include(SEPA::TestValidationHelpers)
+  end
   config.disable_monkey_patching!
 
   # Run specs in random order to surface order dependencies. If you find an

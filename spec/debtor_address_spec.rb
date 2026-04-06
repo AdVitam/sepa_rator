@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 RSpec.describe SEPA::DebtorAddress do
-  it 'should initialize a new address' do
+  it 'initializes a new address' do
     expect(
       SEPA::DebtorAddress.new(country_code: 'CH',
                               address_line1: 'Mustergasse 123',
@@ -11,7 +11,7 @@ RSpec.describe SEPA::DebtorAddress do
     ).to be_valid
   end
 
-  it 'should accept PostalAddress24 fields' do
+  it 'accepts PostalAddress24 fields' do
     expect(
       SEPA::DebtorAddress.new(
         country_code: 'DE',
@@ -32,7 +32,7 @@ RSpec.describe SEPA::DebtorAddress do
     ).to be_valid
   end
 
-  it 'should accept PostalAddress27 fields' do
+  it 'accepts PostalAddress27 fields' do
     expect(
       SEPA::DebtorAddress.new(
         country_code: 'DE',
@@ -43,7 +43,7 @@ RSpec.describe SEPA::DebtorAddress do
     ).to be_valid
   end
 
-  it 'should reject too-long field values' do
+  it 'rejects too-long field values' do
     expect(SEPA::DebtorAddress.new(country_code: 'DE', care_of: 'X' * 141)).not_to be_valid
     expect(SEPA::DebtorAddress.new(country_code: 'DE', building_name: 'X' * 141)).not_to be_valid
     expect(SEPA::DebtorAddress.new(country_code: 'DE', unit_number: 'X' * 17)).not_to be_valid
