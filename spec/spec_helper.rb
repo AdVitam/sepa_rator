@@ -11,7 +11,7 @@ SimpleCov.start do
   add_filter '/spec/'
 end
 
-require 'sepa_king'
+require 'sepa_rator'
 require 'active_support/testing/time_helpers'
 
 # Requires supporting ruby files with custom matchers and macros, etc,

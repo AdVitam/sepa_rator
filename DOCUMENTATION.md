@@ -1,4 +1,4 @@
-# SEPA King — Full Documentation
+# sepa_rator — Full Documentation
 
 ## Table of Contents
 

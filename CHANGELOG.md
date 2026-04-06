@@ -1,9 +1,13 @@
 # Changelog
 
-This project is an [AdVitam](https://github.com/AdVitam) fork of
-[salesking/sepa_king](https://github.com/salesking/sepa_king).
+Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
+Formerly published as the AdVitam fork of sepa_king, now an independent gem.
 
-## [Unreleased]
+## [0.15.0] - 2026-04-06
+
+### Changed
+
+- Gem renamed from `sepa_king` to `sepa_rator`
 
 ### Added
 

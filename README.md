@@ -1,11 +1,11 @@
-# Ruby gem for creating SEPA XML files
+# sepa_rator — Ruby gem for creating SEPA XML files
 
-[![Build Status](https://github.com/AdVitam/sepa_king/workflows/Test/badge.svg?branch=master)](https://github.com/AdVitam/sepa_king/actions)
+[![Build Status](https://github.com/AdVitam/sepa_rator/workflows/Test/badge.svg?branch=master)](https://github.com/AdVitam/sepa_rator/actions)
 
-> **AdVitam fork** of [salesking/sepa_king](https://github.com/salesking/sepa_king).
-> Adds support for newer SEPA schemas (`pain.001.001.09`, `pain.001.001.13`,
-> `pain.008.001.08`, `pain.008.001.12`) and includes extensive code quality
-> and security improvements. The original gem has been unmaintained since 2022.
+Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
+Adds support for newer SEPA schemas (`pain.001.001.09`, `pain.001.001.13`,
+`pain.008.001.08`, `pain.008.001.12`) with extensive code quality
+and security improvements.
 
 ## Features
 
@@ -26,7 +26,7 @@
 ## Installation
 
 ```ruby
-gem 'sepa_king', git: 'https://github.com/AdVitam/sepa_king.git'
+gem 'sepa_rator'
 ```
 
 ## Quick start
@@ -102,7 +102,7 @@ See [CHANGELOG.md](CHANGELOG.md).
 ## Contributors
 
 * [Original contributors](https://github.com/salesking/sepa_king/graphs/contributors) (salesking/sepa_king)
-* [Fork contributors](https://github.com/AdVitam/sepa_king/graphs/contributors) (AdVitam/sepa_king)
+* [sepa_rator contributors](https://github.com/AdVitam/sepa_rator/graphs/contributors)
 
 ## Resources
 

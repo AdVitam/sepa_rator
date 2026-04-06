@@ -1,4 +1,4 @@
-# Contributing to sepa_king (AdVitam fork)
+# Contributing to sepa_rator
 
 ## Getting started
 
