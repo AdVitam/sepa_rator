@@ -72,6 +72,8 @@ module SEPA
     INITN_SRC_SCHEMAS = [PAIN_001_001_13].freeze
 
     validates_presence_of :transactions
+    validates_length_of :initiation_source_name, within: 1..140, allow_nil: true
+    validates_length_of :initiation_source_provider, within: 1..35, allow_nil: true
     validate do |record|
       record.errors.add(:account, record.account.errors.full_messages) unless record.account.valid?
     end

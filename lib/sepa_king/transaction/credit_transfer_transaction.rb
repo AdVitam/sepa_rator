@@ -143,19 +143,26 @@ module SEPA
         if reporting[:indicator] && !REGULATORY_INDICATORS.include?(reporting[:indicator])
           errors.add(:regulatory_reportings, "entry #{i} indicator must be one of #{REGULATORY_INDICATORS.join(', ')}")
         end
-        next unless reporting[:details]
+        validate_regulatory_reporting_details(reporting, i)
+      end
+    end
 
-        unless reporting[:details].is_a?(Array)
-          errors.add(:regulatory_reportings, "entry #{i} details must be an Array")
+    def validate_regulatory_reporting_details(reporting, entry_index)
+      return unless reporting[:details]
+
+      unless reporting[:details].is_a?(Array)
+        errors.add(:regulatory_reportings, "entry #{entry_index} details must be an Array")
+        return
+      end
+
+      reporting[:details].each_with_index do |detail, j|
+        unless detail.is_a?(Hash)
+          errors.add(:regulatory_reportings, "entry #{entry_index} detail #{j} must be a Hash")
           next
         end
-
-        reporting[:details].each_with_index do |detail, j|
-          unless detail.is_a?(Hash)
-            errors.add(:regulatory_reportings, "entry #{i} detail #{j} must be a Hash")
-            next
-          end
-          errors.add(:regulatory_reportings, "entry #{i} detail #{j} code too long") if detail[:code] && detail[:code].to_s.length > 10
+        errors.add(:regulatory_reportings, "entry #{entry_index} detail #{j} code too long") if detail[:code] && detail[:code].to_s.length > 10
+        Array(detail[:information]).each_with_index do |inf, k|
+          errors.add(:regulatory_reportings, "entry #{entry_index} detail #{j} information #{k} exceeds 35 characters") if inf.to_s.length > 35
         end
       end
     end
