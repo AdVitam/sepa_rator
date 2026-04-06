@@ -29,6 +29,7 @@ module SEPA
     attr_accessor :name,
                   :iban,
                   :bic,
+                  :agent_lei,
                   :amount,
                   :instruction,
                   :reference,
@@ -70,6 +71,7 @@ module SEPA
     validates_format_of :uetr, with: UETR_REGEX, allow_nil: true
     validates_inclusion_of :batch_booking, in: [true, false]
     validates_with BICValidator, IBANValidator, message: 'is invalid'
+    validates_with LEIValidator, field_name: :agent_lei, message: 'is invalid'
 
     validate do |t|
       if t.remittance_information && (t.structured_remittance_information || t.additional_remittance_information)

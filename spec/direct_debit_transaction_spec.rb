@@ -272,4 +272,64 @@ RSpec.describe SEPA::DirectDebitTransaction do
       expect(SEPA::DirectDebitTransaction).not_to accept(Date.new(1995, 12, 21), Date.today - 1, Date.today, for: :requested_date)
     end
   end
+
+  context 'Agent LEI' do
+    it 'allows valid LEI' do
+      expect(SEPA::DirectDebitTransaction).to accept(nil, '529900T8BM49AURSDO55', for: :agent_lei)
+    end
+
+    it 'does not allow invalid LEI' do
+      expect(SEPA::DirectDebitTransaction).not_to accept('invalid', 'short', for: :agent_lei)
+    end
+  end
+
+  context 'Debtor Contact Details' do
+    it 'accepts valid contact details' do
+      txn = SEPA::DirectDebitTransaction.new(
+        name: 'Test GmbH',
+        iban: 'DE21500500009876543210',
+        bic: 'SPUEDE2UXXX',
+        amount: 39.99,
+        mandate_id: 'K-02-2011-12345',
+        mandate_date_of_signature: Date.new(2011, 1, 25),
+        debtor_contact_details: SEPA::ContactDetails.new(name: 'John Doe')
+      )
+      expect(txn.errors_on(:debtor_contact_details)).to be_empty
+    end
+
+    it 'propagates contact details validation errors' do
+      txn = SEPA::DirectDebitTransaction.new(
+        name: 'Test GmbH',
+        iban: 'DE21500500009876543210',
+        bic: 'SPUEDE2UXXX',
+        amount: 39.99,
+        mandate_id: 'K-02-2011-12345',
+        mandate_date_of_signature: Date.new(2011, 1, 25),
+        debtor_contact_details: SEPA::ContactDetails.new(name_prefix: 'INVALID')
+      )
+      expect(txn.errors_on(:debtor_contact_details)).not_to be_empty
+    end
+  end
+
+  describe 'schema_compatible? with LEI' do
+    it 'rejects LEI for pain.008.001.02' do
+      expect(SEPA::DirectDebitTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+        .not_to be_schema_compatible('pain.008.001.02')
+    end
+
+    it 'rejects LEI for pain.008.002.02' do
+      expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', agent_lei: '529900T8BM49AURSDO55'))
+        .not_to be_schema_compatible('pain.008.002.02')
+    end
+
+    it 'accepts LEI for pain.008.001.08' do
+      expect(SEPA::DirectDebitTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+        .to be_schema_compatible('pain.008.001.08')
+    end
+
+    it 'accepts LEI for pain.008.001.12' do
+      expect(SEPA::DirectDebitTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+        .to be_schema_compatible('pain.008.001.12')
+    end
+  end
 end

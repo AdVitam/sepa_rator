@@ -15,28 +15,31 @@ module SEPA
 
   SCHEMA_FEATURES = {
     PAIN_001_001_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_001_001_09 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :AnyBIC, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_001_001_13 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :structured, regulatory_reporting_version: :v10 },
+                         org_bic_tag: :AnyBIC, instr_for_dbtr_agt_format: :structured, regulatory_reporting_version: :v10 },
     PAIN_001_002_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_001_003_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_001_001_03_CH_02 => { bic_tag: :BIC, wrap_date: false, swiss: true, requires_bic: false,
-                               instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                               org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_008_001_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_008_001_08 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :AnyBIC, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_008_001_12 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :AnyBIC, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_008_002_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+                         org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
     PAIN_008_003_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
-                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 }
+                         org_bic_tag: :BICOrBEI, instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 }
   }.each_value(&:freeze).freeze
+
+  # Schemas that support LEI (Legal Entity Identifier) in FinInstnId and OrgId
+  LEI_SCHEMAS = [PAIN_001_001_09, PAIN_001_001_13, PAIN_008_001_08, PAIN_008_001_12].freeze
 
   # Element order follows PostalAddress27 XSD sequence (the superset).
   # Fields absent in older schemas are rejected by XSD validation.
@@ -59,6 +62,23 @@ module SEPA
     %i[Ctry country_code],
     %i[AdrLine address_line1],
     %i[AdrLine address_line2]
+  ].freeze
+
+  # Element order follows Contact13 XSD sequence (the superset).
+  # Fields absent in older schemas are rejected by XSD validation.
+  # Othr (OtherContact1) and PrefrdMtd are handled separately (complex/enum structures).
+  CONTACT_DETAILS_FIELDS = [
+    %i[NmPrfx name_prefix],
+    %i[Nm name],
+    %i[PhneNb phone_number],
+    %i[MobNb mobile_number],
+    %i[FaxNb fax_number],
+    %i[URLAdr url_address],
+    %i[EmailAdr email_address],
+    %i[EmailPurp email_purpose],
+    %i[JobTitl job_title],
+    %i[Rspnsblty responsibility],
+    %i[Dept department]
   ].freeze
 
   class Message
@@ -142,6 +162,8 @@ module SEPA
       features = schema_features(schema_name)
       return false if features[:requires_bic] && (account.bic.nil? || account.bic.empty?)
       return false if @initiation_source_name && !INITN_SRC_SCHEMAS.include?(schema_name)
+      return false if account.agent_lei && !LEI_SCHEMAS.include?(schema_name)
+      return false if account.respond_to?(:initiating_party_lei) && account.initiating_party_lei && !LEI_SCHEMAS.include?(schema_name)
 
       transactions.all? { |t| t.schema_compatible?(schema_name) }
     end
@@ -231,7 +253,8 @@ module SEPA
         builder.CtrlSum(format_amount(amount_total))
         builder.InitgPty do
           builder.Nm(account.name)
-          account.initiating_party_id(builder)
+          account.initiating_party_id(builder, schema_name)
+          build_contact_details(builder, account.contact_details)
         end
         build_initiation_source(builder, schema_name)
       end

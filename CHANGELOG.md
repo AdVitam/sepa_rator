@@ -16,7 +16,12 @@ This project is an [AdVitam](https://github.com/AdVitam) fork of
 - Account-level postal address support for Credit Transfer (debtor) and Direct Debit (creditor)
 - Flexible charge bearer (`charge_bearer`) with support for DEBT, CRED, SHAR, SLEV
 - Original mandate ID support in amendment information (`original_mandate_id`)
-- Credit transfer schema features: `InitnSrc`, `InstrForDbtrAgt` (PmtInf + txn), `InstrForCdtrAgt`, `MndtRltdInf`, `RgltryRptg`, enhanced `RemittanceInformation`
+- Credit transfer schema features: `InitnSrc`, `InstrForDbtrAgt`, `InstrForCdtrAgt`, `MndtRltdInf`, `RgltryRptg`, enhanced `RemittanceInformation`
+- LEI (Legal Entity Identifier) on `FinInstnId` and `OrgId` (v09/v13)
+- `BICOrBEI` / `AnyBIC` in `OrganisationIdentification`
+- ContactDetails (`CtctDtls`) on parties — `SEPA::ContactDetails` class
+- Complete `RegulatoryReporting` with `Authrty`, `Tp`, `Dt`, `Ctry`, `Amt`
+- `LEIValidator` for reuse in external models
 
 ### Changed
 

@@ -21,4 +21,24 @@ RSpec.describe SEPA::CreditorAccount do
       expect(SEPA::CreditorAccount).not_to accept('', 'invalid', 'DE98ZZZ099999999990', 'DEAAAAAAAAAAAAAAAA', for: :creditor_identifier)
     end
   end
+
+  describe :initiating_party_lei do
+    it 'accepts valid LEI' do
+      expect(SEPA::CreditorAccount).to accept(nil, '529900T8BM49AURSDO55', for: :initiating_party_lei)
+    end
+
+    it 'does not accept invalid LEI' do
+      expect(SEPA::CreditorAccount).not_to accept('invalid', 'short', for: :initiating_party_lei)
+    end
+  end
+
+  describe :initiating_party_bic do
+    it 'accepts valid BIC' do
+      expect(SEPA::CreditorAccount).to accept(nil, 'DEUTDEFF', 'DEUTDEFF500', for: :initiating_party_bic)
+    end
+
+    it 'does not accept invalid BIC' do
+      expect(SEPA::CreditorAccount).not_to accept('invalid', '', for: :initiating_party_bic)
+    end
+  end
 end

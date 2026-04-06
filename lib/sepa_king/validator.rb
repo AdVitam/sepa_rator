@@ -81,4 +81,19 @@ module SEPA
       record.errors.add(field_name, :invalid, message: options[:message])
     end
   end
+
+  class LEIValidator < ActiveModel::Validator
+    # LEIIdentifier (ISO 17442): 18 alphanumeric + 2 check digits
+    REGEX = /\A[A-Z0-9]{18}[0-9]{2}\z/
+
+    def validate(record)
+      field_name = options[:field_name] || :lei
+      value = record.public_send(field_name)
+
+      return unless value
+      return if value.to_s.match?(REGEX)
+
+      record.errors.add(field_name, :invalid, message: options[:message])
+    end
+  end
 end

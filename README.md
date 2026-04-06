@@ -12,7 +12,7 @@
 * **Credit Transfer** (`pain.001`) — schemas `.001.13`, `.001.09`, `.003.03`, `.002.03`, `.001.03`, `.001.03.ch.02`
 * **Direct Debit** (`pain.008`) — schemas `.001.12`, `.001.08`, `.003.02`, `.002.02`, `.001.02`
 * Full XSD validation on every generated XML
-* Postal addresses (PostalAddress6/24/27)
+* Postal addresses, contact details, LEI, regulatory reporting
 * Flexible charge bearer (SLEV, DEBT, CRED, SHAR)
 * Mandate amendment support (original mandate ID, debtor account, creditor scheme)
 

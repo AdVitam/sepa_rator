@@ -15,6 +15,9 @@
 - [Instructions for Agents](#instructions-for-agents)
 - [Credit Transfer Mandate](#credit-transfer-mandate)
 - [Regulatory Reporting](#regulatory-reporting)
+- [LEI (Legal Entity Identifier)](#lei-legal-entity-identifier)
+- [Organisation BIC (BICOrBEI / AnyBIC)](#organisation-bic-bicorbei--anybic)
+- [Contact Details](#contact-details)
 - [Remittance Information](#remittance-information)
 - [Validators](#validators)
 - [Supported Schemas](#supported-schemas)
@@ -34,6 +37,22 @@ sct = SEPA::CreditTransfer.new(
   # Optional: organization ID emitted in InitgPty/Id/OrgId/Othr/Id
   # Some banks require this for bulk payment authorization
   initiating_party_identifier: 'DE98ZZZ09999999999',
+
+  # Optional: LEI of the initiating party (v09/v13 only, emitted in InitgPty/Id/OrgId/LEI)
+  initiating_party_lei: '529900T8BM49AURSDO55',
+
+  # Optional: BIC of the initiating party (emitted in InitgPty/Id/OrgId as BICOrBEI or AnyBIC)
+  initiating_party_bic: 'BANKDEFFXXX',
+
+  # Optional: LEI of the debtor's bank (v09/v13 only, emitted in DbtrAgt/FinInstnId/LEI)
+  agent_lei: '529900T8BM49AURSDO55',
+
+  # Optional: contact details for the debtor/initiating party
+  contact_details: SEPA::ContactDetails.new(
+    name: 'Treasury Dept',
+    phone_number: '+49301234567',
+    email_address: 'treasury@debtor.de'
+  ),
 
   # Optional: postal address of the debtor at PmtInf level
   # Recommended for cross-border payments
@@ -90,6 +109,15 @@ sct.add_transaction(
   credit_transfer_mandate_date_of_signature: Date.new(2024, 1, 15),     # .13 only
   credit_transfer_mandate_frequency: 'MNTH',                            # .13 only (Frequency6Code)
 
+  # Optional: LEI of the creditor's bank (v09/v13 only, emitted in CdtrAgt/FinInstnId/LEI)
+  agent_lei: '529900ABCDEFGHIJKL99',
+
+  # Optional: contact details for the creditor (emitted in Cdtr/CtctDtls)
+  creditor_contact_details: SEPA::ContactDetails.new(
+    name: 'Accounts Receivable',
+    email_address: 'ar@creditor.de'
+  ),
+
   # Optional: regulatory reporting (see Regulatory Reporting section)
   regulatory_reportings: [{ indicator: 'CRED', details: [{ code: 'ABC', information: ['Transfer info'] }] }],
 
@@ -124,6 +152,12 @@ sdd = SEPA::DirectDebit.new(
   iban:                'DE87200500001234567890',  # Required
   bic:                 'BANKDEFFXXX',            # Optional
   creditor_identifier: 'DE98ZZZ09999999999',     # Required
+
+  # Optional: LEI, BIC, and contact details (same as Credit Transfer account)
+  agent_lei: '529900T8BM49AURSDO55',            # v08/v12 only
+  initiating_party_lei: '529900T8BM49AURSDO55',  # v08/v12 only
+  initiating_party_bic: 'BANKDEFFXXX',
+  contact_details: SEPA::ContactDetails.new(name: 'Admin'),
 
   # Optional: postal address (recommended for cross-border)
   address: SEPA::Address.new(
@@ -181,6 +215,15 @@ sdd.add_transaction(
     building_number: '123a',
     post_code:    '1234',
     town_name:    'Musterstadt'
+  ),
+
+  # Optional: LEI of the debtor's bank (v08/v12 only)
+  agent_lei: '529900ABCDEFGHIJKL99',
+
+  # Optional: contact details for the debtor (emitted in Dbtr/CtctDtls)
+  debtor_contact_details: SEPA::ContactDetails.new(
+    name: 'Debtor Admin',
+    phone_number: '+49301234567'
   ),
 
   # Optional: mandate amendment fields (see Mandate Amendments section)
@@ -397,9 +440,135 @@ Support for `RgltryRptg` on credit transfer transactions. Max 10 entries per tra
 | Key | Type | Notes |
 |-----|------|-------|
 | `indicator` | String | `CRED`, `DEBT`, or `BOTH`. **Required** in v13 |
+| `authority` | Hash | Optional. `{ name: Max140Text, country: 2-letter code }` |
 | `details` | Array<Hash> | Structured reporting details |
+| `details[].type` | String | Max 35 chars. v03/v09: plain text (`Tp`). v13: external code (`Tp/Cd`, 1-4 chars) |
+| `details[].type_proprietary` | String | v13 only. Emitted as `Tp/Prtry`, max 35 chars. Mutually exclusive with `type` |
+| `details[].date` | Date | Optional, emitted as `Dt` (ISODate) |
+| `details[].country` | String | 2-letter ISO 3166 code, emitted as `Ctry` |
 | `details[].code` | String | Max 10 chars. Emitted as `Cd` (v03/v09) or `RptgCd` (v13) |
+| `details[].amount` | Hash | `{ value: Numeric, currency: 'EUR' }`. Up to 5 fractional digits (ActiveOrHistoricCurrencyAndAmount) |
 | `details[].information` | Array<String> | Max 35 chars each, emitted as `Inf` elements |
+
+XSD element order in `Dtls`: `Tp` → `Dt` → `Ctry` → `Cd`/`RptgCd` → `Amt` → `Inf`
+
+```ruby
+regulatory_reportings: [{
+  indicator: 'CRED',
+  authority: { name: 'Banque de France', country: 'FR' },
+  details: [{
+    type: 'TAX',
+    date: Date.new(2026, 1, 1),
+    country: 'FR',
+    code: 'ABC',
+    amount: { value: 1500.50, currency: 'EUR' },
+    information: ['Tax transfer Q1 2026']
+  }]
+}]
+```
+
+---
+
+## LEI (Legal Entity Identifier)
+
+The LEI is a 20-character identifier (ISO 17442) for legal entities in financial transactions.
+
+- **Format**: 18 alphanumeric + 2 check digits (e.g., `529900T8BM49AURSDO55`)
+- **Schema support**: `pain.001.001.09`/`.13`, `pain.008.001.08`/`.12` only
+- Using LEI with older schemas raises `SEPA::SchemaValidationError`
+
+| Attribute | On | XML location |
+|-----------|-----|-------------|
+| `agent_lei` | Account | `DbtrAgt/FinInstnId/LEI` (CT) or `CdtrAgt/FinInstnId/LEI` (DD) |
+| `agent_lei` | Transaction | `CdtrAgt/FinInstnId/LEI` (CT) or `DbtrAgt/FinInstnId/LEI` (DD) |
+| `initiating_party_lei` | DebtorAccount / CreditorAccount | `InitgPty/Id/OrgId/LEI` |
+
+```ruby
+# Account-level LEI (debtor's bank)
+sct = SEPA::CreditTransfer.new(
+  name: 'Debtor Inc.', iban: 'DE87200500001234567890',
+  bic: 'BANKDEFFXXX', agent_lei: '529900T8BM49AURSDO55',
+  initiating_party_lei: '529900ABCDEFGHIJKL99'
+)
+
+# Transaction-level LEI (creditor's bank)
+sct.add_transaction(name: 'Creditor AG', iban: 'DE37112589611964645802',
+                    amount: 100, agent_lei: '529900XYZXYZXYZXYZ01')
+```
+
+---
+
+## Organisation BIC (BICOrBEI / AnyBIC)
+
+The initiating party's BIC can be emitted in the `OrgId` block of `InitgPty`. The XML tag name is schema-dependent:
+
+- **v03 schemas**: `<BICOrBEI>` (OrganisationIdentification4)
+- **v09/v13 schemas**: `<AnyBIC>` (OrganisationIdentification29/39)
+
+| Attribute | On | Notes |
+|-----------|-----|-------|
+| `initiating_party_bic` | DebtorAccount / CreditorAccount | BIC format (8 or 11 chars) |
+
+XSD element order in `OrgId`: `BICOrBEI`/`AnyBIC` → `LEI` → `Othr`
+
+```ruby
+sct = SEPA::CreditTransfer.new(
+  name: 'Debtor Inc.', iban: 'DE87200500001234567890',
+  initiating_party_bic: 'BANKDEFFXXX',
+  initiating_party_identifier: 'DE98ZZZ09999999999'
+)
+```
+
+Note: `initiating_party_identifier` max length is 256 (v13 `GenericOrganisationIdentification3` uses `Max256Text`). Stricter v03/v09 limits (35 chars) are enforced by XSD validation.
+
+---
+
+## Contact Details
+
+Contact information can be attached to parties via `SEPA::ContactDetails`. Fields follow the Contact13 (v13) superset; older schemas reject unsupported fields via XSD validation.
+
+### Fields
+
+| Field | Max length | Schema support |
+|-------|-----------|----------------|
+| `name_prefix` | Enum | All schemas. Values: `DOCT`, `MADM`, `MISS`, `MIST`, `MIKS` (MIKS: v09+ only) |
+| `name` | 140 | All schemas |
+| `phone_number` | 30 | All schemas |
+| `mobile_number` | 30 | All schemas |
+| `fax_number` | 30 | All schemas |
+| `url_address` | 2048 | v13 only |
+| `email_address` | 2048 | All schemas (v13 XSD enforces max 256) |
+| `email_purpose` | 35 | v09+ |
+| `job_title` | 35 | v09+ |
+| `responsibility` | 35 | v09+ |
+| `department` | 70 | v09+ |
+| `other_contacts` | Array | v09+. Each: `{ channel_type: Max4Text, id: Max128Text }` |
+| `preferred_method` | Enum | v09+. Values: `LETT`, `MAIL`, `PHON`, `FAXX`, `CELL`, `ONLI` (ONLI: v13 only) |
+
+### Usage
+
+```ruby
+contact = SEPA::ContactDetails.new(
+  name_prefix:    'MADM',
+  name:           'Jane Smith',
+  phone_number:   '+49301234567',
+  email_address:  'jane@example.com',
+  job_title:      'CFO',
+  department:     'Finance',
+  other_contacts: [{ channel_type: 'TELE', id: '+49301234569' }],
+  preferred_method: 'MAIL'
+)
+```
+
+### Attachment points
+
+| Attribute | On | XML location |
+|-----------|-----|-------------|
+| `contact_details` | Account | `InitgPty/CtctDtls`, `Dbtr/CtctDtls` (CT), `Cdtr/CtctDtls` (DD) |
+| `creditor_contact_details` | CreditTransferTransaction | `Cdtr/CtctDtls` |
+| `debtor_contact_details` | DirectDebitTransaction | `Dbtr/CtctDtls` |
+
+XSD element order in `PartyIdentification`: `Nm` → `PstlAdr` → `Id` → `CtryOfRes` → `CtctDtls`
 
 ---
 
@@ -436,6 +605,8 @@ validates_with SEPA::IBANValidator, field_name: :other_iban # custom field
 validates_with SEPA::BICValidator                           # validates :bic
 validates_with SEPA::MandateIdentifierValidator             # validates :mandate_id
 validates_with SEPA::CreditorIdentifierValidator            # validates :creditor_identifier
+validates_with SEPA::LEIValidator                           # validates :lei
+validates_with SEPA::LEIValidator, field_name: :other_lei   # custom field
 ```
 
 **Note:** `SEPA::IBANValidator` is strict — no spaces allowed.
@@ -449,8 +620,8 @@ validates_with SEPA::CreditorIdentifierValidator            # validates :credito
 | Schema | Type | Notes |
 |--------|------|-------|
 | `pain.001.001.03` | ISO generic | Default. PostalAddress6 |
-| `pain.001.001.09` | ISO 2019 | PostalAddress24, BICFI, UETR, InstrForDbtrAgt (PmtInf) |
-| `pain.001.001.13` | ISO latest | PostalAddress27, BICFI, UETR, InitnSrc, MndtRltdInf, structured InstrForDbtrAgt, RegulatoryReporting10 |
+| `pain.001.001.09` | ISO 2019 | PostalAddress24, BICFI, UETR, LEI, AnyBIC, Contact4, InstrForDbtrAgt (PmtInf) |
+| `pain.001.001.13` | ISO latest | PostalAddress27, BICFI, UETR, LEI, AnyBIC, Contact13, InitnSrc, MndtRltdInf, structured InstrForDbtrAgt, RegulatoryReporting10 |
 | `pain.001.002.03` | EPC/SEPA | EUR only, BIC required, ChrgBr=SLEV only |
 | `pain.001.003.03` | German DK | EUR only |
 | `pain.001.001.03.ch.02` | Swiss SIX | CHF only |
@@ -460,7 +631,7 @@ validates_with SEPA::CreditorIdentifierValidator            # validates :credito
 | Schema | Type | Notes |
 |--------|------|-------|
 | `pain.008.001.02` | ISO generic | Default. PostalAddress6 |
-| `pain.008.001.08` | ISO 2019 | PostalAddress24, BICFI, UETR, RPRE sequence type |
-| `pain.008.001.12` | ISO latest | PostalAddress27, BICFI, UETR, RPRE sequence type |
+| `pain.008.001.08` | ISO 2019 | PostalAddress24, BICFI, UETR, LEI, AnyBIC, Contact4, RPRE sequence type |
+| `pain.008.001.12` | ISO latest | PostalAddress27, BICFI, UETR, LEI, AnyBIC, Contact13, RPRE sequence type |
 | `pain.008.002.02` | EPC/SEPA | EUR only, BIC required, CORE/B2B only, ChrgBr=SLEV only |
 | `pain.008.003.02` | German DK | EUR only |

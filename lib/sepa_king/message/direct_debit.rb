@@ -63,10 +63,11 @@ module SEPA
       builder.Cdtr do
         builder.Nm(group.account.name)
         build_postal_address(builder, group.account.address) if group.account.address
+        build_contact_details(builder, group.account.contact_details)
       end
       build_iban_account(builder, :CdtrAcct, group.account.iban)
       builder.CdtrAgt do
-        build_agent_bic(builder, group.account.bic, schema_name)
+        build_agent_bic(builder, group.account.bic, schema_name, lei: group.account.agent_lei)
       end
       builder.ChrgBr(group.charge_bearer)
     end
@@ -135,11 +136,12 @@ module SEPA
         end
         build_ultimate_party(builder, :UltmtCdtr, transaction.ultimate_creditor_name)
         builder.DbtrAgt do
-          build_agent_bic(builder, transaction.bic, schema_name)
+          build_agent_bic(builder, transaction.bic, schema_name, lei: transaction.agent_lei)
         end
         builder.Dbtr do
           builder.Nm(transaction.name)
           build_postal_address(builder, transaction.debtor_address) if transaction.debtor_address
+          build_contact_details(builder, transaction.debtor_contact_details)
         end
         build_iban_account(builder, :DbtrAcct, transaction.iban)
         build_ultimate_party(builder, :UltmtDbtr, transaction.ultimate_debtor_name)

@@ -220,4 +220,160 @@ RSpec.describe SEPA::CreditTransferTransaction do
       expect(SEPA::CreditTransferTransaction).not_to accept('', 'X' * 71, for: :ultimate_debtor_name)
     end
   end
+
+  context 'Agent LEI' do
+    it 'allows valid LEI' do
+      expect(SEPA::CreditTransferTransaction).to accept(nil, '529900T8BM49AURSDO55', for: :agent_lei)
+    end
+
+    it 'does not allow invalid LEI' do
+      expect(SEPA::CreditTransferTransaction).not_to accept('invalid', 'short', '529900t8bm49aursdo55', for: :agent_lei)
+    end
+  end
+
+  context 'Creditor Contact Details' do
+    it 'accepts valid contact details' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG',
+        iban: 'DE37112589611964645802',
+        amount: 100,
+        creditor_contact_details: SEPA::ContactDetails.new(name: 'John Doe')
+      )
+      expect(txn.errors_on(:creditor_contact_details)).to be_empty
+    end
+
+    it 'propagates contact details validation errors' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG',
+        iban: 'DE37112589611964645802',
+        amount: 100,
+        creditor_contact_details: SEPA::ContactDetails.new(name_prefix: 'INVALID')
+      )
+      expect(txn.errors_on(:creditor_contact_details)).not_to be_empty
+    end
+
+    it 'accepts nil contact details' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG',
+        iban: 'DE37112589611964645802',
+        amount: 100
+      )
+      expect(txn.errors_on(:creditor_contact_details)).to be_empty
+    end
+  end
+
+  describe 'Regulatory Reportings extended validation' do
+    it 'validates authority name max 140 characters' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ authority: { name: 'X' * 141 } }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/authority name exceeds 140/)
+    end
+
+    it 'validates authority country code format' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ authority: { country: 'DEU' } }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/authority country must be a 2-letter code/)
+    end
+
+    it 'validates detail date is a Date' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ date: '2025-01-01' }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/date must be a Date/)
+    end
+
+    it 'validates detail country code format' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ country: 'DEU' }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/country must be a 2-letter code/)
+    end
+
+    it 'validates detail amount requires value and currency' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ amount: { value: 100 } }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount must have :value and :currency/)
+    end
+
+    it 'validates detail amount currency format' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ amount: { value: 100, currency: 'EU' } }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount currency invalid/)
+    end
+
+    it 'validates detail amount value is numeric' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ amount: { value: 'abc', currency: 'EUR' } }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount value must be numeric/)
+    end
+
+    it 'validates type and type_proprietary are mutually exclusive' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ type: 'A', type_proprietary: 'B' }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/mutually exclusive/)
+    end
+
+    it 'validates detail type max 35 characters' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        regulatory_reportings: [{ details: [{ type: 'X' * 36 }] }]
+      )
+      expect(txn.errors_on(:regulatory_reportings).join).to match(/type too long/)
+    end
+
+    it 'accepts valid regulatory reporting with all detail fields' do
+      txn = SEPA::CreditTransferTransaction.new(
+        name: 'Test AG', iban: 'DE37112589611964645802', bic: 'PBNKDEFF370', amount: 100,
+        regulatory_reportings: [{
+          indicator: 'CRED',
+          authority: { name: 'Bundesbank', country: 'DE' },
+          details: [{
+            type: 'PAYMENT',
+            date: Date.new(2025, 1, 1),
+            country: 'DE',
+            code: 'ABC',
+            amount: { value: 100, currency: 'EUR' },
+            information: ['Info line']
+          }]
+        }]
+      )
+      expect(txn.errors_on(:regulatory_reportings)).to be_empty
+    end
+  end
+
+  describe 'schema_compatible? with LEI' do
+    it 'rejects LEI for pain.001.001.03' do
+      expect(SEPA::CreditTransferTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+        .not_to be_schema_compatible('pain.001.001.03')
+    end
+
+    it 'rejects LEI for pain.001.002.03' do
+      expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', agent_lei: '529900T8BM49AURSDO55'))
+        .not_to be_schema_compatible('pain.001.002.03')
+    end
+
+    it 'accepts LEI for pain.001.001.09' do
+      expect(SEPA::CreditTransferTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+        .to be_schema_compatible('pain.001.001.09')
+    end
+
+    it 'accepts LEI for pain.001.001.13' do
+      expect(SEPA::CreditTransferTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+        .to be_schema_compatible('pain.001.001.13')
+    end
+  end
 end

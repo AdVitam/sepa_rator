@@ -1303,5 +1303,430 @@ RSpec.describe SEPA::CreditTransfer do
         expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
       end
     end
+
+    context 'with LEI on debtor agent (DbtrAgt)' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          agent_lei: '529900T8BM49AURSDO55'
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains LEI in DbtrAgt/FinInstnId' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      end
+
+      it 'places LEI after BICFI in DbtrAgt' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml.index('BICFI')).to be < xml.index('LEI')
+      end
+
+      it 'is incompatible with v03' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+    end
+
+    context 'with LEI on creditor agent (CdtrAgt)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(agent_lei: '529900T8BM49AURSDO55')
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains LEI in CdtrAgt/FinInstnId' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      end
+
+      it 'emits CdtrAgt even without BIC when LEI is present' do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(bic: nil, agent_lei: '529900T8BM49AURSDO55')
+        xml = sct.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      end
+
+      it 'is incompatible with v03' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+    end
+
+    context 'with LEI in InitgPty OrgId' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          initiating_party_lei: '529900T8BM49AURSDO55'
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains LEI in InitgPty/Id/OrgId' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', '529900T8BM49AURSDO55')
+      end
+
+      it 'is incompatible with v03' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+    end
+
+    context 'with BICOrBEI in InitgPty OrgId (v03)' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          initiating_party_bic: 'DEUTDEFF'
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'contains BICOrBEI in InitgPty/Id/OrgId' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/BICOrBEI', 'DEUTDEFF')
+      end
+    end
+
+    context 'with AnyBIC in InitgPty OrgId (v09/v13)' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          initiating_party_bic: 'DEUTDEFF'
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains AnyBIC in InitgPty/Id/OrgId for v09' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/AnyBIC', 'DEUTDEFF')
+      end
+
+      it 'does not contain BICOrBEI in v09' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        doc = Nokogiri::XML(xml)
+        doc.remove_namespaces!
+        expect(doc.at_xpath('//InitgPty/Id/OrgId/BICOrBEI')).to be_nil
+      end
+    end
+
+    context 'with AnyBIC and LEI in InitgPty OrgId (v09)' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          initiating_party_bic: 'DEUTDEFF',
+          initiating_party_lei: '529900T8BM49AURSDO55'
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'places AnyBIC before LEI in OrgId' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml.index('AnyBIC')).to be < xml.index('LEI')
+      end
+    end
+
+    context 'with ContactDetails on InitgPty' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          contact_details: SEPA::ContactDetails.new(name: 'John Doe', phone_number: '+49-123456789')
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains CtctDtls in InitgPty' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/CtctDtls/Nm', 'John Doe')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/CtctDtls/PhneNb', '+49-123456789')
+      end
+    end
+
+    context 'with ContactDetails on Dbtr' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          contact_details: SEPA::ContactDetails.new(name: 'Jane Smith', email_address: 'jane@example.com')
+        )
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'contains CtctDtls in Dbtr' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/Dbtr/CtctDtls/Nm', 'Jane Smith')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/Dbtr/CtctDtls/EmailAdr', 'jane@example.com')
+      end
+    end
+
+    context 'with ContactDetails on Cdtr (creditor_contact_details)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          creditor_contact_details: SEPA::ContactDetails.new(name: 'Creditor Contact', phone_number: '+49-30123456')
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains CtctDtls in Cdtr' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/CtctDtls/Nm', 'Creditor Contact')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/CtctDtls/PhneNb', '+49-30123456')
+      end
+    end
+
+    context 'with RegulatoryReporting with authority, type, date, country, amount (v03)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          regulatory_reportings: [{
+            indicator: 'CRED',
+            authority: { name: 'Bundesbank', country: 'DE' },
+            details: [{
+              type: 'PAYMENT',
+              date: Date.new(2025, 6, 15),
+              country: 'DE',
+              code: 'ABC',
+              amount: { value: 102.50, currency: 'EUR' },
+              information: ['Transfer info']
+            }]
+          }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'contains Authrty element' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Authrty/Nm', 'Bundesbank')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Authrty/Ctry', 'DE')
+      end
+
+      it 'contains Tp as plain text in v03' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Tp', 'PAYMENT')
+      end
+
+      it 'contains Dt element' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Dt', '2025-06-15')
+      end
+
+      it 'contains Ctry element in detail' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Ctry', 'DE')
+      end
+
+      it 'contains Amt element' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Amt', '102.50')
+      end
+
+      it 'follows correct XSD element order (Tp, Dt, Ctry, Cd, Amt, Inf)' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        dtls_pos = xml.index('<Dtls>')
+        tp_pos = xml.index('<Tp>PAYMENT</Tp>', dtls_pos)
+        dt_pos = xml.index('<Dt>2025-06-15</Dt>', dtls_pos)
+        ctry_pos = xml.index('<Ctry>DE</Ctry>', dtls_pos)
+        cd_pos = xml.index('<Cd>ABC</Cd>', dtls_pos)
+        amt_pos = xml.index('<Amt', dtls_pos)
+        inf_pos = xml.index('<Inf>Transfer info</Inf>', dtls_pos)
+
+        expect(tp_pos).to be < dt_pos
+        expect(dt_pos).to be < ctry_pos
+        expect(ctry_pos).to be < cd_pos
+        expect(cd_pos).to be < amt_pos
+        expect(amt_pos).to be < inf_pos
+      end
+    end
+
+    context 'with RegulatoryReporting with structured type (v13)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          regulatory_reportings: [{
+            indicator: 'CRED',
+            authority: { name: 'Bundesbank', country: 'DE' },
+            details: [{
+              type: 'PYMT',
+              date: Date.new(2025, 6, 15),
+              country: 'DE',
+              code: 'ABC',
+              amount: { value: 102.50, currency: 'EUR' },
+              information: ['Transfer info']
+            }]
+          }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'wraps Tp in structured Cd element in v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Tp/Cd', 'PYMT')
+      end
+
+      it 'uses RptgCd instead of Cd in v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/RptgCd', 'ABC')
+      end
+    end
+
+    context 'with RegulatoryReporting with type_proprietary (v13)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          regulatory_reportings: [{
+            indicator: 'DEBT',
+            details: [{ type_proprietary: 'CUSTOM_TYPE', code: 'XYZ' }]
+          }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'uses Prtry inside Tp in v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Tp/Prtry', 'CUSTOM_TYPE')
+      end
+    end
+
+    context 'with all new features combined including LEI and ContactDetails (v13)' do
+      subject do
+        sct = SEPA::CreditTransfer.new(
+          name: 'Schuldner GmbH',
+          bic: 'BANKDEFFXXX',
+          iban: 'DE87200500001234567890',
+          agent_lei: '529900T8BM49AURSDO55',
+          initiating_party_lei: 'ABCDEFGHIJKLMNOPQR12',
+          initiating_party_bic: 'DEUTDEFF',
+          contact_details: SEPA::ContactDetails.new(name: 'Admin', phone_number: '+49-30000000')
+        )
+        sct.initiation_source_name = 'MyApp'
+        sct.add_transaction credit_transfer_transaction(
+          agent_lei: '529900ABCDEFGHIJKL99',
+          debtor_agent_instruction: 'Process urgently',
+          credit_transfer_mandate_id: 'MNDT-001',
+          credit_transfer_mandate_date_of_signature: Date.new(2024, 6, 1),
+          instructions_for_creditor_agent: [{ code: 'HOLD' }],
+          instruction_for_debtor_agent: 'Note for agent',
+          instruction_for_debtor_agent_code: 'URGP',
+          regulatory_reportings: [{
+            indicator: 'CRED',
+            authority: { name: 'Bundesbank', country: 'DE' },
+            details: [{ type: 'PYMT', date: Date.new(2025, 1, 1), country: 'DE', code: 'XYZ',
+                        amount: { value: 50, currency: 'EUR' } }]
+          }],
+          creditor_contact_details: SEPA::ContactDetails.new(name: 'Creditor Admin')
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains LEI in multiple locations' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', 'ABCDEFGHIJKLMNOPQR12')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/AnyBIC', 'DEUTDEFF')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL99')
+      end
+
+      it 'contains ContactDetails in multiple locations' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/CtctDtls/Nm', 'Admin')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/Dbtr/CtctDtls/Nm', 'Admin')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/Cdtr/CtctDtls/Nm', 'Creditor Admin')
+      end
+    end
   end
 end

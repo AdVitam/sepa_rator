@@ -1109,4 +1109,146 @@ RSpec.describe SEPA::DirectDebit do
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/RmtInf/Strd/CdtrRefInf/Ref', 'RF712348231')
     end
   end
+
+  describe 'LEI on creditor agent (CdtrAgt)' do
+    subject do
+      sdd = SEPA::DirectDebit.new(
+        name: 'Gläubiger GmbH',
+        bic: 'BANKDEFFXXX',
+        iban: 'DE87200500001234567890',
+        creditor_identifier: 'DE98ZZZ09999999999',
+        agent_lei: '529900T8BM49AURSDO55'
+      )
+      sdd.add_transaction direct_debit_transaction
+      sdd
+    end
+
+    it 'validates against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'validates against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'contains LEI in CdtrAgt/FinInstnId' do
+      xml = subject.to_xml(SEPA::PAIN_008_001_08)
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+    end
+
+    it 'is incompatible with v02' do
+      expect(subject).not_to be_schema_compatible(SEPA::PAIN_008_001_02)
+    end
+  end
+
+  describe 'LEI on debtor agent (DbtrAgt)' do
+    subject do
+      sdd = direct_debit
+      sdd.add_transaction direct_debit_transaction(agent_lei: '529900T8BM49AURSDO55')
+      sdd
+    end
+
+    it 'validates against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'validates against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'contains LEI in DbtrAgt/FinInstnId' do
+      xml = subject.to_xml(SEPA::PAIN_008_001_08)
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+    end
+
+    it 'is incompatible with v02' do
+      expect(subject).not_to be_schema_compatible(SEPA::PAIN_008_001_02)
+    end
+  end
+
+  describe 'ContactDetails on Cdtr' do
+    subject do
+      sdd = SEPA::DirectDebit.new(
+        name: 'Gläubiger GmbH',
+        bic: 'BANKDEFFXXX',
+        iban: 'DE87200500001234567890',
+        creditor_identifier: 'DE98ZZZ09999999999',
+        contact_details: SEPA::ContactDetails.new(name: 'Creditor Contact', phone_number: '+49-30123456')
+      )
+      sdd.add_transaction direct_debit_transaction
+      sdd
+    end
+
+    it 'validates against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'validates against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'contains CtctDtls in Cdtr' do
+      xml = subject.to_xml(SEPA::PAIN_008_001_08)
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/CtctDtls/Nm', 'Creditor Contact')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/CtctDtls/PhneNb', '+49-30123456')
+    end
+  end
+
+  describe 'ContactDetails on Dbtr (debtor_contact_details)' do
+    subject do
+      sdd = direct_debit
+      sdd.add_transaction direct_debit_transaction(
+        debtor_contact_details: SEPA::ContactDetails.new(name: 'Debtor Contact', email_address: 'debtor@example.com')
+      )
+      sdd
+    end
+
+    it 'validates against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'validates against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'contains CtctDtls in Dbtr' do
+      xml = subject.to_xml(SEPA::PAIN_008_001_08)
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/CtctDtls/Nm', 'Debtor Contact')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/CtctDtls/EmailAdr', 'debtor@example.com')
+    end
+  end
+
+  describe 'LEI and ContactDetails combined' do
+    subject do
+      sdd = SEPA::DirectDebit.new(
+        name: 'Gläubiger GmbH',
+        bic: 'BANKDEFFXXX',
+        iban: 'DE87200500001234567890',
+        creditor_identifier: 'DE98ZZZ09999999999',
+        agent_lei: '529900T8BM49AURSDO55',
+        contact_details: SEPA::ContactDetails.new(name: 'Admin')
+      )
+      sdd.add_transaction direct_debit_transaction(
+        agent_lei: '529900ABCDEFGHIJKL99',
+        debtor_contact_details: SEPA::ContactDetails.new(name: 'Debtor Admin')
+      )
+      sdd
+    end
+
+    it 'validates against pain.008.001.08' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_08)).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'validates against pain.008.001.12' do
+      expect(subject.to_xml(SEPA::PAIN_008_001_12)).to validate_against('pain.008.001.12.xsd')
+    end
+
+    it 'contains LEI and ContactDetails in correct locations' do
+      xml = subject.to_xml(SEPA::PAIN_008_001_12)
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/CtctDtls/Nm', 'Admin')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL99')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/CtctDtls/Nm', 'Debtor Admin')
+    end
+  end
 end

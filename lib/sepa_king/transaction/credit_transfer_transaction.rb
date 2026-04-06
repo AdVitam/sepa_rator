@@ -2,6 +2,8 @@
 
 module SEPA
   class CreditTransferTransaction < Transaction
+    include RegulatoryReportingValidator
+
     attr_accessor :service_level,
                   :category_purpose,
                   :charge_bearer,
@@ -13,12 +15,13 @@ module SEPA
                   :instruction_for_debtor_agent_code,
                   # Array<Hash> of {code:, instruction_info:} for creditor agent instructions
                   :instructions_for_creditor_agent,
-                  # Array<Hash> of {indicator:, details: [{code:, information: []}]}
+                  # Array<Hash> of {indicator:, authority:, details: [{type:, date:, country:, code:, amount:, information: []}]}
                   :regulatory_reportings,
                   # CreditTransferMandateData1 fields (v13 only)
                   :credit_transfer_mandate_id,
                   :credit_transfer_mandate_date_of_signature,
-                  :credit_transfer_mandate_frequency
+                  :credit_transfer_mandate_frequency,
+                  :creditor_contact_details
 
     CHARGE_BEARERS = %w[DEBT CRED SHAR SLEV].freeze
     EPC_ONLY_SCHEMAS = %w[pain.001.002.03 pain.001.003.03].freeze
@@ -27,7 +30,7 @@ module SEPA
     MNDT_RLTD_INF_SCHEMAS = %w[pain.001.001.13].freeze
     INSTRUCTION3_CODES = %w[CHQB HOLD PHOB TELB].freeze
     FREQUENCY_CODES = %w[YEAR MNTH QURT MIAN WEEK DAIL ADHO INDA FRTN].freeze
-    REGULATORY_INDICATORS = %w[CRED DEBT BOTH].freeze
+    REGULATORY_INDICATORS = RegulatoryReportingValidator::REGULATORY_INDICATORS
     # EPC schemas (pain.001.002.03, pain.001.003.03) do not define these elements
     INSTR_FOR_CDTR_AGT_SCHEMAS = %w[pain.001.001.03 pain.001.001.09 pain.001.001.13 pain.001.001.03.ch.02].freeze
     TXN_INSTR_FOR_DBTR_AGT_SCHEMAS = %w[pain.001.001.03 pain.001.001.09 pain.001.001.13 pain.001.001.03.ch.02].freeze
@@ -47,6 +50,11 @@ module SEPA
     validates_length_of :credit_transfer_mandate_id, within: 1..35, allow_nil: true
     validates_inclusion_of :credit_transfer_mandate_frequency, in: FREQUENCY_CODES, allow_nil: true
 
+    validate do |t|
+      next unless t.creditor_contact_details && !t.creditor_contact_details.valid?
+
+      t.creditor_contact_details.errors.each { |error| t.errors.add(:creditor_contact_details, error.full_message) }
+    end
     validate { |t| t.validate_requested_date_after(Date.today) }
     validate :validate_instructions_for_creditor_agent
     validate :validate_regulatory_reportings
@@ -86,6 +94,7 @@ module SEPA
       return false if charge_bearer && charge_bearer != 'SLEV' && EPC_ONLY_SCHEMAS.include?(schema_name)
 
       schema_allows_field?(uetr, UETR_SCHEMAS, schema_name) &&
+        schema_allows_field?(agent_lei, LEI_SCHEMAS, schema_name) &&
         schema_allows_field?(debtor_agent_instruction, PMTINF_INSTR_SCHEMAS, schema_name) &&
         schema_allows_field?(credit_transfer_mandate?, MNDT_RLTD_INF_SCHEMAS, schema_name) &&
         schema_allows_field?(instruction_for_debtor_agent_code, [PAIN_001_001_13], schema_name) &&
@@ -93,11 +102,24 @@ module SEPA
         schema_allows_field?(regulatory_reportings&.any?, REGULATORY_REPORTING_SCHEMAS, schema_name)
     end
 
-    # v13 RegulatoryReporting10 requires DbtCdtRptgInd (indicator)
+    # v13 RegulatoryReporting10 requires DbtCdtRptgInd (indicator) and supports type_proprietary.
+    # v03/v09 StructuredRegulatoryReporting3 uses plain-text Tp, so type_proprietary is incompatible.
     def regulatory_reportings_compatible?(schema_name)
-      return true unless regulatory_reportings&.any? && schema_name == PAIN_001_001_13
+      return true unless regulatory_reportings&.any?
 
-      regulatory_reportings.all? { |r| r.is_a?(Hash) && r[:indicator] }
+      regulatory_reportings.all? { |r| regulatory_reporting_schema_ok?(r, schema_name) }
+    end
+
+    def regulatory_reporting_schema_ok?(reporting, schema_name)
+      return false unless reporting.is_a?(Hash)
+      return false if schema_name == PAIN_001_001_13 && !reporting[:indicator]
+      return false if schema_name != PAIN_001_001_13 && type_proprietary?(reporting)
+
+      true
+    end
+
+    def type_proprietary?(reporting)
+      reporting[:details]&.any? { |d| d.is_a?(Hash) && d[:type_proprietary] }
     end
 
     def schema_allows_field?(value, allowed_schemas, schema_name)
@@ -124,48 +146,6 @@ module SEPA
         if instr[:instruction_info]
           len = instr[:instruction_info].to_s.length
           errors.add(:instructions_for_creditor_agent, "entry #{i} instruction_info must be 1-140 characters") unless len.between?(1, 140)
-        end
-      end
-    end
-
-    def validate_regulatory_reportings
-      return unless regulatory_reportings
-
-      unless regulatory_reportings.is_a?(Array)
-        errors.add(:regulatory_reportings, 'must be an Array')
-        return
-      end
-
-      errors.add(:regulatory_reportings, 'maximum 10 entries') if regulatory_reportings.length > 10
-
-      regulatory_reportings.each_with_index do |reporting, i|
-        unless reporting.is_a?(Hash)
-          errors.add(:regulatory_reportings, "entry #{i} must be a Hash")
-          next
-        end
-        if reporting[:indicator] && !REGULATORY_INDICATORS.include?(reporting[:indicator])
-          errors.add(:regulatory_reportings, "entry #{i} indicator must be one of #{REGULATORY_INDICATORS.join(', ')}")
-        end
-        validate_regulatory_reporting_details(reporting, i)
-      end
-    end
-
-    def validate_regulatory_reporting_details(reporting, entry_index)
-      return unless reporting[:details]
-
-      unless reporting[:details].is_a?(Array)
-        errors.add(:regulatory_reportings, "entry #{entry_index} details must be an Array")
-        return
-      end
-
-      reporting[:details].each_with_index do |detail, j|
-        unless detail.is_a?(Hash)
-          errors.add(:regulatory_reportings, "entry #{entry_index} detail #{j} must be a Hash")
-          next
-        end
-        errors.add(:regulatory_reportings, "entry #{entry_index} detail #{j} code too long") if detail[:code] && detail[:code].to_s.length > 10
-        Array(detail[:information]).each_with_index do |inf, k|
-          errors.add(:regulatory_reportings, "entry #{entry_index} detail #{j} information #{k} exceeds 35 characters") if inf.to_s.length > 35
         end
       end
     end
