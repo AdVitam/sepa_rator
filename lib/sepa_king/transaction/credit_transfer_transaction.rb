@@ -131,6 +131,10 @@ module SEPA
         next unless reporting[:details].is_a?(Array)
 
         reporting[:details].each_with_index do |detail, j|
+          unless detail.is_a?(Hash)
+            errors.add(:regulatory_reportings, "entry #{i} detail #{j} must be a Hash")
+            next
+          end
           errors.add(:regulatory_reportings, "entry #{i} detail #{j} code too long") if detail[:code] && detail[:code].to_s.length > 10
         end
       end
@@ -148,13 +152,14 @@ module SEPA
       return false unless INSTR_FOR_CDTR_AGT_SCHEMAS.include?(schema_name)
 
       instructions_for_creditor_agent.each do |instr|
-        next unless instr[:code]
+        code = instr[:code]
+        next unless code
 
         case schema_name
         when PAIN_001_001_03, PAIN_001_001_09, PAIN_001_001_03_CH_02
-          return false unless INSTRUCTION3_CODES.include?(instr[:code])
+          return false unless INSTRUCTION3_CODES.include?(code)
         when PAIN_001_001_13
-          return false unless instr[:code].length.between?(1, 4)
+          return false unless code.to_s.length.between?(1, 4)
         end
       end
       true
