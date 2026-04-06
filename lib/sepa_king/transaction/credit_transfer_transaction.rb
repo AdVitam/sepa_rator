@@ -28,6 +28,8 @@ module SEPA
     INSTRUCTION3_CODES = %w[CHQB HOLD PHOB TELB].freeze
     FREQUENCY_CODES = %w[YEAR MNTH QURT MIAN WEEK DAIL ADHO INDA FRTN].freeze
     REGULATORY_INDICATORS = %w[CRED DEBT BOTH].freeze
+    # EPC schemas (pain.001.002.03, pain.001.003.03) do not define InstrForCdtrAgt
+    INSTR_FOR_CDTR_AGT_SCHEMAS = %w[pain.001.001.03 pain.001.001.09 pain.001.001.13 pain.001.001.03.ch.02].freeze
 
     validates_inclusion_of :service_level, in: %w[SEPA URGP], allow_nil: true
     validates_length_of :category_purpose, within: 1..4, allow_nil: true
@@ -119,6 +121,10 @@ module SEPA
       errors.add(:regulatory_reportings, 'maximum 10 entries') if regulatory_reportings.length > 10
 
       regulatory_reportings.each_with_index do |reporting, i|
+        unless reporting.is_a?(Hash)
+          errors.add(:regulatory_reportings, "entry #{i} must be a Hash")
+          next
+        end
         if reporting[:indicator] && !REGULATORY_INDICATORS.include?(reporting[:indicator])
           errors.add(:regulatory_reportings, "entry #{i} indicator must be one of #{REGULATORY_INDICATORS.join(', ')}")
         end
@@ -139,12 +145,13 @@ module SEPA
 
     def instructions_for_creditor_agent_compatible?(schema_name)
       return true unless instructions_for_creditor_agent&.any?
+      return false unless INSTR_FOR_CDTR_AGT_SCHEMAS.include?(schema_name)
 
       instructions_for_creditor_agent.each do |instr|
         next unless instr[:code]
 
         case schema_name
-        when PAIN_001_001_03, PAIN_001_001_09, PAIN_001_002_03, PAIN_001_003_03, PAIN_001_001_03_CH_02
+        when PAIN_001_001_03, PAIN_001_001_09, PAIN_001_001_03_CH_02
           return false unless INSTRUCTION3_CODES.include?(instr[:code])
         when PAIN_001_001_13
           return false unless instr[:code].length.between?(1, 4)
