@@ -28,8 +28,10 @@ module SEPA
     INSTRUCTION3_CODES = %w[CHQB HOLD PHOB TELB].freeze
     FREQUENCY_CODES = %w[YEAR MNTH QURT MIAN WEEK DAIL ADHO INDA FRTN].freeze
     REGULATORY_INDICATORS = %w[CRED DEBT BOTH].freeze
-    # EPC schemas (pain.001.002.03, pain.001.003.03) do not define InstrForCdtrAgt
+    # EPC schemas (pain.001.002.03, pain.001.003.03) do not define these elements
     INSTR_FOR_CDTR_AGT_SCHEMAS = %w[pain.001.001.03 pain.001.001.09 pain.001.001.13 pain.001.001.03.ch.02].freeze
+    TXN_INSTR_FOR_DBTR_AGT_SCHEMAS = %w[pain.001.001.03 pain.001.001.09 pain.001.001.13 pain.001.001.03.ch.02].freeze
+    REGULATORY_REPORTING_SCHEMAS = %w[pain.001.001.03 pain.001.001.09 pain.001.001.13 pain.001.001.03.ch.02].freeze
 
     validates_inclusion_of :service_level, in: %w[SEPA URGP], allow_nil: true
     validates_length_of :category_purpose, within: 1..4, allow_nil: true
@@ -80,13 +82,18 @@ module SEPA
     private
 
     def optional_fields_compatible?(schema_name)
-      return false if uetr && !UETR_SCHEMAS.include?(schema_name)
       return false if charge_bearer && charge_bearer != 'SLEV' && EPC_ONLY_SCHEMAS.include?(schema_name)
-      return false if debtor_agent_instruction && !PMTINF_INSTR_SCHEMAS.include?(schema_name)
-      return false if credit_transfer_mandate? && !MNDT_RLTD_INF_SCHEMAS.include?(schema_name)
-      return false if instruction_for_debtor_agent_code && schema_name != PAIN_001_001_13
 
-      true
+      schema_allows_field?(uetr, UETR_SCHEMAS, schema_name) &&
+        schema_allows_field?(debtor_agent_instruction, PMTINF_INSTR_SCHEMAS, schema_name) &&
+        schema_allows_field?(credit_transfer_mandate?, MNDT_RLTD_INF_SCHEMAS, schema_name) &&
+        schema_allows_field?(instruction_for_debtor_agent_code, [PAIN_001_001_13], schema_name) &&
+        schema_allows_field?(instruction_for_debtor_agent, TXN_INSTR_FOR_DBTR_AGT_SCHEMAS, schema_name) &&
+        schema_allows_field?(regulatory_reportings&.any?, REGULATORY_REPORTING_SCHEMAS, schema_name)
+    end
+
+    def schema_allows_field?(value, allowed_schemas, schema_name)
+      !value || allowed_schemas.include?(schema_name)
     end
 
     def iso_service_level_compatible?
@@ -128,7 +135,12 @@ module SEPA
         if reporting[:indicator] && !REGULATORY_INDICATORS.include?(reporting[:indicator])
           errors.add(:regulatory_reportings, "entry #{i} indicator must be one of #{REGULATORY_INDICATORS.join(', ')}")
         end
-        next unless reporting[:details].is_a?(Array)
+        next unless reporting[:details]
+
+        unless reporting[:details].is_a?(Array)
+          errors.add(:regulatory_reportings, "entry #{i} details must be an Array")
+          next
+        end
 
         reporting[:details].each_with_index do |detail, j|
           unless detail.is_a?(Hash)
