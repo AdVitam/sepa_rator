@@ -72,4 +72,46 @@ RSpec.describe SEPA::Account do
       expect(account.errors[:address]).not_to be_empty
     end
   end
+
+  describe :agent_lei do
+    it 'accepts valid LEI' do
+      expect(SEPA::Account).to accept(nil, '529900T8BM49AURSDO55', for: :agent_lei)
+    end
+
+    it 'does not accept invalid LEI' do
+      expect(SEPA::Account).not_to accept('invalid', 'short', '529900t8bm49aursdo55', for: :agent_lei)
+    end
+  end
+
+  describe :contact_details do
+    it 'accepts valid contact details' do
+      account = SEPA::Account.new(
+        name: 'Test GmbH',
+        iban: 'DE87200500001234567890',
+        bic: 'BANKDEFFXXX',
+        contact_details: SEPA::ContactDetails.new(name: 'John Doe', phone_number: '+49123456789')
+      )
+      expect(account).to be_valid
+    end
+
+    it 'accepts nil contact details' do
+      account = SEPA::Account.new(
+        name: 'Test GmbH',
+        iban: 'DE87200500001234567890',
+        bic: 'BANKDEFFXXX'
+      )
+      expect(account).to be_valid
+    end
+
+    it 'propagates contact details validation errors' do
+      account = SEPA::Account.new(
+        name: 'Test GmbH',
+        iban: 'DE87200500001234567890',
+        bic: 'BANKDEFFXXX',
+        contact_details: SEPA::ContactDetails.new(name_prefix: 'INVALID')
+      )
+      expect(account).not_to be_valid
+      expect(account.errors[:contact_details]).not_to be_empty
+    end
+  end
 end

@@ -76,11 +76,13 @@ module SEPA
       builder.Dbtr do
         builder.Nm(account.name)
         build_postal_address(builder, account.address) if account.address
+        build_contact_details(builder, account.contact_details)
       end
       build_iban_account(builder, :DbtrAcct, account.iban)
       builder.DbtrAgt do
         build_agent_bic(builder, account.bic, schema_name,
-                        fallback: !schema_features(schema_name)[:swiss])
+                        fallback: !schema_features(schema_name)[:swiss],
+                        lei: account.agent_lei)
       end
     end
 
@@ -101,14 +103,15 @@ module SEPA
         end
         build_credit_transfer_mandate(builder, transaction, schema_name)
         build_ultimate_party(builder, :UltmtDbtr, transaction.ultimate_debtor_name)
-        if transaction.bic
+        if transaction.bic || transaction.agent_lei
           builder.CdtrAgt do
-            build_agent_bic(builder, transaction.bic, schema_name, fallback: false)
+            build_agent_bic(builder, transaction.bic, schema_name, fallback: false, lei: transaction.agent_lei)
           end
         end
         builder.Cdtr do
           builder.Nm(transaction.name)
           build_postal_address(builder, transaction.creditor_address) if transaction.creditor_address
+          build_contact_details(builder, transaction.creditor_contact_details)
         end
         build_iban_account(builder, :CdtrAcct, transaction.iban)
         build_ultimate_party(builder, :UltmtCdtr, transaction.ultimate_creditor_name)
@@ -161,18 +164,53 @@ module SEPA
     def build_regulatory_reportings(builder, transaction, schema_name)
       return unless transaction.regulatory_reportings
 
+      version = schema_features(schema_name)[:regulatory_reporting_version]
+
       transaction.regulatory_reportings.each do |reporting|
         builder.RgltryRptg do
           builder.DbtCdtRptgInd(reporting[:indicator]) if reporting[:indicator]
+          build_regulatory_authority(builder, reporting[:authority])
           reporting[:details]&.each do |detail|
             builder.Dtls do
-              code_tag = schema_features(schema_name)[:regulatory_reporting_version] == :v10 ? :RptgCd : :Cd
+              # XSD sequence: Tp → Dt → Ctry → Cd/RptgCd → Amt → Inf
+              build_regulatory_detail_type(builder, detail, version)
+              builder.Dt(detail[:date].iso8601) if detail[:date]
+              builder.Ctry(detail[:country]) if detail[:country]
+              code_tag = version == :v10 ? :RptgCd : :Cd
               builder.__send__(code_tag, detail[:code]) if detail[:code]
+              build_regulatory_detail_amount(builder, detail[:amount])
               Array(detail[:information]).each { |inf| builder.Inf(inf) }
             end
           end
         end
       end
+    end
+
+    def build_regulatory_authority(builder, authority)
+      return unless authority
+
+      builder.Authrty do
+        builder.Nm(authority[:name]) if authority[:name]
+        builder.Ctry(authority[:country]) if authority[:country]
+      end
+    end
+
+    def build_regulatory_detail_type(builder, detail, version)
+      return unless detail[:type] || detail[:type_proprietary]
+
+      if version == :v10
+        builder.Tp do
+          detail[:type_proprietary] ? builder.Prtry(detail[:type_proprietary]) : builder.Cd(detail[:type])
+        end
+      elsif detail[:type]
+        builder.Tp(detail[:type])
+      end
+    end
+
+    def build_regulatory_detail_amount(builder, amount)
+      return unless amount
+
+      builder.Amt(format_amount(BigDecimal(amount[:value].to_s)), Ccy: amount[:currency])
     end
   end
 end

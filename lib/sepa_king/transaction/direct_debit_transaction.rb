@@ -15,7 +15,8 @@ module SEPA
                   :original_mandate_id,
                   :original_debtor_account,
                   :same_mandate_new_debtor_agent,
-                  :original_creditor_account
+                  :original_creditor_account,
+                  :debtor_contact_details
 
     CHARGE_BEARERS = %w[DEBT CRED SHAR SLEV].freeze
 
@@ -25,6 +26,11 @@ module SEPA
     validates_inclusion_of :sequence_type, in: SEQUENCE_TYPES
     validates_inclusion_of :charge_bearer, in: CHARGE_BEARERS, allow_nil: true
     validates_address :debtor_address
+    validate do |t|
+      next unless t.debtor_contact_details && !t.debtor_contact_details.valid?
+
+      t.debtor_contact_details.errors.each { |error| t.errors.add(:debtor_contact_details, error.full_message) }
+    end
     validate { |t| t.validate_requested_date_after(Date.today.next) }
 
     validate do |t|
@@ -64,14 +70,13 @@ module SEPA
     # Fields (uetr, instruction_priority, bic) are already validated as nil-or-non-empty
     # at add_transaction time, so a nil check is sufficient here.
     def schema_compatible?(schema_name)
-      return false if uetr && !UETR_SCHEMAS.include?(schema_name)
+      return false unless optional_fields_schema_compatible?(schema_name)
 
       case schema_name
       when PAIN_008_001_02
         SEQUENCE_TYPES_V1.include?(sequence_type)
       when PAIN_008_002_02
-        epc_compatible? && bic && !bic.empty? && %w[CORE B2B].include?(local_instrument) &&
-          currency == 'EUR' && SEQUENCE_TYPES_V1.include?(sequence_type)
+        epc_v2_compatible?
       when PAIN_008_003_02
         epc_compatible? && currency == 'EUR' && SEQUENCE_TYPES_V1.include?(sequence_type)
       when PAIN_008_001_08, PAIN_008_001_12
@@ -80,6 +85,16 @@ module SEPA
     end
 
     private
+
+    def optional_fields_schema_compatible?(schema_name)
+      !(uetr && !UETR_SCHEMAS.include?(schema_name)) &&
+        !(agent_lei && !LEI_SCHEMAS.include?(schema_name))
+    end
+
+    def epc_v2_compatible?
+      epc_compatible? && bic && !bic.empty? && %w[CORE B2B].include?(local_instrument) &&
+        currency == 'EUR' && SEQUENCE_TYPES_V1.include?(sequence_type)
+    end
 
     def epc_compatible?
       !instruction_priority && (!charge_bearer || charge_bearer == 'SLEV')

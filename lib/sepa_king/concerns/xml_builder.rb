@@ -13,11 +13,12 @@ module SEPA
       end
     end
 
-    def build_agent_bic(builder, bic, schema_name, fallback: true)
+    def build_agent_bic(builder, bic, schema_name, fallback: true, lei: nil)
       builder.FinInstnId do
-        if bic
-          builder.__send__(schema_features(schema_name)[:bic_tag], bic)
-        elsif fallback
+        # XSD sequence: BICFI/BIC → ClrSysMmbId → LEI → Nm → PstlAdr → Othr
+        builder.__send__(schema_features(schema_name)[:bic_tag], bic) if bic
+        builder.LEI(lei) if lei && LEI_SCHEMAS.include?(schema_name)
+        if !bic && !lei && fallback
           builder.Othr do
             builder.Id('NOTPROVIDED')
           end
@@ -52,10 +53,31 @@ module SEPA
       end
     end
 
-    def build_ultimate_party(builder, tag, name)
+    def build_contact_details(builder, contact_details)
+      return unless contact_details
+
+      builder.CtctDtls do
+        CONTACT_DETAILS_FIELDS.each do |xml_tag, attr|
+          value = contact_details.public_send(attr)
+          builder.__send__(xml_tag, value) if value
+        end
+        contact_details.other_contacts&.each do |contact|
+          builder.Othr do
+            builder.ChanlTp(contact[:channel_type])
+            builder.Id(contact[:id]) if contact[:id]
+          end
+        end
+        builder.PrefrdMtd(contact_details.preferred_method) if contact_details.preferred_method
+      end
+    end
+
+    def build_ultimate_party(builder, tag, name, contact_details: nil)
       return unless name
 
-      builder.__send__(tag) { builder.Nm(name) }
+      builder.__send__(tag) do
+        builder.Nm(name)
+        build_contact_details(builder, contact_details)
+      end
     end
 
     def build_purpose(builder, purpose_code)

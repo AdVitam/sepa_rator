@@ -38,6 +38,15 @@ MandateIdentifierValidatable = Class.new do
   validates_with SEPA::MandateIdentifierValidator, field_name: :mid
 end
 
+LEIValidatable = Class.new do
+  include ActiveModel::Model
+
+  attr_accessor :lei, :custom_lei
+
+  validates_with SEPA::LEIValidator, message: '%<value>s seems wrong'
+  validates_with SEPA::LEIValidator, field_name: :custom_lei
+end
+
 RSpec.describe SEPA::IBANValidator do
   it 'accepts valid IBAN' do
     expect(IBANValidatable).to accept('DE21500500009876543210', 'DE87200500001234567890',
@@ -129,5 +138,32 @@ RSpec.describe SEPA::MandateIdentifierValidator do
     v = MandateIdentifierValidatable.new(mandate_id: '*** 123')
     v.valid?
     expect(v.errors[:mandate_id]).to eq(['*** 123 seems wrong'])
+  end
+end
+
+RSpec.describe SEPA::LEIValidator do
+  it 'accepts valid LEI' do
+    expect(LEIValidatable).to accept('529900T8BM49AURSDO55', 'ABCDEFGHIJKLMNOPQR12', 'A1B2C3D4E5F6G7H8I900',
+                                     for: %i[lei custom_lei])
+  end
+
+  it 'accepts nil (LEI is optional)' do
+    expect(LEIValidatable).to accept(nil, for: %i[lei custom_lei])
+  end
+
+  it 'does not accept an invalid LEI' do
+    expect(LEIValidatable).not_to accept('',                        # empty
+                                         'xxx',                     # too short
+                                         '529900T8BM49AURSDO5',    # 19 chars (too short)
+                                         '529900T8BM49AURSDO555',  # 21 chars (too long)
+                                         '529900t8bm49aursdo55',   # lowercase letters
+                                         '529900T8BM49AURSDO5A',   # last 2 must be digits
+                                         for: %i[lei custom_lei])
+  end
+
+  it 'customizes error message' do
+    v = LEIValidatable.new(lei: 'xxx')
+    v.valid?
+    expect(v.errors[:lei]).to eq(['xxx seems wrong'])
   end
 end
