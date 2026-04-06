@@ -14,17 +14,28 @@ module SEPA
   PAIN_001_001_03_CH_02 = 'pain.001.001.03.ch.02'
 
   SCHEMA_FEATURES = {
-    PAIN_001_001_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false },
-    PAIN_001_001_09 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false },
-    PAIN_001_001_13 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false },
-    PAIN_001_002_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true },
-    PAIN_001_003_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false },
-    PAIN_001_001_03_CH_02 => { bic_tag: :BIC, wrap_date: false, swiss: true, requires_bic: false },
-    PAIN_008_001_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false },
-    PAIN_008_001_08 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false },
-    PAIN_008_001_12 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false },
-    PAIN_008_002_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true },
-    PAIN_008_003_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false }
+    PAIN_001_001_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_001_001_09 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_001_001_13 => { bic_tag: :BICFI, wrap_date: true,  swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :structured, regulatory_reporting_version: :v10 },
+    PAIN_001_002_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_001_003_03 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_001_001_03_CH_02 => { bic_tag: :BIC, wrap_date: false, swiss: true, requires_bic: false,
+                               instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_008_001_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_008_001_08 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_008_001_12 => { bic_tag: :BICFI, wrap_date: false, swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_008_002_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: true,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 },
+    PAIN_008_003_02 => { bic_tag: :BIC,   wrap_date: false, swiss: false, requires_bic: false,
+                         instr_for_dbtr_agt_format: :text, regulatory_reporting_version: :v3 }
   }.each_value(&:freeze).freeze
 
   # Element order follows PostalAddress27 XSD sequence (the superset).
@@ -53,8 +64,12 @@ module SEPA
   class Message
     include ActiveModel::Validations
     include SchemaValidation
+    include XmlBuilder
 
     attr_reader :account, :grouped_transactions
+    attr_accessor :initiation_source_name, :initiation_source_provider
+
+    INITN_SRC_SCHEMAS = [PAIN_001_001_13].freeze
 
     validates_presence_of :transactions
     validate do |record|
@@ -99,7 +114,7 @@ module SEPA
       xml_builder = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |builder|
         builder.Document(xml_schema(schema_name)) do
           builder.__send__(xml_main_tag) do
-            build_group_header(builder)
+            build_group_header(builder, schema_name)
             build_payment_informations(builder, schema_name)
           end
         end
@@ -124,6 +139,7 @@ module SEPA
 
       features = schema_features(schema_name)
       return false if features[:requires_bic] && (account.bic.nil? || account.bic.empty?)
+      return false if @initiation_source_name && !INITN_SRC_SCHEMAS.include?(schema_name)
 
       transactions.all? { |t| t.schema_compatible?(schema_name) }
     end
@@ -205,7 +221,7 @@ module SEPA
       end
     end
 
-    def build_group_header(builder)
+    def build_group_header(builder, schema_name)
       builder.GrpHdr do
         builder.MsgId(message_identification)
         builder.CreDtTm(creation_date_time)
@@ -215,6 +231,7 @@ module SEPA
           builder.Nm(account.name)
           account.initiating_party_id(builder)
         end
+        build_initiation_source(builder, schema_name)
       end
     end
 
@@ -230,78 +247,13 @@ module SEPA
       transaction
     end
 
-    def build_postal_address(builder, address)
-      builder.PstlAdr do
-        POSTAL_ADDRESS_FIELDS.each do |xml_tag, attr|
-          value = address.public_send(attr)
-          builder.__send__(xml_tag, value) if value
-        end
+    def build_initiation_source(builder, schema_name)
+      return unless INITN_SRC_SCHEMAS.include?(schema_name) && @initiation_source_name
+
+      builder.InitnSrc do
+        builder.Nm(@initiation_source_name)
+        builder.Prvdr(@initiation_source_provider) if @initiation_source_provider
       end
-    end
-
-    def build_agent_bic(builder, bic, schema_name, fallback: true)
-      builder.FinInstnId do
-        if bic
-          builder.__send__(schema_features(schema_name)[:bic_tag], bic)
-        elsif fallback
-          builder.Othr do
-            builder.Id('NOTPROVIDED')
-          end
-        end
-      end
-    end
-
-    def build_remittance_information(builder, transaction)
-      return unless transaction.remittance_information || transaction.structured_remittance_information
-
-      builder.RmtInf do
-        if transaction.structured_remittance_information
-          builder.Strd do
-            builder.CdtrRefInf do
-              builder.Tp do
-                builder.CdOrPrtry do
-                  builder.Cd('SCOR')
-                end
-              end
-              builder.Ref(transaction.structured_remittance_information)
-            end
-          end
-        else
-          builder.Ustrd(transaction.remittance_information)
-        end
-      end
-    end
-
-    def build_ultimate_party(builder, tag, name)
-      return unless name
-
-      builder.__send__(tag) { builder.Nm(name) }
-    end
-
-    def build_purpose(builder, purpose_code)
-      return unless purpose_code
-
-      builder.Purp { builder.Cd(purpose_code) }
-    end
-
-    def build_payment_identification(builder, transaction)
-      builder.PmtId do
-        builder.InstrId(transaction.instruction) if transaction.instruction && !transaction.instruction.empty?
-        builder.EndToEndId(transaction.reference)
-        builder.UETR(transaction.uetr) if transaction.uetr && !transaction.uetr.empty?
-      end
-    end
-
-    def build_iban_account(builder, tag, iban)
-      builder.__send__(tag) do
-        builder.Id do
-          builder.IBAN(iban)
-        end
-      end
-    end
-
-    def format_amount(value)
-      format('%.2f', value)
     end
   end
 end
