@@ -1055,5 +1055,253 @@ RSpec.describe SEPA::CreditTransfer do
         expect(cdtr_agt).to be_nil
       end
     end
+
+    context 'with InitnSrc (v13 only)' do
+      subject do
+        sct = credit_transfer
+        sct.initiation_source_name = 'MyApp'
+        sct.initiation_source_provider = 'Advitam'
+        sct.add_transaction credit_transfer_transaction
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains InitnSrc element in v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitnSrc/Nm', 'MyApp')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitnSrc/Prvdr', 'Advitam')
+      end
+
+      it 'is incompatible with v03' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+    end
+
+    context 'with InstrForDbtrAgt at PmtInf level (v09/v13)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(debtor_agent_instruction: 'Please process urgently')
+        sct
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains InstrForDbtrAgt in PmtInf' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_09)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/InstrForDbtrAgt', 'Please process urgently')
+      end
+
+      it 'is incompatible with v03' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+    end
+
+    context 'with MndtRltdInf (v13 only)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          credit_transfer_mandate_id: 'MNDT-2024-001',
+          credit_transfer_mandate_date_of_signature: Date.new(2024, 1, 15),
+          credit_transfer_mandate_frequency: 'MNTH'
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains MndtRltdInf elements in v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/MndtRltdInf/MndtId', 'MNDT-2024-001')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/MndtRltdInf/DtOfSgntr', '2024-01-15')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/MndtRltdInf/Frqcy/Tp', 'MNTH')
+      end
+
+      it 'is incompatible with v03' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+
+      it 'is incompatible with v09' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_09)
+      end
+    end
+
+    context 'with InstrForCdtrAgt' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          instructions_for_creditor_agent: [{ code: 'HOLD', instruction_info: 'Hold for pickup' }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains InstrForCdtrAgt elements' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/Cd', 'HOLD')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForCdtrAgt/InstrInf', 'Hold for pickup')
+      end
+    end
+
+    context 'with InstrForDbtrAgt at transaction level (v03/v09 text)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(instruction_for_debtor_agent: 'Urgent transfer')
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'emits plain text InstrForDbtrAgt for v03' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForDbtrAgt', 'Urgent transfer')
+      end
+    end
+
+    context 'with InstrForDbtrAgt at transaction level (v13 structured)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          instruction_for_debtor_agent: 'Please process',
+          instruction_for_debtor_agent_code: 'URGP'
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'emits structured InstrForDbtrAgt for v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForDbtrAgt/Cd', 'URGP')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/InstrForDbtrAgt/InstrInf', 'Please process')
+      end
+
+      it 'is incompatible with v03 due to code' do
+        expect(subject).not_to be_schema_compatible(SEPA::PAIN_001_001_03)
+      end
+    end
+
+    context 'with RegulatoryReporting (v03)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          regulatory_reportings: [{ indicator: 'CRED', details: [{ code: 'ABC', information: ['Some info'] }] }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'uses Cd tag in v03' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/DbtCdtRptgInd', 'CRED')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Cd', 'ABC')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/Inf', 'Some info')
+      end
+    end
+
+    context 'with RegulatoryReporting (v13)' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          regulatory_reportings: [{ indicator: 'CRED', details: [{ code: 'ABC', information: ['Some info'] }] }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'uses RptgCd tag in v13' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_13)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/DbtCdtRptgInd', 'CRED')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RgltryRptg/Dtls/RptgCd', 'ABC')
+      end
+    end
+
+    context 'with enhanced RemittanceInformation' do
+      subject do
+        sct = credit_transfer
+        sct.add_transaction credit_transfer_transaction(
+          remittance_information: nil,
+          structured_remittance_information: 'RF712348231',
+          structured_remittance_reference_type: 'SCOR',
+          structured_remittance_issuer: 'Bank GmbH',
+          additional_remittance_information: ['Invoice 2024-001']
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.03' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_03)).to validate_against('pain.001.001.03.xsd')
+      end
+
+      it 'validates against pain.001.001.09' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_09)).to validate_against('pain.001.001.09.xsd')
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+
+      it 'contains Issr and AddtlRmtInf' do
+        xml = subject.to_xml(SEPA::PAIN_001_001_03)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Strd/CdtrRefInf/Tp/Issr', 'Bank GmbH')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/RmtInf/Strd/AddtlRmtInf', 'Invoice 2024-001')
+      end
+    end
+
+    context 'with all new features combined (v13)' do
+      subject do
+        sct = credit_transfer
+        sct.initiation_source_name = 'MyApp'
+        sct.add_transaction credit_transfer_transaction(
+          debtor_agent_instruction: 'Process urgently',
+          credit_transfer_mandate_id: 'MNDT-001',
+          credit_transfer_mandate_date_of_signature: Date.new(2024, 6, 1),
+          instructions_for_creditor_agent: [{ code: 'HOLD' }],
+          instruction_for_debtor_agent: 'Note for agent',
+          instruction_for_debtor_agent_code: 'URGP',
+          regulatory_reportings: [{ indicator: 'CRED', details: [{ code: 'XYZ' }] }]
+        )
+        sct
+      end
+
+      it 'validates against pain.001.001.13' do
+        expect(subject.to_xml(SEPA::PAIN_001_001_13)).to validate_against('pain.001.001.13.xsd')
+      end
+    end
   end
 end

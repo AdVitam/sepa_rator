@@ -37,6 +37,9 @@ module SEPA
                   :batch_booking,
                   :currency,
                   :structured_remittance_information,
+                  :structured_remittance_reference_type,
+                  :structured_remittance_issuer,
+                  :additional_remittance_information,
                   :uetr,
                   :instruction_priority,
                   :purpose_code,
@@ -44,6 +47,7 @@ module SEPA
                   :ultimate_creditor_name
 
     convert :name, :instruction, :reference, :remittance_information, :structured_remittance_information,
+            :structured_remittance_reference_type, :structured_remittance_issuer,
             :purpose_code, :ultimate_debtor_name, :ultimate_creditor_name, to: :text
     convert :amount, to: :decimal
 
@@ -54,6 +58,8 @@ module SEPA
     validates_length_of :reference, within: 1..35, allow_nil: true
     validates_length_of :remittance_information, within: 1..140, allow_nil: true
     validates_length_of :structured_remittance_information, within: 1..35, allow_nil: true
+    validates_length_of :structured_remittance_reference_type, within: 1..4, allow_nil: true
+    validates_length_of :structured_remittance_issuer, within: 1..35, allow_nil: true
     validates_length_of :purpose_code, within: 1..4, allow_nil: true
     validates_length_of :ultimate_debtor_name, within: 1..70, allow_nil: true
     validates_length_of :ultimate_creditor_name, within: 1..70, allow_nil: true
@@ -66,8 +72,19 @@ module SEPA
     validates_with BICValidator, IBANValidator, message: 'is invalid'
 
     validate do |t|
-      if t.remittance_information && t.structured_remittance_information
-        t.errors.add(:base, 'remittance_information and structured_remittance_information are mutually exclusive')
+      if t.remittance_information && (t.structured_remittance_information || t.additional_remittance_information)
+        t.errors.add(:base, 'remittance_information and structured remittance fields are mutually exclusive')
+      end
+
+      next unless t.additional_remittance_information
+
+      unless t.additional_remittance_information.is_a?(Array) && t.additional_remittance_information.length <= 3
+        t.errors.add(:additional_remittance_information, 'must be an Array with at most 3 items')
+        next
+      end
+
+      t.additional_remittance_information.each_with_index do |info, i|
+        t.errors.add(:additional_remittance_information, "entry #{i} exceeds 140 characters") if info.to_s.length > 140
       end
     end
 

@@ -61,12 +61,18 @@ RSpec.describe SEPA::IBANValidator do
 end
 
 RSpec.describe SEPA::BICValidator do
-  it 'accepts valid BICs' do
+  it 'accepts valid v03 BICs (AnyBICIdentifier)' do
     expect(BICValidatable).to accept('DEUTDEDBDUE', 'DUSSDEDDXXX', for: %i[bic custom_bic])
   end
 
+  it 'accepts valid v09/v13 BICs (BICFIDec2014Identifier) with digits in first positions' do
+    expect(BICValidatable).to accept('1234DEFFXXX', 'AB12FR00', for: %i[bic custom_bic])
+  end
+
   it 'does not accept an invalid BIC' do
-    expect(BICValidatable).not_to accept('', 'GENODE61HR', 'DEUTDEDBDUEDEUTDEDBDUE', for: %i[bic custom_bic])
+    expect(BICValidatable).not_to accept('', 'GENODE61HR', 'DEUTDEDBDUEDEUTDEDBDUE',
+                                         '12345678', # country code positions not letters
+                                         for: %i[bic custom_bic])
   end
 
   it 'customizes error message' do

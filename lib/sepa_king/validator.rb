@@ -16,15 +16,19 @@ module SEPA
   end
 
   class BICValidator < ActiveModel::Validator
-    # AnyBICIdentifier (taken from schema)
-    REGEX = /\A[A-Z]{6,6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3,3}){0,1}\z/
+    # AnyBICIdentifier (pain.001.001.03 and earlier schemas)
+    V03_REGEX = /\A[A-Z]{6,6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3,3}){0,1}\z/
+    # BICFIDec2014Identifier (pain.001.001.09 / .13 and pain.008.001.08 / .12)
+    V09_REGEX = /\A[A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}([A-Z0-9]{3,3}){0,1}\z/
+
+    REGEX = V03_REGEX
 
     def validate(record)
       field_name = options[:field_name] || :bic
       value = record.public_send(field_name)
 
       return unless value
-      return if value.to_s.match?(REGEX)
+      return if value.to_s.match?(V03_REGEX) || value.to_s.match?(V09_REGEX)
 
       record.errors.add(field_name, :invalid, message: options[:message])
     end
