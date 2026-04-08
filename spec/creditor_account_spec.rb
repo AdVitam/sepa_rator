@@ -5,16 +5,16 @@ require 'spec_helper'
 RSpec.describe SEPA::CreditorAccount do
   it 'initializes a new account' do
     expect(
-      SEPA::CreditorAccount.new(name: 'Gläubiger GmbH',
-                                bic: 'BANKDEFFXXX',
-                                iban: 'DE87200500001234567890',
-                                creditor_identifier: 'DE98ZZZ09999999999')
+      SEPA::CreditorAccount.new(name: SEPA::TestData::CREDITOR_NAME,
+                                bic: SEPA::TestData::DEBTOR_BIC,
+                                iban: SEPA::TestData::DEBTOR_IBAN,
+                                creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
     ).to be_valid
   end
 
   describe :creditor_identifier do
     it 'accepts valid value' do
-      expect(SEPA::CreditorAccount).to accept('DE98ZZZ09999999999', 'AT88ZZZ00000000001', 'IT66ZZZA1B2C3D4E5F6G7H8', 'NL42ZZZ123456780001', 'FR72ZZZ123456', for: :creditor_identifier)
+      expect(SEPA::CreditorAccount).to accept(SEPA::TestData::CREDITOR_IDENTIFIER, 'AT88ZZZ00000000001', 'IT66ZZZA1B2C3D4E5F6G7H8', 'NL42ZZZ123456780001', 'FR72ZZZ123456', for: :creditor_identifier)
     end
 
     it 'does not accept invalid value' do
@@ -24,7 +24,7 @@ RSpec.describe SEPA::CreditorAccount do
 
   describe :initiating_party_lei do
     it 'accepts valid LEI' do
-      expect(SEPA::CreditorAccount).to accept(nil, '529900T8BM49AURSDO55', for: :initiating_party_lei)
+      expect(SEPA::CreditorAccount).to accept(nil, SEPA::TestData::LEI, for: :initiating_party_lei)
     end
 
     it 'does not accept invalid LEI' do

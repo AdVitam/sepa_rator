@@ -4,16 +4,17 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+### Breaking
+
+- Unknown attributes on `Account.new`, `Transaction.new`, etc. now raise `ActiveModel::UnknownAttributeError` instead of `ArgumentError`
+- `SEPA::IBANValidator::REGEX` constant removed — use `IBANValidator.valid_iban?` instead
+- Invalid `creditor_account` on `DirectDebitTransaction` now propagates detailed validation errors instead of the generic `'is not correct'` message
+
 ### Changed
 
-- **BREAKING**: Unknown attributes passed to `Account.new`, `Transaction.new`, etc. now raise `ActiveModel::UnknownAttributeError` instead of `ArgumentError`. Consumers that `rescue ArgumentError` around `.new()` must update their error handling.
-- **BREAKING**: Invalid `creditor_account` on `DirectDebitTransaction` now propagates detailed validation errors instead of the generic `'is not correct'` message. Code pattern-matching on that exact string must be updated.
-- **BREAKING**: `SEPA::IBANValidator::REGEX` constant removed — use `IBANValidator.valid_iban?` instead
-- Replace `iban-tools` dependency with `ibandit` (GoCardless) — actively maintained, stricter country-specific IBAN validation
-- Replace custom `AttributeInitializer` concern with `ActiveModel::Model` (ships with `ActiveModel::Validations` + `ActiveModel::AttributeAssignment` + `initialize` natively)
-- Replace 7 duplicated nested validation blocks and `validates_address` DSL with reusable `NestedModelValidator` (`ActiveModel::EachValidator`)
-- Restore `ActiveSupport::Concern` in `SchemaValidation` (reverts pure-Ruby replacement)
-- IBAN error messages now include details from ibandit (e.g. "is invalid (check_digits is invalid)")
+- Replace `iban-tools` dependency with `ibandit` (GoCardless) — stricter country-specific IBAN validation, enriched error messages
+- Replace custom `AttributeInitializer` with `ActiveModel::Model`
+- Replace duplicated nested validation blocks with reusable `NestedModelValidator`
 
 ### Added
 

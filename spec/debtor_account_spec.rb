@@ -5,15 +5,15 @@ require 'spec_helper'
 RSpec.describe SEPA::DebtorAccount do
   it 'initializes a new account' do
     expect(
-      SEPA::DebtorAccount.new(name: 'Gläubiger GmbH',
-                              bic: 'BANKDEFFXXX',
-                              iban: 'DE87200500001234567890')
+      SEPA::DebtorAccount.new(name: SEPA::TestData::CREDITOR_NAME,
+                              bic: SEPA::TestData::DEBTOR_BIC,
+                              iban: SEPA::TestData::DEBTOR_IBAN)
     ).to be_valid
   end
 
   describe :agent_lei do
     it 'accepts valid LEI' do
-      expect(SEPA::DebtorAccount).to accept(nil, '529900T8BM49AURSDO55', for: :agent_lei)
+      expect(SEPA::DebtorAccount).to accept(nil, SEPA::TestData::LEI, for: :agent_lei)
     end
 
     it 'does not accept invalid LEI' do
@@ -23,7 +23,7 @@ RSpec.describe SEPA::DebtorAccount do
 
   describe :initiating_party_lei do
     it 'accepts valid LEI' do
-      expect(SEPA::DebtorAccount).to accept(nil, '529900T8BM49AURSDO55', for: :initiating_party_lei)
+      expect(SEPA::DebtorAccount).to accept(nil, SEPA::TestData::LEI, for: :initiating_party_lei)
     end
 
     it 'does not accept invalid LEI' do

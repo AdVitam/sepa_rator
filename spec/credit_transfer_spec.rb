@@ -4,11 +4,7 @@ require 'spec_helper'
 
 RSpec.describe SEPA::CreditTransfer do
   let(:message_id_regex) { %r{MSG/[0-9a-f]{28}} }
-  let(:credit_transfer) do
-    SEPA::CreditTransfer.new name: 'Schuldner GmbH',
-                             bic: 'BANKDEFFXXX',
-                             iban: 'DE87200500001234567890'
-  end
+  let(:credit_transfer) { credit_transfer_message }
 
   describe :new do
     it 'accepts missing options' do
@@ -45,20 +41,13 @@ RSpec.describe SEPA::CreditTransfer do
 
     context 'setting creditor address with adrline' do
       subject do
-        sct = SEPA::CreditTransfer.new name: 'Schuldner GmbH',
-                                       iban: 'DE87200500001234567890'
+        sct = credit_transfer_message(bic: nil)
 
         sca = SEPA::CreditorAddress.new country_code: 'CH',
                                         address_line1: 'Mustergasse 123',
                                         address_line2: '1234 Musterstadt'
 
-        sct.add_transaction name: 'Telekomiker AG',
-                            bic: 'PBNKDEFF370',
-                            iban: 'DE37112589611964645802',
-                            amount: 102.50,
-                            reference: 'XYZ-1234/123',
-                            remittance_information: 'Rechnung vom 22.08.2013',
-                            creditor_address: sca
+        sct.add_transaction(credit_transfer_transaction(creditor_address: sca))
 
         sct
       end
@@ -78,9 +67,7 @@ RSpec.describe SEPA::CreditTransfer do
 
     context 'setting creditor address with structured fields' do
       subject do
-        sct = SEPA::CreditTransfer.new name: 'Schuldner GmbH',
-                                       iban: 'DE87200500001234567890',
-                                       bic: 'BANKDEFFXXX'
+        sct = credit_transfer_message
 
         sca = SEPA::CreditorAddress.new country_code: 'CH',
                                         street_name: 'Mustergasse',
@@ -88,13 +75,7 @@ RSpec.describe SEPA::CreditTransfer do
                                         post_code: '1234',
                                         town_name: 'Musterstadt'
 
-        sct.add_transaction name: 'Telekomiker AG',
-                            bic: 'PBNKDEFF370',
-                            iban: 'DE37112589611964645802',
-                            amount: 102.50,
-                            reference: 'XYZ-1234/123',
-                            remittance_information: 'Rechnung vom 22.08.2013',
-                            creditor_address: sca
+        sct.add_transaction(credit_transfer_transaction(creditor_address: sca))
 
         sct
       end
@@ -115,16 +96,9 @@ RSpec.describe SEPA::CreditTransfer do
     context 'for valid debtor' do
       context 'without BIC (IBAN-only)' do
         subject do
-          sct = SEPA::CreditTransfer.new name: 'Schuldner GmbH',
-                                         iban: 'DE87200500001234567890'
+          sct = credit_transfer_message(bic: nil)
 
-          sct.add_transaction name: 'Telekomiker AG',
-                              bic: 'PBNKDEFF370',
-                              iban: 'DE37112589611964645802',
-                              amount: 102.50,
-                              currency: currency,
-                              reference: 'XYZ-1234/123',
-                              remittance_information: 'Rechnung vom 22.08.2013'
+          sct.add_transaction(credit_transfer_transaction(currency: currency))
 
           sct
         end
@@ -165,14 +139,7 @@ RSpec.describe SEPA::CreditTransfer do
       context 'with BIC' do
         subject do
           sct = credit_transfer
-
-          sct.add_transaction name: 'Telekomiker AG',
-                              bic: 'PBNKDEFF370',
-                              iban: 'DE37112589611964645802',
-                              amount: 102.50,
-                              reference: 'XYZ-1234/123',
-                              remittance_information: 'Rechnung vom 22.08.2013'
-
+          sct.add_transaction(credit_transfer_transaction)
           sct
         end
 
@@ -200,24 +167,17 @@ RSpec.describe SEPA::CreditTransfer do
       context 'XML structure for pain.001.001.09' do
         subject do
           sct = credit_transfer
-
-          sct.add_transaction name: 'Telekomiker AG',
-                              bic: 'PBNKDEFF370',
-                              iban: 'DE37112589611964645802',
-                              amount: 102.50,
-                              reference: 'XYZ-1234/123',
-                              remittance_information: 'Rechnung vom 22.08.2013'
-
+          sct.add_transaction(credit_transfer_transaction)
           sct.to_xml(SEPA::PAIN_001_001_09)
         end
 
         it 'uses BICFI instead of BIC for debtor agent' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BICFI', SEPA::TestData::DEBTOR_BIC)
           expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BIC')
         end
 
         it 'uses BICFI instead of BIC for creditor agent' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/BICFI', 'PBNKDEFF370')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/BICFI', SEPA::TestData::CT_TX_BIC)
           expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/BIC')
         end
 
@@ -233,19 +193,12 @@ RSpec.describe SEPA::CreditTransfer do
       context 'XML structure for pain.001.001.13' do
         subject do
           sct = credit_transfer
-
-          sct.add_transaction name: 'Telekomiker AG',
-                              bic: 'PBNKDEFF370',
-                              iban: 'DE37112589611964645802',
-                              amount: 102.50,
-                              reference: 'XYZ-1234/123',
-                              remittance_information: 'Rechnung vom 22.08.2013'
-
+          sct.add_transaction(credit_transfer_transaction)
           sct.to_xml(SEPA::PAIN_001_001_13)
         end
 
         it 'uses BICFI instead of BIC' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BICFI', SEPA::TestData::DEBTOR_BIC)
           expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BIC')
         end
 
@@ -262,12 +215,7 @@ RSpec.describe SEPA::CreditTransfer do
         subject do
           sct = credit_transfer
 
-          sct.add_transaction name: 'Telekomiker AG',
-                              bic: 'PBNKDEFF370',
-                              iban: 'DE37112589611964645802',
-                              amount: 102.50,
-                              reference: 'XYZ-1234/123',
-                              remittance_information: 'Rechnung vom 22.08.2013'
+          sct.add_transaction(credit_transfer_transaction)
 
           sct.add_transaction name: 'Amazonas GmbH',
                               iban: 'DE27793589132923472195',
@@ -311,15 +259,15 @@ RSpec.describe SEPA::CreditTransfer do
         end
 
         it 'contains <Dbtr>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/Dbtr/Nm', 'Schuldner GmbH')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/Dbtr/Nm', SEPA::TestData::DEBTOR_NAME)
         end
 
         it 'contains <DbtrAcct>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAcct/Id/IBAN', 'DE87200500001234567890')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAcct/Id/IBAN', SEPA::TestData::DEBTOR_IBAN)
         end
 
         it 'contains <DbtrAgt>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BIC', 'BANKDEFFXXX')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/BIC', SEPA::TestData::DEBTOR_BIC)
         end
 
         it 'contains <EndToEndId>' do
@@ -333,17 +281,17 @@ RSpec.describe SEPA::CreditTransfer do
         end
 
         it 'contains <CdtrAgt> for every BIC given' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/CdtrAgt/FinInstnId/BIC', 'PBNKDEFF370')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/CdtrAgt/FinInstnId/BIC', SEPA::TestData::CT_TX_BIC)
           expect(subject).not_to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[2]/CdtrAgt')
         end
 
         it 'contains <Cdtr>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/Cdtr/Nm', 'Telekomiker AG')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/Cdtr/Nm', SEPA::TestData::CT_TX_NAME)
           expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[2]/Cdtr/Nm', 'Amazonas GmbH')
         end
 
         it 'contains <CdtrAcct>' do
-          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/CdtrAcct/Id/IBAN', 'DE37112589611964645802')
+          expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[1]/CdtrAcct/Id/IBAN', SEPA::TestData::CT_TX_IBAN)
           expect(subject).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf[2]/CdtrAcct/Id/IBAN', 'DE27793589132923472195')
         end
 
@@ -476,9 +424,9 @@ RSpec.describe SEPA::CreditTransfer do
 
         let(:credit_transfer_with_address) do
           SEPA::CreditTransfer.new(
-            name: 'Schuldner GmbH',
-            bic: 'BANKDEFFXXX',
-            iban: 'DE87200500001234567890',
+            name: SEPA::TestData::DEBTOR_NAME,
+            bic: SEPA::TestData::DEBTOR_BIC,
+            iban: SEPA::TestData::DEBTOR_IBAN,
             address: SEPA::Address.new(country_code: 'DE', town_name: 'Berlin', post_code: '10115', street_name: 'Hauptstrasse')
           )
         end
@@ -568,8 +516,8 @@ RSpec.describe SEPA::CreditTransfer do
         subject do
           sct = credit_transfer
 
-          sct.add_transaction name: 'Telekomiker AG',
-                              iban: 'DE37112589611964645802',
+          sct.add_transaction name: SEPA::TestData::CT_TX_NAME,
+                              iban: SEPA::TestData::CT_TX_IBAN,
                               amount: 102.50,
                               instruction: '1234/ABC'
 
@@ -589,9 +537,9 @@ RSpec.describe SEPA::CreditTransfer do
         subject do
           sct = credit_transfer
 
-          sct.add_transaction name: 'Telekomiker AG',
-                              iban: 'DE37112589611964645802',
-                              bic: 'PBNKDEFF370',
+          sct.add_transaction name: SEPA::TestData::CT_TX_NAME,
+                              iban: SEPA::TestData::CT_TX_IBAN,
+                              bic: SEPA::TestData::CT_TX_BIC,
                               amount: 102.50,
                               currency: 'CHF'
 
@@ -628,8 +576,8 @@ RSpec.describe SEPA::CreditTransfer do
         subject do
           sct = credit_transfer
 
-          sct.add_transaction name: 'Telekomiker AG',
-                              iban: 'DE37112589611964645802',
+          sct.add_transaction name: SEPA::TestData::CT_TX_NAME,
+                              iban: SEPA::TestData::CT_TX_IBAN,
                               amount: 102.50
 
           sct
@@ -671,9 +619,9 @@ RSpec.describe SEPA::CreditTransfer do
 
       let(:transaction) do
         {
-          name: 'Telekomiker AG',
-          iban: 'DE37112589611964645802',
-          bic: 'PBNKDEFF370',
+          name: SEPA::TestData::CT_TX_NAME,
+          iban: SEPA::TestData::CT_TX_IBAN,
+          bic: SEPA::TestData::CT_TX_BIC,
           amount: 102.50,
           currency: 'CHF'
         }
@@ -695,9 +643,9 @@ RSpec.describe SEPA::CreditTransfer do
         let(:format) { SEPA::PAIN_001_002_03 }
         let(:transaction) do
           {
-            name: 'Telekomiker AG',
-            bic: 'PBNKDEFF370',
-            iban: 'DE37112589611964645802',
+            name: SEPA::TestData::CT_TX_NAME,
+            bic: SEPA::TestData::CT_TX_BIC,
+            iban: SEPA::TestData::CT_TX_IBAN,
             amount: 102.50,
             reference: 'XYZ-1234/123',
             remittance_information: 'Rechnung vom 22.08.2013'
@@ -713,9 +661,9 @@ RSpec.describe SEPA::CreditTransfer do
         let(:format) { SEPA::PAIN_001_003_03 }
         let(:transaction) do
           {
-            name: 'Telekomiker AG',
-            bic: 'PBNKDEFF370',
-            iban: 'DE37112589611964645802',
+            name: SEPA::TestData::CT_TX_NAME,
+            bic: SEPA::TestData::CT_TX_BIC,
+            iban: SEPA::TestData::CT_TX_IBAN,
             amount: 102.50,
             reference: 'XYZ-1234/123',
             remittance_information: 'Rechnung vom 22.08.2013'
@@ -730,13 +678,13 @@ RSpec.describe SEPA::CreditTransfer do
       context "when format is #{SEPA::PAIN_001_001_03_CH_02}" do
         let(:format) { SEPA::PAIN_001_001_03_CH_02 }
         let(:credit_transfer) do
-          SEPA::CreditTransfer.new name: 'Schuldner GmbH',
+          SEPA::CreditTransfer.new name: SEPA::TestData::DEBTOR_NAME,
                                    iban: 'CH5481230000001998736',
                                    bic: 'RAIFCH22'
         end
         let(:transaction) do
           {
-            name: 'Telekomiker AG',
+            name: SEPA::TestData::CT_TX_NAME,
             iban: 'DE62007620110623852957',
             amount: 102.50,
             currency: 'CHF',
@@ -760,7 +708,7 @@ RSpec.describe SEPA::CreditTransfer do
 
     context 'with potentially malicious input' do
       it 'generates valid XML with injection attempts in name' do
-        sct = SEPA::CreditTransfer.new(name: 'Legitimate Business', iban: 'DE87200500001234567890', bic: 'BANKDEFFXXX')
+        sct = SEPA::CreditTransfer.new(name: 'Legitimate Business', iban: SEPA::TestData::DEBTOR_IBAN, bic: SEPA::TestData::DEBTOR_BIC)
         sct.add_transaction(
           name: '<script>alert("xss")</script>',
           iban: 'DE21500500009876543210',
@@ -960,10 +908,10 @@ RSpec.describe SEPA::CreditTransfer do
 
     context 'with initiating_party_identifier' do
       subject do
-        sct = SEPA::CreditTransfer.new(name: 'Schuldner GmbH',
-                                       bic: 'BANKDEFFXXX',
-                                       iban: 'DE87200500001234567890',
-                                       initiating_party_identifier: 'DE98ZZZ09999999999')
+        sct = SEPA::CreditTransfer.new(name: SEPA::TestData::DEBTOR_NAME,
+                                       bic: SEPA::TestData::DEBTOR_BIC,
+                                       iban: SEPA::TestData::DEBTOR_IBAN,
+                                       initiating_party_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
         sct.add_transaction credit_transfer_transaction
         sct
       end
@@ -982,7 +930,7 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'contains InitgPty/Id element' do
         expect(subject.to_xml(SEPA::PAIN_001_001_03))
-          .to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/Othr/Id', 'DE98ZZZ09999999999')
+          .to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/Othr/Id', SEPA::TestData::CREDITOR_IDENTIFIER)
       end
     end
 
@@ -1307,10 +1255,10 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with LEI on debtor agent (DbtrAgt)' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
-          agent_lei: '529900T8BM49AURSDO55'
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
+          agent_lei: SEPA::TestData::LEI
         )
         sct.add_transaction credit_transfer_transaction
         sct
@@ -1326,7 +1274,7 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'contains LEI in DbtrAgt/FinInstnId' do
         xml = subject.to_xml(SEPA::PAIN_001_001_09)
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
       end
 
       it 'places LEI after BICFI in DbtrAgt' do
@@ -1342,7 +1290,7 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with LEI on creditor agent (CdtrAgt)' do
       subject do
         sct = credit_transfer
-        sct.add_transaction credit_transfer_transaction(agent_lei: '529900T8BM49AURSDO55')
+        sct.add_transaction credit_transfer_transaction(agent_lei: SEPA::TestData::LEI)
         sct
       end
 
@@ -1356,14 +1304,14 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'contains LEI in CdtrAgt/FinInstnId' do
         xml = subject.to_xml(SEPA::PAIN_001_001_09)
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
       end
 
       it 'emits CdtrAgt even without BIC when LEI is present' do
         sct = credit_transfer
-        sct.add_transaction credit_transfer_transaction(bic: nil, agent_lei: '529900T8BM49AURSDO55')
+        sct.add_transaction credit_transfer_transaction(bic: nil, agent_lei: SEPA::TestData::LEI)
         xml = sct.to_xml(SEPA::PAIN_001_001_09)
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
       end
 
       it 'is incompatible with v03' do
@@ -1374,10 +1322,10 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with LEI in InitgPty OrgId' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
-          initiating_party_lei: '529900T8BM49AURSDO55'
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
+          initiating_party_lei: SEPA::TestData::LEI
         )
         sct.add_transaction credit_transfer_transaction
         sct
@@ -1393,7 +1341,7 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'contains LEI in InitgPty/Id/OrgId' do
         xml = subject.to_xml(SEPA::PAIN_001_001_09)
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', '529900T8BM49AURSDO55')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', SEPA::TestData::LEI)
       end
 
       it 'is incompatible with v03' do
@@ -1404,9 +1352,9 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with BICOrBEI in InitgPty OrgId (v03)' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
           initiating_party_bic: 'DEUTDEFF'
         )
         sct.add_transaction credit_transfer_transaction
@@ -1426,9 +1374,9 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with AnyBIC in InitgPty OrgId (v09/v13)' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
           initiating_party_bic: 'DEUTDEFF'
         )
         sct.add_transaction credit_transfer_transaction
@@ -1459,11 +1407,11 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with AnyBIC and LEI in InitgPty OrgId (v09)' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
           initiating_party_bic: 'DEUTDEFF',
-          initiating_party_lei: '529900T8BM49AURSDO55'
+          initiating_party_lei: SEPA::TestData::LEI
         )
         sct.add_transaction credit_transfer_transaction
         sct
@@ -1482,9 +1430,9 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with ContactDetails on InitgPty' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
           contact_details: SEPA::ContactDetails.new(name: 'John Doe', phone_number: '+49-123456789')
         )
         sct.add_transaction credit_transfer_transaction
@@ -1509,9 +1457,9 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with ContactDetails on Dbtr' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
           contact_details: SEPA::ContactDetails.new(name: 'Jane Smith', email_address: 'jane@example.com')
         )
         sct.add_transaction credit_transfer_transaction
@@ -1681,17 +1629,17 @@ RSpec.describe SEPA::CreditTransfer do
     context 'with all new features combined including LEI and ContactDetails (v13)' do
       subject do
         sct = SEPA::CreditTransfer.new(
-          name: 'Schuldner GmbH',
-          bic: 'BANKDEFFXXX',
-          iban: 'DE87200500001234567890',
-          agent_lei: '529900T8BM49AURSDO55',
-          initiating_party_lei: 'ABCDEFGHIJKLMNOPQR30',
+          name: SEPA::TestData::DEBTOR_NAME,
+          bic: SEPA::TestData::DEBTOR_BIC,
+          iban: SEPA::TestData::DEBTOR_IBAN,
+          agent_lei: SEPA::TestData::LEI,
+          initiating_party_lei: SEPA::TestData::LEI_ALT2,
           initiating_party_bic: 'DEUTDEFF',
           contact_details: SEPA::ContactDetails.new(name: 'Admin', phone_number: '+49-30000000')
         )
         sct.initiation_source_name = 'MyApp'
         sct.add_transaction credit_transfer_transaction(
-          agent_lei: '529900ABCDEFGHIJKL19',
+          agent_lei: SEPA::TestData::LEI_ALT,
           debtor_agent_instruction: 'Process urgently',
           credit_transfer_mandate_id: 'MNDT-001',
           credit_transfer_mandate_date_of_signature: Date.new(2024, 6, 1),
@@ -1715,10 +1663,10 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'contains LEI in multiple locations' do
         xml = subject.to_xml(SEPA::PAIN_001_001_13)
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', 'ABCDEFGHIJKLMNOPQR30')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', SEPA::TestData::LEI_ALT2)
         expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/AnyBIC', 'DEUTDEFF')
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL19')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', SEPA::TestData::LEI_ALT)
       end
 
       it 'contains ContactDetails in multiple locations' do

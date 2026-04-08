@@ -5,12 +5,7 @@ require 'spec_helper'
 RSpec.describe SEPA::DirectDebit do
   let(:message_id_regex) { %r{MSG/[0-9a-f]{28}} }
 
-  let(:direct_debit) do
-    SEPA::DirectDebit.new name: 'Gläubiger GmbH',
-                          bic: 'BANKDEFFXXX',
-                          iban: 'DE87200500001234567890',
-                          creditor_identifier: 'DE98ZZZ09999999999'
-  end
+  let(:direct_debit) { direct_debit_message }
 
   describe :new do
     it 'accepts missing options' do
@@ -77,23 +72,13 @@ RSpec.describe SEPA::DirectDebit do
 
     context 'setting debtor address with adrline' do
       subject do
-        sdd = SEPA::DirectDebit.new name: 'Gläubiger GmbH',
-                                    iban: 'DE87200500001234567890',
-                                    creditor_identifier: 'DE98ZZZ09999999999'
+        sdd = direct_debit_message(bic: nil)
 
         sda = SEPA::DebtorAddress.new country_code: 'CH',
                                       address_line1: 'Mustergasse 123',
                                       address_line2: '1234 Musterstadt'
 
-        sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                            bic: 'SPUEDE2UXXX',
-                            iban: 'DE21500500009876543210',
-                            amount: 39.99,
-                            reference: 'XYZ/2013-08-ABO/12345',
-                            remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                            mandate_id: 'K-02-2011-12345',
-                            debtor_address: sda,
-                            mandate_date_of_signature: Date.new(2011, 1, 25)
+        sdd.add_transaction(direct_debit_transaction_alt(debtor_address: sda))
 
         sdd
       end
@@ -113,9 +98,7 @@ RSpec.describe SEPA::DirectDebit do
 
     context 'setting debtor address with structured fields' do
       subject do
-        sdd = SEPA::DirectDebit.new name: 'Gläubiger GmbH',
-                                    iban: 'DE87200500001234567890',
-                                    creditor_identifier: 'DE98ZZZ09999999999'
+        sdd = direct_debit_message(bic: nil)
 
         sda = SEPA::DebtorAddress.new country_code: 'CH',
                                       street_name: 'Mustergasse',
@@ -123,15 +106,7 @@ RSpec.describe SEPA::DirectDebit do
                                       post_code: '1234',
                                       town_name: 'Musterstadt'
 
-        sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                            bic: 'SPUEDE2UXXX',
-                            iban: 'DE21500500009876543210',
-                            amount: 39.99,
-                            reference: 'XYZ/2013-08-ABO/12345',
-                            remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                            mandate_id: 'K-02-2011-12345',
-                            debtor_address: sda,
-                            mandate_date_of_signature: Date.new(2011, 1, 25)
+        sdd.add_transaction(direct_debit_transaction_alt(debtor_address: sda))
 
         sdd
       end
@@ -152,18 +127,9 @@ RSpec.describe SEPA::DirectDebit do
     context 'for valid creditor' do
       context 'without BIC (IBAN-only)' do
         subject do
-          sdd = SEPA::DirectDebit.new name: 'Gläubiger GmbH',
-                                      iban: 'DE87200500001234567890',
-                                      creditor_identifier: 'DE98ZZZ09999999999'
+          sdd = direct_debit_message(bic: nil)
 
-          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                              bic: 'SPUEDE2UXXX',
-                              iban: 'DE21500500009876543210',
-                              amount: 39.99,
-                              reference: 'XYZ/2013-08-ABO/12345',
-                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                              mandate_id: 'K-02-2011-12345',
-                              mandate_date_of_signature: Date.new(2011, 1, 25)
+          sdd.add_transaction(direct_debit_transaction_alt)
 
           sdd
         end
@@ -195,14 +161,7 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                              bic: 'SPUEDE2UXXX',
-                              iban: 'DE21500500009876543210',
-                              amount: 39.99,
-                              reference: 'XYZ/2013-08-ABO/12345',
-                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                              mandate_id: 'K-02-2011-12345',
-                              mandate_date_of_signature: Date.new(2011, 1, 25)
+          sdd.add_transaction(direct_debit_transaction_alt)
 
           sdd
         end
@@ -232,25 +191,18 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                              bic: 'SPUEDE2UXXX',
-                              iban: 'DE21500500009876543210',
-                              amount: 39.99,
-                              reference: 'XYZ/2013-08-ABO/12345',
-                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                              mandate_id: 'K-02-2011-12345',
-                              mandate_date_of_signature: Date.new(2011, 1, 25)
+          sdd.add_transaction(direct_debit_transaction_alt)
 
           sdd.to_xml(SEPA::PAIN_008_001_08)
         end
 
         it 'uses BICFI instead of BIC for creditor agent' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', SEPA::TestData::DEBTOR_BIC)
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC')
         end
 
         it 'uses BICFI instead of BIC for debtor agent' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BICFI', 'SPUEDE2UXXX')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BICFI', SEPA::TestData::DD_TX_ALT_BIC)
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/BIC')
         end
 
@@ -268,20 +220,13 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                              bic: 'SPUEDE2UXXX',
-                              iban: 'DE21500500009876543210',
-                              amount: 39.99,
-                              reference: 'XYZ/2013-08-ABO/12345',
-                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                              mandate_id: 'K-02-2011-12345',
-                              mandate_date_of_signature: Date.new(2011, 1, 25)
+          sdd.add_transaction(direct_debit_transaction_alt)
 
           sdd.to_xml(SEPA::PAIN_008_001_12)
         end
 
         it 'uses BICFI instead of BIC' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', 'BANKDEFFXXX')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BICFI', SEPA::TestData::DEBTOR_BIC)
           expect(subject).not_to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC')
         end
 
@@ -305,15 +250,7 @@ RSpec.describe SEPA::DirectDebit do
             address_line2: '1234 Musterstadt'
           )
 
-          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                              bic: 'SPUEDE2UXXX',
-                              iban: 'DE21500500009876543210',
-                              amount: 39.99,
-                              reference: 'XYZ/2013-08-ABO/12345',
-                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                              mandate_id: 'K-02-2011-12345',
-                              debtor_address: sda,
-                              mandate_date_of_signature: Date.new(2011, 1, 25)
+          sdd.add_transaction(direct_debit_transaction_alt(debtor_address: sda))
 
           sdd
         end
@@ -343,14 +280,7 @@ RSpec.describe SEPA::DirectDebit do
         subject do
           sdd = direct_debit
 
-          sdd.add_transaction name: 'Zahlemann & Söhne GbR',
-                              bic: 'SPUEDE2UXXX',
-                              iban: 'DE21500500009876543210',
-                              amount: 39.99,
-                              reference: 'XYZ/2013-08-ABO/12345',
-                              remittance_information: 'Unsere Rechnung vom 10.08.2013',
-                              mandate_id: 'K-02-2011-12345',
-                              mandate_date_of_signature: Date.new(2011, 1, 25)
+          sdd.add_transaction(direct_debit_transaction_alt)
 
           sdd.add_transaction name: 'Meier & Schulze oHG',
                               iban: 'DE68210501700012345678',
@@ -396,19 +326,19 @@ RSpec.describe SEPA::DirectDebit do
         end
 
         it 'contains <Cdtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Gläubiger GmbH')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', SEPA::TestData::CREDITOR_NAME)
         end
 
         it 'contains <CdtrAcct>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAcct/Id/IBAN', 'DE87200500001234567890')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAcct/Id/IBAN', SEPA::TestData::DEBTOR_IBAN)
         end
 
         it 'contains <CdtrAgt>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC', 'BANKDEFFXXX')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/BIC', SEPA::TestData::DEBTOR_BIC)
         end
 
         it 'contains <CdtrAgt>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrSchmeId/Id/PrvtId/Othr/Id', 'DE98ZZZ09999999999')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrSchmeId/Id/PrvtId/Othr/Id', SEPA::TestData::CREDITOR_IDENTIFIER)
         end
 
         it 'contains <EndToEndId>' do
@@ -432,7 +362,7 @@ RSpec.describe SEPA::DirectDebit do
         end
 
         it 'contains <DbtrAgt>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DbtrAgt/FinInstnId/BIC', 'SPUEDE2UXXX')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DbtrAgt/FinInstnId/BIC', SEPA::TestData::DD_TX_ALT_BIC)
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DbtrAgt/FinInstnId/Othr/Id', 'NOTPROVIDED')
         end
 
@@ -442,7 +372,7 @@ RSpec.describe SEPA::DirectDebit do
         end
 
         it 'contains <DbtrAcct>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DbtrAcct/Id/IBAN', 'DE21500500009876543210')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/DbtrAcct/Id/IBAN', SEPA::TestData::DD_TX_ALT_IBAN)
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DbtrAcct/Id/IBAN', 'DE68210501700012345678')
         end
 
@@ -585,7 +515,7 @@ RSpec.describe SEPA::DirectDebit do
         end
 
         it 'contains two payment_informations with <Cdtr>' do
-          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/Cdtr/Nm', 'Gläubiger GmbH')
+          expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[1]/Cdtr/Nm', SEPA::TestData::CREDITOR_NAME)
           expect(subject).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf[2]/Cdtr/Nm', 'Creditor Inc.')
         end
       end
@@ -677,10 +607,10 @@ RSpec.describe SEPA::DirectDebit do
 
         let(:direct_debit_with_address) do
           SEPA::DirectDebit.new(
-            name: 'Gläubiger GmbH',
-            bic: 'BANKDEFFXXX',
-            iban: 'DE87200500001234567890',
-            creditor_identifier: 'DE98ZZZ09999999999',
+            name: SEPA::TestData::CREDITOR_NAME,
+            bic: SEPA::TestData::DEBTOR_BIC,
+            iban: SEPA::TestData::DEBTOR_IBAN,
+            creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER,
             address: SEPA::Address.new(country_code: 'DE', town_name: 'Berlin', post_code: '10115')
           )
         end
@@ -809,9 +739,9 @@ RSpec.describe SEPA::DirectDebit do
       subject { sepa_direct_debit.to_xml(format) }
 
       let(:sepa_direct_debit) do
-        SEPA::DirectDebit.new name: 'Gläubiger GmbH',
-                              iban: 'DE87200500001234567890',
-                              creditor_identifier: 'DE98ZZZ09999999999'
+        SEPA::DirectDebit.new name: SEPA::TestData::CREDITOR_NAME,
+                              iban: SEPA::TestData::DEBTOR_IBAN,
+                              creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER
       end
 
       let(:xml_header) do
@@ -821,18 +751,7 @@ RSpec.describe SEPA::DirectDebit do
           "xsi:schemaLocation=\"urn:iso:std:iso:20022:tech:xsd:#{format} #{format}.xsd\">\n"
       end
 
-      let(:transaction) do
-        {
-          name: 'Zahlemann & Söhne GbR',
-          bic: 'SPUEDE2UXXX',
-          iban: 'DE21500500009876543210',
-          amount: 39.99,
-          reference: 'XYZ/2013-08-ABO/12345',
-          remittance_information: 'Unsere Rechnung vom 10.08.2013',
-          mandate_id: 'K-02-2011-12345',
-          mandate_date_of_signature: Date.new(2011, 1, 25)
-        }
-      end
+      let(:transaction) { direct_debit_transaction_alt }
 
       before do
         sepa_direct_debit.add_transaction transaction
@@ -849,27 +768,16 @@ RSpec.describe SEPA::DirectDebit do
       context "when format is #{SEPA::PAIN_008_002_02}" do
         let(:format) { SEPA::PAIN_008_002_02 }
         let(:sepa_direct_debit) do
-          SEPA::DirectDebit.new name: 'Gläubiger GmbH',
-                                bic: 'SPUEDE2UXXX',
-                                iban: 'DE87200500001234567890',
-                                creditor_identifier: 'DE98ZZZ09999999999'
+          direct_debit_message(bic: SEPA::TestData::DD_TX_ALT_BIC)
         end
         let(:transaction) do
-          {
-            name: 'Zahlemann & Söhne GbR',
-            bic: 'SPUEDE2UXXX',
-            iban: 'DE21500500009876543210',
-            amount: 39.99,
-            reference: 'XYZ/2013-08-ABO/12345',
-            remittance_information: 'Unsere Rechnung vom 10.08.2013',
-            mandate_id: 'K-02-2011-12345',
+          direct_debit_transaction_alt(
             debtor_address: SEPA::DebtorAddress.new(
               country_code: 'CH',
               address_line1: 'Mustergasse 123',
               address_line2: '1234 Musterstadt'
-            ),
-            mandate_date_of_signature: Date.new(2011, 1, 25)
-          }
+            )
+          )
         end
 
         it 'returns correct header' do
@@ -1113,11 +1021,11 @@ RSpec.describe SEPA::DirectDebit do
   describe 'LEI on creditor agent (CdtrAgt)' do
     subject do
       sdd = SEPA::DirectDebit.new(
-        name: 'Gläubiger GmbH',
-        bic: 'BANKDEFFXXX',
-        iban: 'DE87200500001234567890',
-        creditor_identifier: 'DE98ZZZ09999999999',
-        agent_lei: '529900T8BM49AURSDO55'
+        name: SEPA::TestData::CREDITOR_NAME,
+        bic: SEPA::TestData::DEBTOR_BIC,
+        iban: SEPA::TestData::DEBTOR_IBAN,
+        creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER,
+        agent_lei: SEPA::TestData::LEI
       )
       sdd.add_transaction direct_debit_transaction
       sdd
@@ -1133,7 +1041,7 @@ RSpec.describe SEPA::DirectDebit do
 
     it 'contains LEI in CdtrAgt/FinInstnId' do
       xml = subject.to_xml(SEPA::PAIN_008_001_08)
-      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
     end
 
     it 'is incompatible with v02' do
@@ -1144,7 +1052,7 @@ RSpec.describe SEPA::DirectDebit do
   describe 'LEI on debtor agent (DbtrAgt)' do
     subject do
       sdd = direct_debit
-      sdd.add_transaction direct_debit_transaction(agent_lei: '529900T8BM49AURSDO55')
+      sdd.add_transaction direct_debit_transaction(agent_lei: SEPA::TestData::LEI)
       sdd
     end
 
@@ -1158,7 +1066,7 @@ RSpec.describe SEPA::DirectDebit do
 
     it 'contains LEI in DbtrAgt/FinInstnId' do
       xml = subject.to_xml(SEPA::PAIN_008_001_08)
-      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
     end
 
     it 'is incompatible with v02' do
@@ -1169,10 +1077,10 @@ RSpec.describe SEPA::DirectDebit do
   describe 'ContactDetails on Cdtr' do
     subject do
       sdd = SEPA::DirectDebit.new(
-        name: 'Gläubiger GmbH',
-        bic: 'BANKDEFFXXX',
-        iban: 'DE87200500001234567890',
-        creditor_identifier: 'DE98ZZZ09999999999',
+        name: SEPA::TestData::CREDITOR_NAME,
+        bic: SEPA::TestData::DEBTOR_BIC,
+        iban: SEPA::TestData::DEBTOR_IBAN,
+        creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER,
         contact_details: SEPA::ContactDetails.new(name: 'Creditor Contact', phone_number: '+49-30123456')
       )
       sdd.add_transaction direct_debit_transaction
@@ -1221,15 +1129,15 @@ RSpec.describe SEPA::DirectDebit do
   describe 'LEI and ContactDetails combined' do
     subject do
       sdd = SEPA::DirectDebit.new(
-        name: 'Gläubiger GmbH',
-        bic: 'BANKDEFFXXX',
-        iban: 'DE87200500001234567890',
-        creditor_identifier: 'DE98ZZZ09999999999',
-        agent_lei: '529900T8BM49AURSDO55',
+        name: SEPA::TestData::CREDITOR_NAME,
+        bic: SEPA::TestData::DEBTOR_BIC,
+        iban: SEPA::TestData::DEBTOR_IBAN,
+        creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER,
+        agent_lei: SEPA::TestData::LEI,
         contact_details: SEPA::ContactDetails.new(name: 'Admin')
       )
       sdd.add_transaction direct_debit_transaction(
-        agent_lei: '529900ABCDEFGHIJKL19',
+        agent_lei: SEPA::TestData::LEI_ALT,
         debtor_contact_details: SEPA::ContactDetails.new(name: 'Debtor Admin')
       )
       sdd
@@ -1245,9 +1153,9 @@ RSpec.describe SEPA::DirectDebit do
 
     it 'contains LEI and ContactDetails in correct locations' do
       xml = subject.to_xml(SEPA::PAIN_008_001_12)
-      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', SEPA::TestData::LEI)
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/CtctDtls/Nm', 'Admin')
-      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL19')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', SEPA::TestData::LEI_ALT)
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/CtctDtls/Nm', 'Debtor Admin')
     end
   end

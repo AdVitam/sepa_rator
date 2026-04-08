@@ -7,7 +7,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
     it 'creates a valid transaction' do
       expect(
         SEPA::DirectDebitTransaction.new(name: 'Zahlemann & Söhne Gbr',
-                                         bic: 'SPUEDE2UXXX',
+                                         bic: SEPA::TestData::DD_TX_ALT_BIC,
                                          iban: 'DE21500500009876543210',
                                          amount: 39.99,
                                          reference: 'XYZ-1234/123',
@@ -35,24 +35,24 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
     context 'for pain.008.002.02' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE')).to be_schema_compatible('pain.008.002.02')
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE')).to be_schema_compatible('pain.008.002.02')
       end
 
       it 'fails for invalid attributes' do
         expect(SEPA::DirectDebitTransaction.new(bic: nil)).not_to be_schema_compatible('pain.008.002.02')
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'COR1')).not_to be_schema_compatible('pain.008.002.02')
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).not_to be_schema_compatible('pain.008.002.02')
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'COR1')).not_to be_schema_compatible('pain.008.002.02')
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).not_to be_schema_compatible('pain.008.002.02')
       end
 
       it 'rejects RPRE sequence type' do
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', sequence_type: 'RPRE'))
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', sequence_type: 'RPRE'))
           .not_to be_schema_compatible('pain.008.002.02')
       end
     end
 
     context 'for pain.008.001.02' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.008.001.02')
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.008.001.02')
       end
 
       it 'rejects RPRE sequence type' do
@@ -62,7 +62,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
     context 'for pain.008.001.08' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.008.001.08')
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.008.001.08')
         expect(SEPA::DirectDebitTransaction.new(bic: nil)).to be_schema_compatible('pain.008.001.08')
       end
 
@@ -78,7 +78,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
     context 'for pain.008.001.12' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.008.001.12')
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.008.001.12')
         expect(SEPA::DirectDebitTransaction.new(bic: nil)).to be_schema_compatible('pain.008.001.12')
       end
 
@@ -99,7 +99,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
       end
 
       it 'rejects UETR for pain.008.002.02' do
-        expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', uetr: '550e8400-e29b-41d4-a716-446655440000'))
+        expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', uetr: '550e8400-e29b-41d4-a716-446655440000'))
           .not_to be_schema_compatible('pain.008.002.02')
       end
     end
@@ -162,7 +162,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
   context 'Charge Bearer schema compatibility' do
     it 'rejects non-SLEV for pain.008.002.02' do
-      expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', charge_bearer: 'SHAR'))
+      expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', charge_bearer: 'SHAR'))
         .not_to be_schema_compatible('pain.008.002.02')
     end
 
@@ -172,7 +172,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
     end
 
     it 'accepts SLEV for pain.008.002.02' do
-      expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', charge_bearer: 'SLEV'))
+      expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', charge_bearer: 'SLEV'))
         .to be_schema_compatible('pain.008.002.02')
     end
 
@@ -187,7 +187,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
     end
 
     it 'accepts nil for EPC schemas' do
-      expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', charge_bearer: nil))
+      expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', charge_bearer: nil))
         .to be_schema_compatible('pain.008.002.02')
     end
   end
@@ -214,7 +214,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
   describe 'InstrPrty schema compatibility' do
     it 'rejects for pain.008.002.02' do
-      expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', instruction_priority: 'HIGH'))
+      expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', instruction_priority: 'HIGH'))
         .not_to be_schema_compatible('pain.008.002.02')
     end
 
@@ -290,7 +290,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
   context 'Agent LEI' do
     it 'allows valid LEI' do
-      expect(SEPA::DirectDebitTransaction).to accept(nil, '529900T8BM49AURSDO55', for: :agent_lei)
+      expect(SEPA::DirectDebitTransaction).to accept(nil, SEPA::TestData::LEI, for: :agent_lei)
     end
 
     it 'does not allow invalid LEI' do
@@ -303,7 +303,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
       txn = SEPA::DirectDebitTransaction.new(
         name: 'Test GmbH',
         iban: 'DE21500500009876543210',
-        bic: 'SPUEDE2UXXX',
+        bic: SEPA::TestData::DD_TX_ALT_BIC,
         amount: 39.99,
         mandate_id: 'K-02-2011-12345',
         mandate_date_of_signature: Date.new(2011, 1, 25),
@@ -316,7 +316,7 @@ RSpec.describe SEPA::DirectDebitTransaction do
       txn = SEPA::DirectDebitTransaction.new(
         name: 'Test GmbH',
         iban: 'DE21500500009876543210',
-        bic: 'SPUEDE2UXXX',
+        bic: SEPA::TestData::DD_TX_ALT_BIC,
         amount: 39.99,
         mandate_id: 'K-02-2011-12345',
         mandate_date_of_signature: Date.new(2011, 1, 25),
@@ -328,22 +328,22 @@ RSpec.describe SEPA::DirectDebitTransaction do
 
   describe 'schema_compatible? with LEI' do
     it 'rejects LEI for pain.008.001.02' do
-      expect(SEPA::DirectDebitTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::DirectDebitTransaction.new(agent_lei: SEPA::TestData::LEI))
         .not_to be_schema_compatible('pain.008.001.02')
     end
 
     it 'rejects LEI for pain.008.002.02' do
-      expect(SEPA::DirectDebitTransaction.new(bic: 'SPUEDE2UXXX', local_instrument: 'CORE', agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::DirectDebitTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, local_instrument: 'CORE', agent_lei: SEPA::TestData::LEI))
         .not_to be_schema_compatible('pain.008.002.02')
     end
 
     it 'accepts LEI for pain.008.001.08' do
-      expect(SEPA::DirectDebitTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::DirectDebitTransaction.new(agent_lei: SEPA::TestData::LEI))
         .to be_schema_compatible('pain.008.001.08')
     end
 
     it 'accepts LEI for pain.008.001.12' do
-      expect(SEPA::DirectDebitTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::DirectDebitTransaction.new(agent_lei: SEPA::TestData::LEI))
         .to be_schema_compatible('pain.008.001.12')
     end
   end

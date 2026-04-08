@@ -7,8 +7,8 @@ RSpec.describe SEPA::CreditTransferTransaction do
     it 'initializes a valid transaction' do
       expect(
         SEPA::CreditTransferTransaction.new(name: 'Telekomiker AG',
-                                            iban: 'DE37112589611964645802',
-                                            bic: 'PBNKDEFF370',
+                                            iban: SEPA::TestData::CT_TX_IBAN,
+                                            bic: SEPA::TestData::CT_TX_BIC,
                                             amount: 102.50,
                                             reference: 'XYZ-1234/123',
                                             remittance_information: 'Rechnung 123 vom 22.08.2013')
@@ -29,19 +29,19 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     context 'pain.001.002.03' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA')).to be_schema_compatible('pain.001.002.03')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'SEPA')).to be_schema_compatible('pain.001.002.03')
       end
 
       it 'fails for invalid attributes' do
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).not_to be_schema_compatible('pain.001.002.03')
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'URGP')).not_to be_schema_compatible('pain.001.002.03')
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).not_to be_schema_compatible('pain.001.002.03')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'URGP')).not_to be_schema_compatible('pain.001.002.03')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).not_to be_schema_compatible('pain.001.002.03')
       end
     end
 
     context 'for pain.001.001.03' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.03')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.001.001.03')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.003.03')
       end
 
@@ -54,15 +54,15 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     context 'for pain.001.001.03.ch.02' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.03.ch.02')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.001.001.03.ch.02')
       end
     end
 
     context 'for pain.001.001.09' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX')).to be_schema_compatible('pain.001.001.09')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC)).to be_schema_compatible('pain.001.001.09')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.001.09')
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.09')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.001.001.09')
       end
 
       it 'accepts UETR' do
@@ -73,9 +73,9 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     context 'for pain.001.001.13' do
       it 'succeeds for valid attributes' do
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX')).to be_schema_compatible('pain.001.001.13')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC)).to be_schema_compatible('pain.001.001.13')
         expect(SEPA::CreditTransferTransaction.new(bic: nil)).to be_schema_compatible('pain.001.001.13')
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', currency: 'CHF')).to be_schema_compatible('pain.001.001.13')
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, currency: 'CHF')).to be_schema_compatible('pain.001.001.13')
       end
 
       it 'accepts UETR' do
@@ -91,7 +91,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
       end
 
       it 'rejects UETR for pain.001.002.03' do
-        expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', uetr: '550e8400-e29b-41d4-a716-446655440000'))
+        expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'SEPA', uetr: '550e8400-e29b-41d4-a716-446655440000'))
           .not_to be_schema_compatible('pain.001.002.03')
       end
     end
@@ -131,7 +131,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
   context 'Charge Bearer schema compatibility' do
     it 'rejects non-SLEV for pain.001.002.03' do
-      expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', charge_bearer: 'SHAR'))
+      expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'SEPA', charge_bearer: 'SHAR'))
         .not_to be_schema_compatible('pain.001.002.03')
     end
 
@@ -141,7 +141,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
     end
 
     it 'accepts SLEV for pain.001.002.03' do
-      expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', charge_bearer: 'SLEV'))
+      expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'SEPA', charge_bearer: 'SLEV'))
         .to be_schema_compatible('pain.001.002.03')
     end
 
@@ -156,7 +156,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
     end
 
     it 'accepts nil for EPC schemas' do
-      expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', charge_bearer: nil))
+      expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'SEPA', charge_bearer: nil))
         .to be_schema_compatible('pain.001.002.03')
     end
   end
@@ -223,7 +223,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
   context 'Agent LEI' do
     it 'allows valid LEI' do
-      expect(SEPA::CreditTransferTransaction).to accept(nil, '529900T8BM49AURSDO55', for: :agent_lei)
+      expect(SEPA::CreditTransferTransaction).to accept(nil, SEPA::TestData::LEI, for: :agent_lei)
     end
 
     it 'does not allow invalid LEI' do
@@ -235,7 +235,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
     it 'accepts valid contact details' do
       txn = SEPA::CreditTransferTransaction.new(
         name: 'Test AG',
-        iban: 'DE37112589611964645802',
+        iban: SEPA::TestData::CT_TX_IBAN,
         amount: 100,
         creditor_contact_details: SEPA::ContactDetails.new(name: 'John Doe')
       )
@@ -245,7 +245,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
     it 'propagates contact details validation errors' do
       txn = SEPA::CreditTransferTransaction.new(
         name: 'Test AG',
-        iban: 'DE37112589611964645802',
+        iban: SEPA::TestData::CT_TX_IBAN,
         amount: 100,
         creditor_contact_details: SEPA::ContactDetails.new(name_prefix: 'INVALID')
       )
@@ -255,7 +255,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
     it 'accepts nil contact details' do
       txn = SEPA::CreditTransferTransaction.new(
         name: 'Test AG',
-        iban: 'DE37112589611964645802',
+        iban: SEPA::TestData::CT_TX_IBAN,
         amount: 100
       )
       expect(txn.errors_on(:creditor_contact_details)).to be_empty
@@ -265,7 +265,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
   describe 'Regulatory Reportings extended validation' do
     it 'validates authority name max 140 characters' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ authority: { name: 'X' * 141 } }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/authority name exceeds 140/)
@@ -273,7 +273,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates authority country code format' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ authority: { country: 'DEU' } }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/authority country must be a 2-letter code/)
@@ -281,7 +281,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates detail date is a Date' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ date: '2025-01-01' }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/date must be a Date/)
@@ -289,7 +289,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates detail country code format' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ country: 'DEU' }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/country must be a 2-letter code/)
@@ -297,7 +297,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates detail amount requires value and currency' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ amount: { value: 100 } }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/amount must have :value and :currency/)
@@ -305,7 +305,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates detail amount currency format' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ amount: { value: 100, currency: 'EU' } }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/amount currency invalid/)
@@ -313,7 +313,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates detail amount value is numeric' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ amount: { value: 'abc', currency: 'EUR' } }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/amount value must be numeric/)
@@ -321,7 +321,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates type and type_proprietary are mutually exclusive' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ type: 'A', type_proprietary: 'B' }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/mutually exclusive/)
@@ -329,7 +329,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'validates detail type max 35 characters' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ type: 'X' * 36 }] }]
       )
       expect(txn.errors_on(:regulatory_reportings).join).to match(/type too long/)
@@ -337,7 +337,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
     it 'accepts valid regulatory reporting with all detail fields' do
       txn = SEPA::CreditTransferTransaction.new(
-        name: 'Test AG', iban: 'DE37112589611964645802', bic: 'PBNKDEFF370', amount: 100,
+        name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, bic: SEPA::TestData::CT_TX_BIC, amount: 100,
         regulatory_reportings: [{
           indicator: 'CRED',
           authority: { name: 'Bundesbank', country: 'DE' },
@@ -357,22 +357,22 @@ RSpec.describe SEPA::CreditTransferTransaction do
 
   describe 'schema_compatible? with LEI' do
     it 'rejects LEI for pain.001.001.03' do
-      expect(SEPA::CreditTransferTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::CreditTransferTransaction.new(agent_lei: SEPA::TestData::LEI))
         .not_to be_schema_compatible('pain.001.001.03')
     end
 
     it 'rejects LEI for pain.001.002.03' do
-      expect(SEPA::CreditTransferTransaction.new(bic: 'SPUEDE2UXXX', service_level: 'SEPA', agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::CreditTransferTransaction.new(bic: SEPA::TestData::DD_TX_ALT_BIC, service_level: 'SEPA', agent_lei: SEPA::TestData::LEI))
         .not_to be_schema_compatible('pain.001.002.03')
     end
 
     it 'accepts LEI for pain.001.001.09' do
-      expect(SEPA::CreditTransferTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::CreditTransferTransaction.new(agent_lei: SEPA::TestData::LEI))
         .to be_schema_compatible('pain.001.001.09')
     end
 
     it 'accepts LEI for pain.001.001.13' do
-      expect(SEPA::CreditTransferTransaction.new(agent_lei: '529900T8BM49AURSDO55'))
+      expect(SEPA::CreditTransferTransaction.new(agent_lei: SEPA::TestData::LEI))
         .to be_schema_compatible('pain.001.001.13')
     end
   end
