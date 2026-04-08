@@ -68,10 +68,10 @@ RSpec.describe SEPA::IBANValidator do
     expect(v.errors[:iban]).to eq(['xxx seems wrong'])
   end
 
-  it 'provides a detailed error message by default' do
+  it 'provides a detailed error message with field names by default' do
     v = IBANValidatable.new(iban_the_terrible: 'DE22500500009876543210')
     v.valid?
-    expect(v.errors[:iban_the_terrible].first).to match(/\Ais invalid \(.+\)\z/)
+    expect(v.errors[:iban_the_terrible].first).to match(/\Ais invalid \(\w+ .+\)\z/)
   end
 
   it 'provides a specific message for lowercase or spaced IBANs' do
@@ -178,5 +178,35 @@ RSpec.describe SEPA::LEIValidator do
     v = LEIValidatable.new(lei: 'xxx')
     v.valid?
     expect(v.errors[:lei]).to eq(['xxx seems wrong'])
+  end
+end
+
+RSpec.describe SEPA, '.mod97_valid?' do
+  it 'returns true for valid checksums' do
+    expect(SEPA.mod97_valid?('529900T8BM49AURSDO55')).to be true            # valid LEI
+    expect(SEPA.mod97_valid?('09999999999DE98')).to be true                 # rearranged creditor id
+  end
+
+  it 'returns false for invalid checksums' do
+    expect(SEPA.mod97_valid?('529900T8BM49AURSDO56')).to be false
+    expect(SEPA.mod97_valid?('AAAA')).to be false
+  end
+end
+
+RSpec.describe SEPA::IBANValidator, '.valid_iban?' do
+  it 'returns true for valid IBANs' do
+    expect(SEPA::IBANValidator.valid_iban?('DE87200500001234567890')).to be true
+  end
+
+  it 'returns false for invalid IBANs' do
+    expect(SEPA::IBANValidator.valid_iban?('DE22500500009876543210')).to be false
+  end
+
+  it 'returns false for lowercase IBANs' do
+    expect(SEPA::IBANValidator.valid_iban?('de87200500001234567890')).to be false
+  end
+
+  it 'returns false for spaced IBANs' do
+    expect(SEPA::IBANValidator.valid_iban?('DE87 2005 0000 1234 5678 90')).to be false
   end
 end

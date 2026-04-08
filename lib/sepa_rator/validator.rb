@@ -31,7 +31,7 @@ module SEPA
     private
 
     def iban_error_message(iban)
-      details = iban.errors.values.join(', ')
+      details = iban.errors.map { |key, msg| "#{key} #{msg}" }.join(', ')
       details.empty? ? 'is invalid' : "is invalid (#{details})"
     end
   end

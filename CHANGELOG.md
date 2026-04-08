@@ -1,7 +1,6 @@
 # Changelog
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
-Formerly published as the AdVitam fork of sepa_king, now an independent gem.
 
 ## [Unreleased]
 
