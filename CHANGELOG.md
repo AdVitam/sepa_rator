@@ -1,7 +1,6 @@
 # Changelog
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
-Formerly published as the AdVitam fork of sepa_king, now an independent gem.
 
 ## [Unreleased]
 
@@ -9,9 +8,18 @@ Formerly published as the AdVitam fork of sepa_king, now an independent gem.
 
 - **BREAKING**: Unknown attributes passed to `Account.new`, `Transaction.new`, etc. now raise `ActiveModel::UnknownAttributeError` instead of `ArgumentError`. Consumers that `rescue ArgumentError` around `.new()` must update their error handling.
 - **BREAKING**: Invalid `creditor_account` on `DirectDebitTransaction` now propagates detailed validation errors instead of the generic `'is not correct'` message. Code pattern-matching on that exact string must be updated.
+- **BREAKING**: `SEPA::IBANValidator::REGEX` constant removed — use `IBANValidator.valid_iban?` instead
+- Replace `iban-tools` dependency with `ibandit` (GoCardless) — actively maintained, stricter country-specific IBAN validation
 - Replace custom `AttributeInitializer` concern with `ActiveModel::Model` (ships with `ActiveModel::Validations` + `ActiveModel::AttributeAssignment` + `initialize` natively)
 - Replace 7 duplicated nested validation blocks and `validates_address` DSL with reusable `NestedModelValidator` (`ActiveModel::EachValidator`)
 - Restore `ActiveSupport::Concern` in `SchemaValidation` (reverts pure-Ruby replacement)
+- IBAN error messages now include details from ibandit (e.g. "is invalid (check_digits is invalid)")
+
+### Added
+
+- `IBANValidator.valid_iban?` class method for standalone IBAN validation
+- `SEPA.mod97_valid?` shared helper for ISO 7064 Mod 97-10 checksum
+- `LEIValidator` now verifies mod-97 checksum (was format-only)
 
 ## [0.15.0] - 2026-04-06
 

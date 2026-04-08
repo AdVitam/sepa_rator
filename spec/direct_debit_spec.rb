@@ -1229,7 +1229,7 @@ RSpec.describe SEPA::DirectDebit do
         contact_details: SEPA::ContactDetails.new(name: 'Admin')
       )
       sdd.add_transaction direct_debit_transaction(
-        agent_lei: '529900ABCDEFGHIJKL99',
+        agent_lei: '529900ABCDEFGHIJKL19',
         debtor_contact_details: SEPA::ContactDetails.new(name: 'Debtor Admin')
       )
       sdd
@@ -1247,7 +1247,7 @@ RSpec.describe SEPA::DirectDebit do
       xml = subject.to_xml(SEPA::PAIN_008_001_12)
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/CdtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/CtctDtls/Nm', 'Admin')
-      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL99')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DbtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL19')
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/CtctDtls/Nm', 'Debtor Admin')
     end
   end

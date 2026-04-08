@@ -3,7 +3,7 @@
 require 'active_model'
 require 'bigdecimal'
 require 'nokogiri'
-require 'iban-tools'
+require 'ibandit'
 
 require 'sepa_rator/error'
 require 'sepa_rator/converter'

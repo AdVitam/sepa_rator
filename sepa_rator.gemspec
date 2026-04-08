@@ -25,6 +25,6 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 3.2'
 
   s.add_dependency 'activemodel', '>= 7.0', '< 9'
-  s.add_dependency 'iban-tools'
+  s.add_dependency 'ibandit', '>= 1.0'
   s.add_dependency 'nokogiri', '>= 1.13'
 end

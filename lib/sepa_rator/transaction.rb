@@ -54,7 +54,8 @@ module SEPA
     UETR_REGEX = /\A[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}\z/
     validates_format_of :uetr, with: UETR_REGEX, allow_nil: true
     validates_inclusion_of :batch_booking, in: [true, false]
-    validates_with BICValidator, IBANValidator, message: 'is invalid'
+    validates_with BICValidator, message: 'is invalid'
+    validates_with IBANValidator
     validates_with LEIValidator, field_name: :agent_lei, message: 'is invalid'
 
     validate do |t|

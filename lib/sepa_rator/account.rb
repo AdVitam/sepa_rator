@@ -10,7 +10,8 @@ module SEPA
     convert :name, to: :text
 
     validates_length_of :name, within: 1..70
-    validates_with BICValidator, IBANValidator, message: 'is invalid'
+    validates_with BICValidator, message: 'is invalid'
+    validates_with IBANValidator
     validates_with LEIValidator, field_name: :agent_lei, message: 'is invalid'
     validates :address, :contact_details, nested_model: true, allow_nil: true
 

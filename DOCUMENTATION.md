@@ -110,7 +110,7 @@ sct.add_transaction(
   credit_transfer_mandate_frequency: 'MNTH',                            # .13 only (Frequency6Code)
 
   # Optional: LEI of the creditor's bank (v09/v13 only, emitted in CdtrAgt/FinInstnId/LEI)
-  agent_lei: '529900ABCDEFGHIJKL99',
+  agent_lei: '529900ABCDEFGHIJKL19',
 
   # Optional: contact details for the creditor (emitted in Cdtr/CtctDtls)
   creditor_contact_details: SEPA::ContactDetails.new(
@@ -218,7 +218,7 @@ sdd.add_transaction(
   ),
 
   # Optional: LEI of the debtor's bank (v08/v12 only)
-  agent_lei: '529900ABCDEFGHIJKL99',
+  agent_lei: '529900ABCDEFGHIJKL19',
 
   # Optional: contact details for the debtor (emitted in Dbtr/CtctDtls)
   debtor_contact_details: SEPA::ContactDetails.new(
@@ -488,7 +488,7 @@ The LEI is a 20-character identifier (ISO 17442) for legal entities in financial
 sct = SEPA::CreditTransfer.new(
   name: 'Debtor Inc.', iban: 'DE87200500001234567890',
   bic: 'BANKDEFFXXX', agent_lei: '529900T8BM49AURSDO55',
-  initiating_party_lei: '529900ABCDEFGHIJKL99'
+  initiating_party_lei: '529900ABCDEFGHIJKL19'
 )
 
 # Transaction-level LEI (creditor's bank)

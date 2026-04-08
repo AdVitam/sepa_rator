@@ -143,7 +143,10 @@ RSpec.describe SEPA::DirectDebitTransaction do
     end
 
     it 'does not accept invalid value' do
-      expect(SEPA::DirectDebitTransaction).not_to accept('INVALID', 'XX00000000', for: :original_debtor_account)
+      expect(SEPA::DirectDebitTransaction).not_to accept('INVALID', 'XX00000000',
+                                                         'de21500500009876543210', # lowercase
+                                                         'DE21 5005 0000 9876 5432 10', # spaces
+                                                         for: :original_debtor_account)
     end
   end
 

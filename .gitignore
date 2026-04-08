@@ -1,9 +1,4 @@
-nbproject/*
-.rvmrc
-coverage/*
-rdoc/*
-pkg/*
+coverage/
+pkg/
 .DS_Store
 Gemfile*.lock
-# tmp disable
-docs/

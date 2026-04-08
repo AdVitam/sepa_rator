@@ -1685,13 +1685,13 @@ RSpec.describe SEPA::CreditTransfer do
           bic: 'BANKDEFFXXX',
           iban: 'DE87200500001234567890',
           agent_lei: '529900T8BM49AURSDO55',
-          initiating_party_lei: 'ABCDEFGHIJKLMNOPQR12',
+          initiating_party_lei: 'ABCDEFGHIJKLMNOPQR30',
           initiating_party_bic: 'DEUTDEFF',
           contact_details: SEPA::ContactDetails.new(name: 'Admin', phone_number: '+49-30000000')
         )
         sct.initiation_source_name = 'MyApp'
         sct.add_transaction credit_transfer_transaction(
-          agent_lei: '529900ABCDEFGHIJKL99',
+          agent_lei: '529900ABCDEFGHIJKL19',
           debtor_agent_instruction: 'Process urgently',
           credit_transfer_mandate_id: 'MNDT-001',
           credit_transfer_mandate_date_of_signature: Date.new(2024, 6, 1),
@@ -1715,10 +1715,10 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'contains LEI in multiple locations' do
         xml = subject.to_xml(SEPA::PAIN_001_001_13)
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', 'ABCDEFGHIJKLMNOPQR12')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/LEI', 'ABCDEFGHIJKLMNOPQR30')
         expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/AnyBIC', 'DEUTDEFF')
         expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', '529900T8BM49AURSDO55')
-        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL99')
+        expect(xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/CdtTrfTxInf/CdtrAgt/FinInstnId/LEI', '529900ABCDEFGHIJKL19')
       end
 
       it 'contains ContactDetails in multiple locations' do
