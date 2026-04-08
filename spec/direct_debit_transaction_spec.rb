@@ -125,6 +125,18 @@ RSpec.describe SEPA::DirectDebitTransaction do
     end
   end
 
+  context 'Creditor Account' do
+    it 'propagates errors from invalid creditor_account' do
+      invalid_account = SEPA::CreditorAccount.new(name: '', iban: 'INVALID')
+      transaction = SEPA::DirectDebitTransaction.new(
+        direct_debit_transaction(creditor_account: invalid_account)
+      )
+
+      expect(transaction).not_to be_valid
+      expect(transaction.errors[:creditor_account]).not_to be_empty
+    end
+  end
+
   context 'Original Debtor Account' do
     it 'accepts valid IBAN' do
       expect(SEPA::DirectDebitTransaction).to accept(nil, 'DE21500500009876543210', for: :original_debtor_account)

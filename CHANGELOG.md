@@ -3,6 +3,16 @@
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 Formerly published as the AdVitam fork of sepa_king, now an independent gem.
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING**: Unknown attributes passed to `Account.new`, `Transaction.new`, etc. now raise `ActiveModel::UnknownAttributeError` instead of `ArgumentError`. Consumers that `rescue ArgumentError` around `.new()` must update their error handling.
+- **BREAKING**: Invalid `creditor_account` on `DirectDebitTransaction` now propagates detailed validation errors instead of the generic `'is not correct'` message. Code pattern-matching on that exact string must be updated.
+- Replace custom `AttributeInitializer` concern with `ActiveModel::Model` (ships with `ActiveModel::Validations` + `ActiveModel::AttributeAssignment` + `initialize` natively)
+- Replace 7 duplicated nested validation blocks and `validates_address` DSL with reusable `NestedModelValidator` (`ActiveModel::EachValidator`)
+- Restore `ActiveSupport::Concern` in `SchemaValidation` (reverts pure-Ruby replacement)
+
 ## [0.15.0] - 2026-04-06
 
 ### Changed
