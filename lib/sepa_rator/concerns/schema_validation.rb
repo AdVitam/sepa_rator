@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
+require 'active_support/concern'
+
 module SEPA
   module SchemaValidation
+    extend ActiveSupport::Concern
+
     SCHEMA_DIR = File.expand_path('../../schema', __dir__).freeze
     SCHEMA_CACHE_MUTEX = Mutex.new
 
-    def self.included(base)
-      base.extend ClassMethods
-    end
-
-    module ClassMethods
+    class_methods do
       def schema_cache
         @schema_cache ||= {}
       end

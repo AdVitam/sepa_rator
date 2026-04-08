@@ -7,7 +7,7 @@ RSpec.describe SEPA::Account do
     it 'does not accept unknown keys' do
       expect do
         SEPA::Account.new foo: 'bar'
-      end.to raise_error(ArgumentError, /Unknown attribute: foo/)
+      end.to raise_error(ActiveModel::UnknownAttributeError)
     end
   end
 

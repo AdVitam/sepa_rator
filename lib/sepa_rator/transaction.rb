@@ -2,24 +2,8 @@
 
 module SEPA
   class Transaction
-    include ActiveModel::Validations
-    include AttributeInitializer
+    include ActiveModel::Model
     extend Converter
-
-    # DSL to declare and validate address fields on subclasses (ISP-compliant).
-    # Each subclass declares only the address it actually uses.
-    def self.validates_address(*fields)
-      fields.each do |field|
-        attr_accessor field
-
-        validate do |t|
-          address = t.public_send(field)
-          next unless address && !address.valid?
-
-          address.errors.each { |error| t.errors.add(field, error.full_message) }
-        end
-      end
-    end
 
     # Convention SEPA: 1999-01-01 signifies "execute as soon as possible" (ASAP).
     # When no specific date is requested, this sentinel value tells the bank

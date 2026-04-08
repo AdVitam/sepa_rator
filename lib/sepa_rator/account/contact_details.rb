@@ -2,8 +2,7 @@
 
 module SEPA
   class ContactDetails
-    include ActiveModel::Validations
-    include AttributeInitializer
+    include ActiveModel::Model
     extend Converter
 
     NAME_PREFIXES = %w[DOCT MADM MISS MIST MIKS].freeze

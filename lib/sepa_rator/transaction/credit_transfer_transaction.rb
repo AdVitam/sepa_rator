@@ -21,7 +21,8 @@ module SEPA
                   :credit_transfer_mandate_id,
                   :credit_transfer_mandate_date_of_signature,
                   :credit_transfer_mandate_frequency,
-                  :creditor_contact_details
+                  :creditor_contact_details,
+                  :creditor_address
 
     CHARGE_BEARERS = %w[DEBT CRED SHAR SLEV].freeze
     EPC_ONLY_SCHEMAS = %w[pain.001.002.03 pain.001.003.03].freeze
@@ -39,7 +40,7 @@ module SEPA
     validates_inclusion_of :service_level, in: %w[SEPA URGP], allow_nil: true
     validates_length_of :category_purpose, within: 1..4, allow_nil: true
     validates_inclusion_of :charge_bearer, in: CHARGE_BEARERS, allow_nil: true
-    validates_address :creditor_address
+    validates :creditor_address, :creditor_contact_details, nested_model: true, allow_nil: true
 
     convert :debtor_agent_instruction, :instruction_for_debtor_agent,
             :credit_transfer_mandate_id, to: :text
@@ -50,11 +51,6 @@ module SEPA
     validates_length_of :credit_transfer_mandate_id, within: 1..35, allow_nil: true
     validates_inclusion_of :credit_transfer_mandate_frequency, in: FREQUENCY_CODES, allow_nil: true
 
-    validate do |t|
-      next unless t.creditor_contact_details && !t.creditor_contact_details.valid?
-
-      t.creditor_contact_details.errors.each { |error| t.errors.add(:creditor_contact_details, error.full_message) }
-    end
     validate { |t| t.validate_requested_date_after(Date.today) }
     validate :validate_instructions_for_creditor_agent
     validate :validate_regulatory_reportings

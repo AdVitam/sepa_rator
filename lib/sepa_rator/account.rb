@@ -2,8 +2,7 @@
 
 module SEPA
   class Account
-    include ActiveModel::Validations
-    include AttributeInitializer
+    include ActiveModel::Model
     extend Converter
 
     attr_accessor :name, :iban, :bic, :address, :agent_lei, :contact_details
@@ -13,26 +12,7 @@ module SEPA
     validates_length_of :name, within: 1..70
     validates_with BICValidator, IBANValidator, message: 'is invalid'
     validates_with LEIValidator, field_name: :agent_lei, message: 'is invalid'
-
-    validate do |record|
-      next unless record.address
-
-      unless record.address.valid?
-        record.address.errors.each do |error|
-          record.errors.add(:address, error.full_message)
-        end
-      end
-    end
-
-    validate do |record|
-      next unless record.contact_details
-
-      unless record.contact_details.valid?
-        record.contact_details.errors.each do |error|
-          record.errors.add(:contact_details, error.full_message)
-        end
-      end
-    end
+    validates :address, :contact_details, nested_model: true, allow_nil: true
 
     def initiating_party_id(builder, schema_name); end
 

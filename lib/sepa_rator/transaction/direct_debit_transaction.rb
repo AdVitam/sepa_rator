@@ -16,7 +16,8 @@ module SEPA
                   :original_debtor_account,
                   :same_mandate_new_debtor_agent,
                   :original_creditor_account,
-                  :debtor_contact_details
+                  :debtor_contact_details,
+                  :debtor_address
 
     CHARGE_BEARERS = %w[DEBT CRED SHAR SLEV].freeze
 
@@ -25,18 +26,11 @@ module SEPA
     validates_inclusion_of :local_instrument, in: LOCAL_INSTRUMENTS
     validates_inclusion_of :sequence_type, in: SEQUENCE_TYPES
     validates_inclusion_of :charge_bearer, in: CHARGE_BEARERS, allow_nil: true
-    validates_address :debtor_address
-    validate do |t|
-      next unless t.debtor_contact_details && !t.debtor_contact_details.valid?
-
-      t.debtor_contact_details.errors.each { |error| t.errors.add(:debtor_contact_details, error.full_message) }
-    end
+    validates :debtor_address, :debtor_contact_details, :creditor_account, nested_model: true, allow_nil: true
     validate { |t| t.validate_requested_date_after(Date.today.next) }
 
     validate do |t|
       errors.add(:original_mandate_id, 'is invalid') if original_mandate_id && !original_mandate_id.to_s.match?(MandateIdentifierValidator::REGEX)
-
-      errors.add(:creditor_account, 'is not correct') if creditor_account && !creditor_account.valid?
 
       if original_debtor_account && !original_debtor_account.to_s.empty?
         iban_str = original_debtor_account.to_s

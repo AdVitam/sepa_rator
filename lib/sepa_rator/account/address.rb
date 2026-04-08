@@ -2,8 +2,7 @@
 
 module SEPA
   class Address
-    include ActiveModel::Validations
-    include AttributeInitializer
+    include ActiveModel::Model
     extend Converter
 
     # PostalAddress6 fields (all schemas)

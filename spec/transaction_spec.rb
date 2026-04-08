@@ -88,8 +88,8 @@ RSpec.describe SEPA::Transaction do
   end
 
   context 'Unknown attributes' do
-    it 'raises ArgumentError for unknown attribute' do
-      expect { SEPA::Transaction.new(nonexistent_attr: 'value') }.to raise_error(ArgumentError, /Unknown attribute: nonexistent_attr/)
+    it 'raises ActiveModel::UnknownAttributeError for unknown attribute' do
+      expect { SEPA::Transaction.new(nonexistent_attr: 'value') }.to raise_error(ActiveModel::UnknownAttributeError)
     end
 
     it 'accepts valid attributes' do
