@@ -61,12 +61,14 @@ require 'sepa_rator/message/credit_transfer'
 
 # Profile validators (national rules) — loaded before profiles that use them.
 require 'sepa_rator/validators/cfonb/structured_address'
+require 'sepa_rator/validators/dk/min_amount'
 
 # Profiles — loaded last, after message/transaction classes and stages.
 # EPC / CFONB / DK compose from ISO, so ISO must load first.
 require 'sepa_rator/profiles/iso'
 require 'sepa_rator/profiles/epc'
 require 'sepa_rator/profiles/cfonb'
+require 'sepa_rator/profiles/dk'
 
 # Country defaults must load AFTER all variant profiles have been defined.
 require 'sepa_rator/profiles/country_defaults'

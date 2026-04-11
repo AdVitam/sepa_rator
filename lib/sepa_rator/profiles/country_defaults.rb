@@ -54,9 +54,21 @@ module SEPA
       R.set_country_default(family: :direct_debit, country: :fr, version: :v08,
                             profile: CFONB::SDD_08)
 
-      # ── Germany → DK / DFÜ (registered in the DK profile file) ────────
-      # Populated by `lib/sepa_rator/profiles/dk.rb` once the DK profile is
-      # introduced in the next refactor step.
+      # ── Germany → DK / DFÜ ────────────────────────────────────────────
+
+      R.set_country_default(family: :credit_transfer, country: :de, version: :latest,
+                            profile: DK::SCT_13_GBIC5)
+      R.set_country_default(family: :credit_transfer, country: :de, version: :v13,
+                            profile: DK::SCT_13_GBIC5)
+      R.set_country_default(family: :credit_transfer, country: :de, version: :v09,
+                            profile: DK::SCT_09_GBIC5)
+
+      R.set_country_default(family: :direct_debit, country: :de, version: :latest,
+                            profile: DK::SDD_12_GBIC5)
+      R.set_country_default(family: :direct_debit, country: :de, version: :v12,
+                            profile: DK::SDD_12_GBIC5)
+      R.set_country_default(family: :direct_debit, country: :de, version: :v08,
+                            profile: DK::SDD_08_GBIC5)
     end
   end
 end
