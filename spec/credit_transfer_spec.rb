@@ -15,10 +15,10 @@ RSpec.describe SEPA::CreditTransfer do
   let(:sct_epc_003_03) { SEPA::Profiles::ISO::SCT_EPC_003_03 }
 
   describe :new do
-    it 'requires a profile' do
-      expect do
-        SEPA::CreditTransfer.new(name: 'x', iban: SEPA::TestData::DEBTOR_IBAN, bic: SEPA::TestData::DEBTOR_BIC)
-      end.to raise_error(ArgumentError, /missing keyword: :profile/)
+    it 'defaults to the generic EPC SCT profile when no profile/country is given' do
+      sct = SEPA::CreditTransfer.new(name: SEPA::TestData::DEBTOR_NAME, iban: SEPA::TestData::DEBTOR_IBAN,
+                                     bic: SEPA::TestData::DEBTOR_BIC)
+      expect(sct.profile).to equal(SEPA::Profiles::EPC::SCT_13)
     end
 
     it 'rejects a DirectDebit profile' do

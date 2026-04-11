@@ -15,6 +15,7 @@ RSpec/DescribeClass:
   Exclude:
     - 'spec/message_spec.rb'
     - 'spec/validation_spec.rb'
+    - 'spec/public_api_spec.rb'
 
 # Non-autocorrectable cops that require significant manual rework of existing tests.
 # These are acceptable in test files per project guidelines.

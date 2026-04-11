@@ -12,11 +12,11 @@ RSpec.describe SEPA::DirectDebit do
   let(:sdd_epc_003_02) { SEPA::Profiles::ISO::SDD_EPC_003_02 }
 
   describe :new do
-    it 'requires a profile' do
-      expect do
-        SEPA::DirectDebit.new(name: 'x', iban: SEPA::TestData::DEBTOR_IBAN, bic: SEPA::TestData::DEBTOR_BIC,
-                              creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
-      end.to raise_error(ArgumentError, /missing keyword: :profile/)
+    it 'defaults to the generic EPC SDD profile when no profile/country is given' do
+      sdd = SEPA::DirectDebit.new(name: SEPA::TestData::CREDITOR_NAME, iban: SEPA::TestData::DEBTOR_IBAN,
+                                  bic: SEPA::TestData::DEBTOR_BIC,
+                                  creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
+      expect(sdd.profile).to equal(SEPA::Profiles::EPC::SDD_12)
     end
 
     it 'rejects a CreditTransfer profile' do

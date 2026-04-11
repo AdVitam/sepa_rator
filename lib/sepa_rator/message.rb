@@ -22,17 +22,22 @@ module SEPA
 
     class_attribute :account_class, :transaction_class, instance_writer: false
 
-    # @param profile [SEPA::Profile] the profile describing the target variant
-    #   (ISO / EPC / CFONB / DK / ...). Determines XSD, namespace, features,
-    #   validators and the XML builder stages.
+    # @param profile [SEPA::Profile, nil] explicit profile object. Mutually
+    #   exclusive with `country:` and `version:`. Power-user path.
+    # @param country [Symbol, nil] country code of **the bank that will receive
+    #   and process this XML file** (not the beneficiary's bank). Resolves to
+    #   the country-specific profile via {ProfileRegistry.recommended}. Falls
+    #   back to the generic SEPA/EPC profile when the country has no dedicated
+    #   variant registered.
+    # @param version [Symbol] semantic version hint (`:latest`, `:v09`, `:v13`,
+    #   …). Defaults to `:latest`.
     # @param account_options [Hash] attributes for the debtor/creditor account
     #   (`:name`, `:iban`, `:bic`, …).
-    def initialize(profile:, **account_options)
-      raise ArgumentError, 'profile is required' unless profile.is_a?(Profile)
-      raise ArgumentError, "profile #{profile.id} is for #{profile.family}, not #{self.class::FAMILY}" \
-        unless profile.family == self.class::FAMILY
-
-      @profile = profile
+    # @raise [ArgumentError] if `profile:` is mixed with `country:` / `version:`
+    # @raise [SEPA::UnsupportedVersionError] if the requested version is not
+    #   registered for the resolved country
+    def initialize(country: nil, version: :latest, profile: nil, **account_options)
+      @profile = resolve_profile(country: country, version: version, profile: profile)
       @grouped_transactions = {}
       @account = account_class.new(account_options)
     end
@@ -138,6 +143,19 @@ module SEPA
     end
 
     private
+
+    # Resolves the (country, version, profile) triple to a single Profile.
+    # Passing `profile:` bypasses the country/version lookup entirely; the
+    # two are mutually exclusive.
+    def resolve_profile(country:, version:, profile:)
+      return ProfileRegistry.recommended(family: self.class::FAMILY, country: country, version: version) unless profile
+
+      raise ArgumentError, 'pass either `profile:` or `country:`/`version:`, not both' if country || version != :latest
+      raise ArgumentError, "expected SEPA::Profile, got #{profile.class}" unless profile.is_a?(Profile)
+      raise ArgumentError, "profile #{profile.id} is for #{profile.family}, not #{self.class::FAMILY}" unless profile.family == self.class::FAMILY
+
+      profile
+    end
 
     def run_stages(stages, builder)
       ctx = Builders::Context.new(

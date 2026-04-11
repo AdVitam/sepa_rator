@@ -109,6 +109,8 @@ module SEPA
 
   class ProfileRegistry
     @profiles = {}
+    # Nested map: { family => { country_symbol_or_nil => { version_symbol => profile } } }
+    @country_defaults = {}
 
     class << self
       def register(profile, aliases: [])
@@ -125,6 +127,37 @@ module SEPA
 
       def all
         @profiles.values.uniq
+      end
+
+      # Register a (family, country, version) → profile mapping used by
+      # `Message.new(country:, version:)` to resolve the recommended profile.
+      def set_country_default(family:, country:, version:, profile:)
+        @country_defaults[family] ||= {}
+        @country_defaults[family][country] ||= {}
+        @country_defaults[family][country][version] = profile
+      end
+
+      # Resolve a (family, country, version) triple to the recommended profile.
+      # Falls back to the generic `country: nil` entry when the requested
+      # country has no specific profiles registered.
+      #
+      # @raise [ArgumentError] when the family is unknown
+      # @raise [SEPA::UnsupportedVersionError] when the version is unknown for
+      #   the resolved country
+      def recommended(family:, country: nil, version: :latest)
+        per_country = @country_defaults.fetch(family) do
+          raise ArgumentError, "Unknown family: #{family.inspect}"
+        end
+
+        versions = per_country[country] || per_country[nil]
+        raise ArgumentError, "No default profiles registered for family=#{family.inspect}" unless versions
+
+        versions.fetch(version) do
+          raise SEPA::UnsupportedVersionError.new(
+            country: country, version: version,
+            available_versions: versions.keys
+          )
+        end
       end
     end
   end

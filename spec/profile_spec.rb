@@ -145,8 +145,14 @@ RSpec.describe SEPA::ProfileFeatures do
 end
 
 RSpec.describe SEPA::ProfileRegistry do
-  before do
+  # Snapshot the registry state before each example and restore it afterwards
+  # so these tests don't clobber the global profile catalog used by other specs.
+  around do |example|
+    saved = described_class.instance_variable_get(:@profiles).dup
     described_class.instance_variable_set(:@profiles, {})
+    example.run
+  ensure
+    described_class.instance_variable_set(:@profiles, saved)
   end
 
   let(:profile) do
