@@ -40,6 +40,17 @@ RSpec.describe SEPA::Profiles::CFONB do
       end.not_to raise_error
     end
 
+    it 'rejects a mixed address that has both structured fields and AdrLine' do
+      sct = fresh_sct
+      mixed = SEPA::CreditorAddress.new(
+        country_code: 'FR', street_name: 'rue de Rivoli', town_name: 'Paris',
+        post_code: '75001', address_line1: 'c/o John Doe'
+      )
+      expect do
+        sct.add_transaction(credit_transfer_transaction(creditor_address: mixed))
+      end.to raise_error(SEPA::ValidationError, /must use structured fields/)
+    end
+
     it 'accepts a transaction without any address' do
       sct = fresh_sct
       expect { sct.add_transaction(credit_transfer_transaction) }.not_to raise_error
