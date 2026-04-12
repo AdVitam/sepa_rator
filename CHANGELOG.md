@@ -2,6 +2,12 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [Unreleased]
+
+### Changed
+
+- Add Ruby 4.0 to CI test matrix (Rails 8.1 only)
+
 ## [1.1.0] - 2026-04-12
 
 ### Added

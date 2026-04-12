@@ -11,8 +11,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: [ '3.2', '3.3', '3.4' ]
+        ruby: [ '3.2', '3.3', '3.4', '4.0' ]
         rails: [ '7.0', '7.1', '8.1' ]
+        exclude:
+          - ruby: '4.0'
+            rails: '7.0'
+          - ruby: '4.0'
+            rails: '7.1'
 
     name: Ruby ${{ matrix.ruby }} / Rails ${{ matrix.rails }}
     env:
