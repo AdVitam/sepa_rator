@@ -204,18 +204,22 @@ module SEPA
       end
 
       assert_address_structured!(account.address, "#{label}.address")
+      assert_address_has_country_code!(account.address, "#{label}.address")
     end
 
     # Transaction-level addresses (`creditor_address`, `debtor_address`) are
     # serialised in `PmtInf/*/PstlAdr` and must satisfy the same structured
     # requirement as the message account when the profile mandates it.
     def validate_transaction_addresses_against_profile!(transaction)
-      return unless profile.features.requires_structured_address
+      if profile.features.requires_structured_address
+        assert_address_structured!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
+        assert_address_structured!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
+      end
 
-      assert_address_structured!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
-      return unless transaction.respond_to?(:debtor_address)
+      return unless profile.features.requires_country_code_on_address
 
-      assert_address_structured!(transaction.debtor_address, 'debtor_address')
+      assert_address_has_country_code!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
+      assert_address_has_country_code!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
     end
 
     def assert_address_structured!(address, label)
@@ -226,6 +230,15 @@ module SEPA
       raise SEPA::ValidationError,
             "[#{profile.id}] #{label} must use structured fields " \
             '(StrtNm, PstCd, TwnNm, …), not AdrLine'
+    end
+
+    def assert_address_has_country_code!(address, label)
+      return unless profile.features.requires_country_code_on_address
+      return if address.nil?
+      return if address.country_code && !address.country_code.empty?
+
+      raise SEPA::ValidationError,
+            "[#{profile.id}] #{label} must include a country code (Ctry)"
     end
 
     # Resolves the (country, version, profile) triple to a single Profile.

@@ -148,10 +148,45 @@ RSpec.describe SEPA::Profiles::CFONB do
     end
   end
 
+  describe 'SCT 03 (legacy)' do
+    let(:profile) { described_class::SCT_03 }
+
+    it 'composes from EPC SCT 03' do
+      expect(profile.iso_schema).to eq 'pain.001.001.03'
+    end
+
+    it 'requires structured addresses' do
+      expect(profile.features.requires_structured_address).to be true
+    end
+
+    it 'generates valid XML against the ISO v03 XSD' do
+      sct = SEPA::CreditTransfer.new(profile: profile, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)
+      sct.add_transaction(credit_transfer_transaction)
+      expect(sct.to_xml).to validate_against('pain.001.001.03.xsd')
+    end
+  end
+
+  describe 'SDD 02 (legacy)' do
+    let(:profile) { described_class::SDD_02 }
+
+    it 'composes from EPC SDD 02' do
+      expect(profile.iso_schema).to eq 'pain.008.001.02'
+    end
+
+    it 'generates valid XML against the ISO v02 XSD' do
+      sdd = direct_debit_message(profile: profile)
+      sdd.add_transaction(direct_debit_transaction)
+      expect(sdd.to_xml).to validate_against('pain.008.001.02.xsd')
+    end
+  end
+
   describe 'profile ids' do
     it 'registers all CFONB profiles in the registry' do
+      expect(SEPA::ProfileRegistry['cfonb.sct.03']).to equal(described_class::SCT_03)
       expect(SEPA::ProfileRegistry['cfonb.sct.09']).to equal(described_class::SCT_09)
       expect(SEPA::ProfileRegistry['cfonb.sct.13']).to equal(described_class::SCT_13)
+      expect(SEPA::ProfileRegistry['cfonb.sdd.02']).to equal(described_class::SDD_02)
       expect(SEPA::ProfileRegistry['cfonb.sdd.08']).to equal(described_class::SDD_08)
       expect(SEPA::ProfileRegistry['cfonb.sdd.12']).to equal(described_class::SDD_12)
     end

@@ -56,7 +56,7 @@ RSpec.describe SEPA::Profiles::DK do
                               town_name: 'Berlin', post_code: '10115'
                             )
                           ))
-      expect(sct.to_xml).to validate_against('pain.001.001.09.xsd')
+      expect(sct.to_xml).to validate_against('dk/pain.001.001.09_GBIC_5.xsd')
     end
   end
 
@@ -83,7 +83,7 @@ RSpec.describe SEPA::Profiles::DK do
                               town_name: 'Berlin', post_code: '10115'
                             )
                           ))
-      expect(sdd.to_xml).to validate_against('pain.008.001.08.xsd')
+      expect(sdd.to_xml).to validate_against('dk/pain.008.001.08_GBIC_5.xsd')
     end
   end
 
@@ -124,6 +124,43 @@ RSpec.describe SEPA::Profiles::DK do
       expect do
         SEPA::Validators::DK::MinAmount.validate(txn, SEPA::Profiles::EPC::SCT_13)
       end.not_to raise_error
+    end
+  end
+
+  describe 'SCT 03 GBIC3 (legacy)' do
+    let(:profile) { described_class::SCT_03_GBIC3 }
+
+    it 'composes from EPC SCT 03' do
+      expect(profile.iso_schema).to eq 'pain.001.001.03'
+    end
+
+    it 'uses the DK GBIC3 XSD' do
+      expect(profile.xsd_path).to eq 'dk/pain.001.001.03_GBIC_3.xsd'
+    end
+
+    it 'does not require structured addresses (GBIC3 only supports Ctry + AdrLine)' do
+      expect(profile.features.requires_structured_address).to be false
+    end
+
+    it 'generates valid XML against the DK GBIC3 XSD' do
+      sct = SEPA::CreditTransfer.new(profile: profile, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)
+      sct.add_transaction(credit_transfer_transaction)
+      expect(sct.to_xml).to validate_against('dk/pain.001.001.03_GBIC_3.xsd')
+    end
+  end
+
+  describe 'SDD 02 GBIC3 (legacy)' do
+    let(:profile) { described_class::SDD_02_GBIC3 }
+
+    it 'uses the DK GBIC3 XSD' do
+      expect(profile.xsd_path).to eq 'dk/pain.008.001.02_GBIC_3.xsd'
+    end
+
+    it 'generates valid XML against the DK GBIC3 XSD' do
+      sdd = direct_debit_message(profile: profile)
+      sdd.add_transaction(direct_debit_transaction)
+      expect(sdd.to_xml).to validate_against('dk/pain.008.001.02_GBIC_3.xsd')
     end
   end
 

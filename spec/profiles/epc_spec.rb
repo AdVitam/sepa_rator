@@ -90,4 +90,40 @@ RSpec.describe SEPA::Profiles::EPC do
       expect(sdd.to_xml).to validate_against('pain.008.001.08.xsd')
     end
   end
+
+  describe 'SCT 03 (legacy)' do
+    let(:profile) { described_class::SCT_03 }
+
+    it 'composes from ISO SCT 03' do
+      expect(profile.iso_schema).to eq 'pain.001.001.03'
+    end
+
+    it 'rejects non-EUR transactions' do
+      sct = SEPA::CreditTransfer.new(profile: profile, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)
+      expect { sct.add_transaction(credit_transfer_transaction(currency: 'CHF', service_level: nil)) }
+        .to raise_error(SEPA::ValidationError, /not compatible/)
+    end
+
+    it 'generates valid XML against the ISO v03 XSD' do
+      sct = SEPA::CreditTransfer.new(profile: profile, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)
+      sct.add_transaction(credit_transfer_transaction)
+      expect(sct.to_xml).to validate_against('pain.001.001.03.xsd')
+    end
+  end
+
+  describe 'SDD 02 (legacy)' do
+    let(:profile) { described_class::SDD_02 }
+
+    it 'composes from ISO SDD 02' do
+      expect(profile.iso_schema).to eq 'pain.008.001.02'
+    end
+
+    it 'generates valid XML against the ISO v02 XSD' do
+      sdd = direct_debit_message(profile: profile)
+      sdd.add_transaction(direct_debit_transaction)
+      expect(sdd.to_xml).to validate_against('pain.008.001.02.xsd')
+    end
+  end
 end

@@ -15,6 +15,10 @@ module SEPA
 
       # ─── SEPA Credit Transfer ────────────────────────────────────────────
 
+      SCT_03 = ProfileRegistry.register(
+        EPC::SCT_03.with(id: 'cfonb.sct.03', features: REQUIRES_STRUCTURED_ADDRESS)
+      )
+
       SCT_09 = ProfileRegistry.register(
         EPC::SCT_09.with(id: 'cfonb.sct.09', features: REQUIRES_STRUCTURED_ADDRESS)
       )
@@ -24,6 +28,10 @@ module SEPA
       )
 
       # ─── SEPA Direct Debit ───────────────────────────────────────────────
+
+      SDD_02 = ProfileRegistry.register(
+        EPC::SDD_02.with(id: 'cfonb.sdd.02', features: REQUIRES_STRUCTURED_ADDRESS)
+      )
 
       SDD_08 = ProfileRegistry.register(
         EPC::SDD_08.with(id: 'cfonb.sdd.08', features: REQUIRES_STRUCTURED_ADDRESS)
