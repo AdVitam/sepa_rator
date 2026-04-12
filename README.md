@@ -161,6 +161,7 @@ both raises `ArgumentError`.
 | DK / DFÜ (Germany 🇩🇪) | `Profiles::DK`   | `SCT_03_GBIC3`, `SCT_09_GBIC5`, `SCT_13_GBIC5`, `SDD_02_GBIC3`, `SDD_08_GBIC5`, `SDD_12_GBIC5`                                         |
 | SPS (Switzerland 🇨🇭) | `Profiles::SPS`  | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                              |
 | GB (United Kingdom 🇬🇧) | `Profiles::GB`  | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                              |
+| AT / PSA (Austria 🇦🇹)    | `Profiles::AT`  | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                              |
 
 Adding a new country is a single file in `lib/sepa_rator/profiles/` plus
 entries in `lib/sepa_rator/profiles/country_defaults.rb`.

@@ -60,6 +60,7 @@ require 'sepa_rator/message/direct_debit'
 require 'sepa_rator/message/credit_transfer'
 
 # Profile validators (national rules) — loaded before profiles that use them.
+require 'sepa_rator/validators/min_amount'
 require 'sepa_rator/validators/dk/min_amount'
 
 # Profiles — loaded last, after message/transaction classes and stages.
@@ -70,6 +71,7 @@ require 'sepa_rator/profiles/cfonb'
 require 'sepa_rator/profiles/dk'
 require 'sepa_rator/profiles/sps'
 require 'sepa_rator/profiles/gb'
+require 'sepa_rator/profiles/at'
 
 # Country defaults must load AFTER all variant profiles have been defined.
 require 'sepa_rator/profiles/country_defaults'

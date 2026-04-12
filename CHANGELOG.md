@@ -7,10 +7,13 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 ### Added
 
 - United Kingdom (GB) profiles for CHAPS and SEPA (`country: :gb`)
+- Austria (AT) profiles with PSA/Stuzza XSD validation (`country: :at`)
 
 ### Changed
 
 - Add Ruby 4.0 to CI test matrix (Rails 8.1 only)
+- Extract shared `Validators::MinAmount` from `Validators::DK::MinAmount`
+- Use `File.open` instead of `File.read` for XSD loading to support `xs:include`/`xs:redefine`
 
 ## [1.1.0] - 2026-04-12
 

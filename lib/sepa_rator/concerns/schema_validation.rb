@@ -42,7 +42,9 @@ module SEPA
 
     def read_xsd(profile)
       path = File.join(SCHEMA_DIR, profile.xsd_path)
-      Nokogiri::XML::Schema(File.read(path))
+      # File.open (not File.read) so Nokogiri can resolve xs:include/xs:redefine
+      # relative to the XSD file's directory (needed for AT/PSA schemas).
+      File.open(path) { |f| Nokogiri::XML::Schema(f) }
     rescue Errno::ENOENT => e
       raise SEPA::Error,
             "[#{profile.id}] XSD file not found at #{path} (xsd_path=#{profile.xsd_path.inspect}): #{e.message}"
