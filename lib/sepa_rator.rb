@@ -72,6 +72,7 @@ require 'sepa_rator/profiles/dk'
 require 'sepa_rator/profiles/sps'
 require 'sepa_rator/profiles/gb'
 require 'sepa_rator/profiles/at'
+require 'sepa_rator/profiles/nl'
 
 # Country defaults must load AFTER all variant profiles have been defined.
 require 'sepa_rator/profiles/country_defaults'

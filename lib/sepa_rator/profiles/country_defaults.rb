@@ -139,6 +139,26 @@ module SEPA
                             profile: GB::SDD_08)
       R.set_country_default(family: :direct_debit, country: :gb, version: :v02,
                             profile: GB::SDD_02)
+
+      # ── Netherlands → NL (Betaalvereniging) ──────────────────────
+
+      R.set_country_default(family: :credit_transfer, country: :nl, version: :latest,
+                            profile: NL::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :nl, version: :v13,
+                            profile: NL::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :nl, version: :v09,
+                            profile: NL::SCT_09)
+      R.set_country_default(family: :credit_transfer, country: :nl, version: :v03,
+                            profile: NL::SCT_03)
+
+      R.set_country_default(family: :direct_debit, country: :nl, version: :latest,
+                            profile: NL::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :nl, version: :v12,
+                            profile: NL::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :nl, version: :v08,
+                            profile: NL::SDD_08)
+      R.set_country_default(family: :direct_debit, country: :nl, version: :v02,
+                            profile: NL::SDD_02)
     end
   end
 end

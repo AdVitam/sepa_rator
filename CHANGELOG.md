@@ -6,6 +6,9 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ### Added
 
+- Netherlands (NL) profiles following Betaalvereniging guidelines (`country: :nl`).
+  Composes from EPC with structured address requirement.
+  Profiles: `nl.sct.03`, `nl.sct.09`, `nl.sct.13`, `nl.sdd.02`, `nl.sdd.08`, `nl.sdd.12`.
 - United Kingdom (GB) profiles for CHAPS and SEPA (`country: :gb`)
 - Austria (AT) profiles with PSA/Stuzza XSD validation (`country: :at`)
 
