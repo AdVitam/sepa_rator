@@ -156,9 +156,11 @@ both raises `ArgumentError`.
 | Family              | Namespace        | Profiles                                                                                                                               |
 |---------------------|------------------|----------------------------------------------------------------------------------------------------------------------------------------|
 | ISO (raw XSD)       | `Profiles::ISO`  | `SCT_03`, `SCT_09`, `SCT_13`, `SCT_EPC_002_03`, `SCT_EPC_003_03`, `SDD_02`, `SDD_08`, `SDD_12`, `SDD_EPC_002_02`, `SDD_EPC_003_02`     |
-| EPC SEPA            | `Profiles::EPC`  | `SCT_09`, `SCT_13`, `SDD_08`, `SDD_12`                                                                                                 |
-| CFONB (France 🇫🇷) | `Profiles::CFONB` | `SCT_09`, `SCT_13`, `SDD_08`, `SDD_12`                                                                                                 |
-| DK / DFÜ (Germany 🇩🇪) | `Profiles::DK`   | `SCT_09_GBIC5`, `SCT_13_GBIC5`, `SDD_08_GBIC5`, `SDD_12_GBIC5`                                                                         |
+| EPC SEPA            | `Profiles::EPC`  | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                             |
+| CFONB (France 🇫🇷) | `Profiles::CFONB` | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                             |
+| DK / DFÜ (Germany 🇩🇪) | `Profiles::DK`   | `SCT_03_GBIC3`, `SCT_09_GBIC5`, `SCT_13_GBIC5`, `SDD_02_GBIC3`, `SDD_08_GBIC5`, `SDD_12_GBIC5`                                         |
+| SPS (Switzerland 🇨🇭) | `Profiles::SPS`  | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                              |
+| GB (United Kingdom 🇬🇧) | `Profiles::GB`  | `SCT_03`, `SCT_09`, `SCT_13`, `SDD_02`, `SDD_08`, `SDD_12`                                                                              |
 
 Adding a new country is a single file in `lib/sepa_rator/profiles/` plus
 entries in `lib/sepa_rator/profiles/country_defaults.rb`.
@@ -194,6 +196,8 @@ See [CHANGELOG.md](CHANGELOG.md).
 - [EPC rulebooks](https://www.europeanpaymentscouncil.eu/document-library)
 - [CFONB guides](https://www.cfonb.org/espaces-telechargements/documents)
 - [EBICS / DK data formats](https://www.ebics.de/de/datenformate)
+- [Swiss Payment Standards (SIX)](https://www.six-group.com/en/products-services/banking-services/payment-standardization/standards/iso-20022.html)
+- [Bank of England ISO 20022 handbook](https://www.bankofengland.co.uk/payment-and-settlement/rtgs-renewal-programme/iso-20022-handbook)
 
 ## License
 

@@ -658,7 +658,7 @@ validates_with SEPA::LEIValidator, field_name: :other_lei   # custom field
 
 ## Supported Profiles and Schemas
 
-Profiles compose in layers: `ISO` → `EPC` → country-specific (`CFONB`, `DK`).
+Profiles compose in layers: `ISO` → `EPC` → country-specific (`CFONB`, `DK`, `SPS`, `GB`).
 Each country layer inherits the XSD, stage list and capabilities of its parent
 and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 
@@ -671,12 +671,21 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::ISO::SCT_13`           | `pain.001.001.13`     | PostalAddress27, Contact13, InitnSrc, MndtRltdInf, structured InstrForDbtrAgt, RegulatoryReporting10 |
 | `Profiles::ISO::SCT_EPC_002_03`   | `pain.001.002.03`     | EPC AOS, EUR only, BIC required, ChrgBr=SLEV only |
 | `Profiles::ISO::SCT_EPC_003_03`   | `pain.001.003.03`     | EPC AOS, EUR only |
-| `Profiles::EPC::SCT_09`           | `pain.001.001.09`     | ISO 09 tightened with the EPC rulebook (EUR, SEPA service level, SLEV) |
+| `Profiles::EPC::SCT_03`           | `pain.001.001.03`     | ISO 03 tightened with the EPC rulebook (EUR, SEPA service level, SLEV) |
+| `Profiles::EPC::SCT_09`           | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::EPC::SCT_13`           | `pain.001.001.13`     | Same, for v13 |
-| `Profiles::CFONB::SCT_09`         | `pain.001.001.09`     | EPC + structured addresses required (CFONB rule) |
+| `Profiles::CFONB::SCT_03`         | `pain.001.001.03`     | EPC + structured addresses required (CFONB rule) |
+| `Profiles::CFONB::SCT_09`         | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::CFONB::SCT_13`         | `pain.001.001.13`     | Same, for v13 |
+| `Profiles::DK::SCT_03_GBIC3`      | `pain.001.001.03`     | EPC + DK GBIC3 (structured addresses) |
 | `Profiles::DK::SCT_09_GBIC5`      | `pain.001.001.09`     | EPC + DK GBIC5 (min_amount 0.01, structured addresses) |
 | `Profiles::DK::SCT_13_GBIC5`      | `pain.001.001.13`     | Same, for v13 |
+| `Profiles::SPS::SCT_03`           | `pain.001.001.03`     | ISO 03 + EUR/CHF, structured addresses, country code required |
+| `Profiles::SPS::SCT_09`           | `pain.001.001.09`     | Same, for v09 |
+| `Profiles::SPS::SCT_13`           | `pain.001.001.13`     | Same, for v13 |
+| `Profiles::GB::SCT_03`            | `pain.001.001.03`     | ISO 03 + EUR/GBP (CHAPS), structured addresses, country code required |
+| `Profiles::GB::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
+| `Profiles::GB::SCT_13`            | `pain.001.001.13`     | Same, for v13 |
 
 ### Direct Debit (pain.008)
 
@@ -687,12 +696,21 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::ISO::SDD_12`           | `pain.008.001.12`     | PostalAddress27, Contact13, RPRE |
 | `Profiles::ISO::SDD_EPC_002_02`   | `pain.008.002.02`     | EPC AOS, EUR only, BIC required, CORE/B2B only, ChrgBr=SLEV only |
 | `Profiles::ISO::SDD_EPC_003_02`   | `pain.008.003.02`     | EPC AOS, EUR only |
-| `Profiles::EPC::SDD_08`           | `pain.008.001.08`     | ISO 08 tightened with the EPC rulebook |
+| `Profiles::EPC::SDD_02`           | `pain.008.001.02`     | ISO 02 tightened with the EPC rulebook |
+| `Profiles::EPC::SDD_08`           | `pain.008.001.08`     | Same, for v08 |
 | `Profiles::EPC::SDD_12`           | `pain.008.001.12`     | Same, for v12 |
-| `Profiles::CFONB::SDD_08`         | `pain.008.001.08`     | EPC + structured addresses required |
+| `Profiles::CFONB::SDD_02`         | `pain.008.001.02`     | EPC + structured addresses required |
+| `Profiles::CFONB::SDD_08`         | `pain.008.001.08`     | Same, for v08 |
 | `Profiles::CFONB::SDD_12`         | `pain.008.001.12`     | Same, for v12 |
+| `Profiles::DK::SDD_02_GBIC3`      | `pain.008.001.02`     | EPC + DK GBIC3 (structured addresses) |
 | `Profiles::DK::SDD_08_GBIC5`      | `pain.008.001.08`     | EPC + DK GBIC5 |
 | `Profiles::DK::SDD_12_GBIC5`      | `pain.008.001.12`     | Same, for v12 |
+| `Profiles::SPS::SDD_02`           | `pain.008.001.02`     | ISO 02 + EUR only, structured addresses |
+| `Profiles::SPS::SDD_08`           | `pain.008.001.08`     | Same, for v08 |
+| `Profiles::SPS::SDD_12`           | `pain.008.001.12`     | Same, for v12 |
+| `Profiles::GB::SDD_02`            | `pain.008.001.02`     | ISO 02 + EUR only, structured addresses |
+| `Profiles::GB::SDD_08`            | `pain.008.001.08`     | Same, for v08 |
+| `Profiles::GB::SDD_12`            | `pain.008.001.12`     | Same, for v12 |
 
 ### Country defaults
 
@@ -700,12 +718,11 @@ The `country:` / `version:` lookup (`SEPA::CreditTransfer.new(country: :fr, ...)
 is driven by `SEPA::ProfileRegistry.recommended(family:, country:, version:)`.
 The current mappings live in `lib/sepa_rator/profiles/country_defaults.rb`.
 `country: nil` (or an unknown country) falls back to the generic EPC profiles.
+Countries with dedicated profiles: `:fr` (CFONB), `:de` (DK), `:ch` (SPS), `:gb` (GB).
 
-### DK XSDs
+### Country-specific XSDs
 
-The profiles under `Profiles::DK` reference the ISO baseline XSDs
-(`lib/schema/iso/pain.*.xsd`). Real DK XSDs (`pain.*_AXZ_GBIC5.xsd`) are
-licensed by Deutsche Kreditwirtschaft and not vendored in this gem — see
-`lib/schema/dk/README.md` for the procedure to wire them up in production.
-The XSD cache in `SchemaValidation` is keyed by `profile.xsd_path`, so swapping
-them in never collides with the ISO baseline.
+The profiles under `Profiles::DK` validate against vendored DK GBIC XSDs
+(`lib/schema/dk/`). The profiles under `Profiles::SPS` validate against
+vendored SPS XSDs (`lib/schema/sps/`). GB profiles use the ISO baseline
+XSDs — no UK-specific schema exists.

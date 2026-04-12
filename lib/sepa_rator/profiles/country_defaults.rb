@@ -99,6 +99,26 @@ module SEPA
                             profile: SPS::SDD_08)
       R.set_country_default(family: :direct_debit, country: :ch, version: :v02,
                             profile: SPS::SDD_02)
+
+      # ── United Kingdom → GB ────────────────────────────────────
+
+      R.set_country_default(family: :credit_transfer, country: :gb, version: :latest,
+                            profile: GB::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :gb, version: :v13,
+                            profile: GB::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :gb, version: :v09,
+                            profile: GB::SCT_09)
+      R.set_country_default(family: :credit_transfer, country: :gb, version: :v03,
+                            profile: GB::SCT_03)
+
+      R.set_country_default(family: :direct_debit, country: :gb, version: :latest,
+                            profile: GB::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :gb, version: :v12,
+                            profile: GB::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :gb, version: :v08,
+                            profile: GB::SDD_08)
+      R.set_country_default(family: :direct_debit, country: :gb, version: :v02,
+                            profile: GB::SDD_02)
     end
   end
 end

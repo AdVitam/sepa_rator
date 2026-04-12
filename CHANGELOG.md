@@ -4,6 +4,10 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+### Added
+
+- United Kingdom (GB) profiles for CHAPS and SEPA (`country: :gb`)
+
 ### Changed
 
 - Add Ruby 4.0 to CI test matrix (Rails 8.1 only)
