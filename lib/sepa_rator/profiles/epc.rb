@@ -20,6 +20,10 @@ module SEPA
     module EPC
       # ─── SEPA Credit Transfer ────────────────────────────────────────────
 
+      SCT_03 = ProfileRegistry.register(
+        ISO::SCT_03.with(id: 'epc.sct.03', accept_transaction: ISO::CT_EPC_RULES)
+      )
+
       SCT_09 = ProfileRegistry.register(
         ISO::SCT_09.with(id: 'epc.sct.09', accept_transaction: ISO::CT_EPC_RULES)
       )
@@ -29,6 +33,10 @@ module SEPA
       )
 
       # ─── SEPA Direct Debit ───────────────────────────────────────────────
+
+      SDD_02 = ProfileRegistry.register(
+        ISO::SDD_02.with(id: 'epc.sdd.02', accept_transaction: ISO::DD_EPC_RULES)
+      )
 
       SDD_08 = ProfileRegistry.register(
         ISO::SDD_08.with(id: 'epc.sdd.08', accept_transaction: ISO::DD_EPC_RULES)

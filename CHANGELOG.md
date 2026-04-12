@@ -2,6 +2,27 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [1.1.0] - 2026-04-12
+
+### Added
+
+- Swiss Payment Standards (SPS) profiles for Switzerland (`country: :ch`).
+  Extends ISO with EUR+CHF support, structured addresses, and country code
+  requirement. Profiles: `sps.sct.03`, `sps.sct.09`, `sps.sct.13`,
+  `sps.sdd.02`, `sps.sdd.08`, `sps.sdd.12`.
+- Legacy v03/v02 profiles for EPC (`epc.sct.03`, `epc.sdd.02`), CFONB
+  (`cfonb.sct.03`, `cfonb.sdd.02`), and DK (`dk.sct.03.gbic3`,
+  `dk.sdd.02.gbic3`). These cover pain.001.001.03 and pain.008.001.02
+  which remain widely used until November 2026.
+- Vendor DK XSD files: GBIC5 (`pain.001.001.09_GBIC_5.xsd`,
+  `pain.008.001.08_GBIC_5.xsd`) and GBIC3 (`pain.001.001.03_GBIC_3.xsd`,
+  `pain.008.001.02_GBIC_3.xsd`). DK profiles now validate against the
+  real Deutsche Kreditwirtschaft schemas instead of the ISO baseline.
+- Vendor SPS XSD file (`pain.001.001.09.ch.03.xsd`) for Swiss CT schema
+  validation.
+- Enforce `requires_country_code_on_address` profile feature — validates
+  that postal addresses include a country code when the profile mandates it.
+
 ## [1.0.0] - 2026-04-11
 
 ### Breaking

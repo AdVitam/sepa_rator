@@ -28,6 +28,8 @@ module SEPA
                             profile: EPC::SCT_13)
       R.set_country_default(family: :credit_transfer, country: nil, version: :v09,
                             profile: EPC::SCT_09)
+      R.set_country_default(family: :credit_transfer, country: nil, version: :v03,
+                            profile: EPC::SCT_03)
 
       R.set_country_default(family: :direct_debit, country: nil, version: :latest,
                             profile: EPC::SDD_12)
@@ -35,6 +37,8 @@ module SEPA
                             profile: EPC::SDD_12)
       R.set_country_default(family: :direct_debit, country: nil, version: :v08,
                             profile: EPC::SDD_08)
+      R.set_country_default(family: :direct_debit, country: nil, version: :v02,
+                            profile: EPC::SDD_02)
 
       # ── France → CFONB ────────────────────────────────────────────────
 
@@ -44,6 +48,8 @@ module SEPA
                             profile: CFONB::SCT_13)
       R.set_country_default(family: :credit_transfer, country: :fr, version: :v09,
                             profile: CFONB::SCT_09)
+      R.set_country_default(family: :credit_transfer, country: :fr, version: :v03,
+                            profile: CFONB::SCT_03)
 
       R.set_country_default(family: :direct_debit, country: :fr, version: :latest,
                             profile: CFONB::SDD_12)
@@ -51,6 +57,8 @@ module SEPA
                             profile: CFONB::SDD_12)
       R.set_country_default(family: :direct_debit, country: :fr, version: :v08,
                             profile: CFONB::SDD_08)
+      R.set_country_default(family: :direct_debit, country: :fr, version: :v02,
+                            profile: CFONB::SDD_02)
 
       # ── Germany → DK / DFÜ ────────────────────────────────────────────
 
@@ -60,6 +68,8 @@ module SEPA
                             profile: DK::SCT_13_GBIC5)
       R.set_country_default(family: :credit_transfer, country: :de, version: :v09,
                             profile: DK::SCT_09_GBIC5)
+      R.set_country_default(family: :credit_transfer, country: :de, version: :v03,
+                            profile: DK::SCT_03_GBIC3)
 
       R.set_country_default(family: :direct_debit, country: :de, version: :latest,
                             profile: DK::SDD_12_GBIC5)
@@ -67,6 +77,28 @@ module SEPA
                             profile: DK::SDD_12_GBIC5)
       R.set_country_default(family: :direct_debit, country: :de, version: :v08,
                             profile: DK::SDD_08_GBIC5)
+      R.set_country_default(family: :direct_debit, country: :de, version: :v02,
+                            profile: DK::SDD_02_GBIC3)
+
+      # ── Switzerland → SPS ──────────────────────────────────────────────
+
+      R.set_country_default(family: :credit_transfer, country: :ch, version: :latest,
+                            profile: SPS::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :ch, version: :v13,
+                            profile: SPS::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :ch, version: :v09,
+                            profile: SPS::SCT_09)
+      R.set_country_default(family: :credit_transfer, country: :ch, version: :v03,
+                            profile: SPS::SCT_03)
+
+      R.set_country_default(family: :direct_debit, country: :ch, version: :latest,
+                            profile: SPS::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :ch, version: :v12,
+                            profile: SPS::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :ch, version: :v08,
+                            profile: SPS::SDD_08)
+      R.set_country_default(family: :direct_debit, country: :ch, version: :v02,
+                            profile: SPS::SDD_02)
     end
   end
 end
