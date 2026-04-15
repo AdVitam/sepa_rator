@@ -100,6 +100,26 @@ module SEPA
       R.set_country_default(family: :direct_debit, country: :ch, version: :v02,
                             profile: SPS::SDD_02)
 
+      # ── Austria → AT / PSA ────────────────────────────────────────
+
+      R.set_country_default(family: :credit_transfer, country: :at, version: :latest,
+                            profile: AT::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :at, version: :v13,
+                            profile: AT::SCT_13)
+      R.set_country_default(family: :credit_transfer, country: :at, version: :v09,
+                            profile: AT::SCT_09)
+      R.set_country_default(family: :credit_transfer, country: :at, version: :v03,
+                            profile: AT::SCT_03)
+
+      R.set_country_default(family: :direct_debit, country: :at, version: :latest,
+                            profile: AT::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :at, version: :v12,
+                            profile: AT::SDD_12)
+      R.set_country_default(family: :direct_debit, country: :at, version: :v08,
+                            profile: AT::SDD_08)
+      R.set_country_default(family: :direct_debit, country: :at, version: :v02,
+                            profile: AT::SDD_02)
+
       # ── United Kingdom → GB ────────────────────────────────────
 
       R.set_country_default(family: :credit_transfer, country: :gb, version: :latest,

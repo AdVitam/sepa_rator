@@ -658,7 +658,7 @@ validates_with SEPA::LEIValidator, field_name: :other_lei   # custom field
 
 ## Supported Profiles and Schemas
 
-Profiles compose in layers: `ISO` → `EPC` → country-specific (`CFONB`, `DK`, `SPS`, `GB`).
+Profiles compose in layers: `ISO` → `EPC` → country-specific (`CFONB`, `DK`, `SPS`, `GB`, `AT`).
 Each country layer inherits the XSD, stage list and capabilities of its parent
 and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 
@@ -686,6 +686,9 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::GB::SCT_03`            | `pain.001.001.03`     | ISO 03 + EUR/GBP (CHAPS), structured addresses, country code required |
 | `Profiles::GB::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::GB::SCT_13`            | `pain.001.001.13`     | Same, for v13 |
+| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01 |
+| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses |
+| `Profiles::AT::SCT_13`            | `pain.001.001.13`     | Same, for v13 (ISO baseline XSD — no AT-specific v13 published) |
 
 ### Direct Debit (pain.008)
 
@@ -711,6 +714,9 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::GB::SDD_02`            | `pain.008.001.02`     | ISO 02 + EUR only, structured addresses |
 | `Profiles::GB::SDD_08`            | `pain.008.001.08`     | Same, for v08 |
 | `Profiles::GB::SDD_12`            | `pain.008.001.12`     | Same, for v12 |
+| `Profiles::AT::SDD_02`            | `pain.008.001.02`     | EPC 02 + PSA/Stuzza XSD, min_amount 0.01 |
+| `Profiles::AT::SDD_08`            | `pain.008.001.08`     | EPC 08 + PSA/Stuzza XSD, min_amount 0.01, structured addresses |
+| `Profiles::AT::SDD_12`            | `pain.008.001.12`     | Same, for v12 (ISO baseline XSD — no AT-specific v12 published) |
 
 ### Country defaults
 
@@ -718,11 +724,15 @@ The `country:` / `version:` lookup (`SEPA::CreditTransfer.new(country: :fr, ...)
 is driven by `SEPA::ProfileRegistry.recommended(family:, country:, version:)`.
 The current mappings live in `lib/sepa_rator/profiles/country_defaults.rb`.
 `country: nil` (or an unknown country) falls back to the generic EPC profiles.
-Countries with dedicated profiles: `:fr` (CFONB), `:de` (DK), `:ch` (SPS), `:gb` (GB).
+Countries with dedicated profiles: `:fr` (CFONB), `:de` (DK), `:ch` (SPS), `:gb` (GB), `:at` (AT).
 
 ### Country-specific XSDs
 
 The profiles under `Profiles::DK` validate against vendored DK GBIC XSDs
 (`lib/schema/dk/`). The profiles under `Profiles::SPS` validate against
-vendored SPS XSDs (`lib/schema/sps/`). GB profiles use the ISO baseline
-XSDs — no UK-specific schema exists.
+vendored SPS XSDs (`lib/schema/sps/`). The profiles under `Profiles::AT`
+validate against vendored PSA/Stuzza XSDs (`lib/schema/at/`); the original
+Austrian XSDs use XSD 1.1 `xs:assert` elements which have been stripped
+for Nokogiri/libxml2 compatibility — the cross-field validations are
+handled in Ruby. GB profiles use the ISO baseline XSDs — no UK-specific
+schema exists.
