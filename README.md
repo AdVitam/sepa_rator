@@ -28,6 +28,7 @@ national variants (CFONB for France, DK/DFÜ for Germany, …) first-class.
 | SPS 🇨🇭 | `Profiles::SPS` | `country: :ch` | `SCT_03`, `SCT_09`, `SCT_13` | `SDD_02`, `SDD_08`, `SDD_12` |
 | GB 🇬🇧 | `Profiles::GB` | `country: :gb` | `SCT_03`, `SCT_09`, `SCT_13` | `SDD_02`, `SDD_08`, `SDD_12` |
 | AT / PSA 🇦🇹 | `Profiles::AT` | `country: :at` | `SCT_03`, `SCT_09`, `SCT_13` | `SDD_02`, `SDD_08`, `SDD_12` |
+| NL 🇳🇱 | `Profiles::NL` | `country: :nl` | `SCT_03`, `SCT_09`, `SCT_13` | `SDD_02`, `SDD_08`, `SDD_12` |
 
 For the full per-profile detail (XSD, constraints, capabilities), see [DOCUMENTATION.md](DOCUMENTATION.md#supported-profiles-and-schemas). Adding a new country is a single file in `lib/sepa_rator/profiles/` plus entries in `lib/sepa_rator/profiles/country_defaults.rb`.
 
