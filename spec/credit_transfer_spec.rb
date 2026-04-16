@@ -740,6 +740,31 @@ RSpec.describe SEPA::CreditTransfer do
       end
     end
 
+    context 'with initiating_party_scheme' do
+      let(:account_attrs) do
+        { initiating_party_identifier: SEPA::TestData::CREDITOR_IDENTIFIER, initiating_party_scheme: 'SIREN' }
+      end
+      let(:setup) { ->(sct) { sct.add_transaction(credit_transfer_transaction) } }
+
+      %i[sct_03 sct_09 sct_13].each do |profile_key|
+        it "validates against #{profile_key}" do
+          profile = send(profile_key)
+          expect(build_ct(profile, account_attrs, &setup).to_xml).to validate_against("#{profile.iso_schema}.xsd")
+        end
+      end
+
+      it 'contains SchmeNm/Prtry element' do
+        expect(build_ct(sct_13, account_attrs, &setup).to_xml)
+          .to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/Othr/SchmeNm/Prtry', 'SIREN')
+      end
+
+      it 'omits SchmeNm when scheme is nil' do
+        attrs = { initiating_party_identifier: SEPA::TestData::CREDITOR_IDENTIFIER }
+        expect(build_ct(sct_13, attrs, &setup).to_xml)
+          .not_to have_xml('//Document/CstmrCdtTrfInitn/GrpHdr/InitgPty/Id/OrgId/Othr/SchmeNm')
+      end
+    end
+
     context 'with URGP service level' do
       let(:setup) { ->(sct) { sct.add_transaction(credit_transfer_transaction(service_level: 'URGP')) } }
 

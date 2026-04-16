@@ -7,6 +7,7 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 ### Added
 
 - Netherlands (NL) profiles with Betaalvereniging guidelines (`country: :nl`)
+- `initiating_party_scheme` on `DebtorAccount` to emit `SchmeNm/Prtry` under `InitgPty/Id/OrgId/Othr`
 
 ## [1.2.0] - 2026-04-15
 
