@@ -50,4 +50,14 @@ RSpec.describe SEPA::DebtorAccount do
       expect(SEPA::DebtorAccount).not_to accept('', 'X' * 257, for: :initiating_party_identifier)
     end
   end
+
+  describe :initiating_party_scheme do
+    it 'accepts valid values up to 35 characters' do
+      expect(SEPA::DebtorAccount).to accept(nil, 'SIREN', 'X' * 35, for: :initiating_party_scheme)
+    end
+
+    it 'does not accept values exceeding 35 characters' do
+      expect(SEPA::DebtorAccount).not_to accept('', 'X' * 36, for: :initiating_party_scheme)
+    end
+  end
 end

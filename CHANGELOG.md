@@ -2,6 +2,12 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [1.3.1] - 2026-04-17
+
+### Added
+
+- `initiating_party_scheme` on `DebtorAccount` to emit `SchmeNm/Prtry` under `InitgPty/Id/OrgId/Othr`
+
 ## [1.3.0] - 2026-04-16
 
 ### Added
