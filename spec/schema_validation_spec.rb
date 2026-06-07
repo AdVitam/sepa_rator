@@ -26,10 +26,11 @@ RSpec.describe SEPA::SchemaValidation do
       end
     end
 
-    it 'does not register the same root twice' do
+    it 'does not register the same root twice, even non-normalized' do
       Dir.mktmpdir do |dir|
         expect do
-          2.times { described_class.register_schema_root(dir) }
+          described_class.register_schema_root(dir)
+          described_class.register_schema_root("#{dir}/.")
         end.to change { described_class.schema_roots.size }.by(1)
       end
     end
@@ -44,6 +45,14 @@ RSpec.describe SEPA::SchemaValidation do
         SEPA.register_schema_root(dir)
 
         expect(described_class.schema_roots).to include(dir)
+      end
+    end
+
+    SEPA::SchemaValidation::SCHEMA_GEMS.each_key do |prefix|
+      it "is called by the #{prefix} entry file required in spec_helper" do
+        root = File.expand_path("../sepa_rator-#{prefix}/lib/schema", __dir__)
+
+        expect(described_class.schema_roots).to include(root)
       end
     end
   end

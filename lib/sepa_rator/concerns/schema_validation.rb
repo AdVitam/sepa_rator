@@ -9,8 +9,8 @@ module SEPA
     DEFAULT_SCHEMA_ROOT = File.expand_path('../../schema', __dir__).freeze
     # So missing-schema errors can name the companion gem to install.
     SCHEMA_GEMS = { 'at' => 'sepa_rator-at', 'dk' => 'sepa_rator-dk', 'sps' => 'sepa_rator-sps' }.freeze
-    # Keyed by resolved absolute path: a root registered after a first
-    # validation must not be shadowed by a stale entry.
+    # Keyed by resolved absolute path so a late-registered root takes
+    # effect immediately.
     SCHEMA_CACHE = {} # rubocop:disable Style/MutableConstant -- intentional cache
     SCHEMA_CACHE_MUTEX = Mutex.new
 
@@ -48,7 +48,7 @@ module SEPA
       return cached if cached
 
       SCHEMA_CACHE_MUTEX.synchronize do
-        SCHEMA_CACHE[path] ||= read_xsd(profile, path)
+        SCHEMA_CACHE[path] ||= read_xsd(path)
       end
     end
 
@@ -59,12 +59,10 @@ module SEPA
         raise_missing_schema!(profile)
     end
 
-    def read_xsd(profile, path)
+    def read_xsd(path)
       # File.open (not File.read) so Nokogiri can resolve xs:include/xs:redefine
       # relative to the XSD file's directory (needed for AT/PSA schemas).
       File.open(path) { |f| Nokogiri::XML::Schema(f) }
-    rescue Errno::ENOENT
-      raise_missing_schema!(profile)
     end
 
     def raise_missing_schema!(profile)

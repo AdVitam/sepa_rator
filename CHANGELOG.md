@@ -6,7 +6,7 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ### Changed
 
-- **BREAKING**: AT/DK/SPS XSD schemas extracted to companion gems `sepa_rator-at`, `sepa_rator-dk` and `sepa_rator-sps` — add the relevant gem(s) to your Gemfile to validate `at.*`/`dk.*`/`sps.*` profiles (core gem shrinks from ~2.8 MB to ~0.8 MB)
+- **BREAKING**: AT/DK/SPS XSD schemas extracted to companion gems `sepa_rator-at`, `sepa_rator-dk` and `sepa_rator-sps` — add the relevant gem(s) to your Gemfile to validate `at.*`/`dk.*`/`sps.*` profiles (core gem shrinks from ~2.8 MB to ~0.8 MB installed, 283 KB to 73 KB packaged)
 
 ### Added
 
