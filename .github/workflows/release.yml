@@ -24,7 +24,7 @@ jobs:
           status=0
           for gem in pkg/*.gem; do
             output=$(gem push "$gem" 2>&1) || {
-              if echo "$output" | grep -qi 'already been pushed'; then
+              if echo "$output" | grep -Eqi 'already been pushed|repushing of gem versions is not allowed'; then
                 echo "skip: $gem already on RubyGems"
               else
                 echo "FAILED: $gem"; echo "$output"; status=1

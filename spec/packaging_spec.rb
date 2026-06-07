@@ -36,8 +36,8 @@ RSpec.describe 'gem packaging' do # rubocop:disable RSpec/DescribeClass
     describe gem_name do
       subject(:gemspec) { load_gemspec(gem_name, gem_name) }
 
-      it "packages every #{prefix}/ XSD referenced by a profile, the entry file and the license" do
-        expect(gemspec.files).to include("lib/sepa_rator/#{prefix}.rb", 'LICENSE.txt')
+      it "packages every #{prefix}/ XSD referenced by a profile, the entry files and the license" do
+        expect(gemspec.files).to include("lib/sepa_rator/#{prefix}.rb", "lib/#{gem_name}.rb", 'LICENSE.txt')
         xsd_paths_for(prefix).each do |xsd_path|
           expect(gemspec.files).to include("lib/schema/#{xsd_path}")
         end
