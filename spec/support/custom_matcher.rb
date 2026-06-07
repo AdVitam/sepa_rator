@@ -5,8 +5,13 @@ require 'nokogiri'
 
 RSpec::Matchers.define :validate_against do |xsd|
   match do |actual|
-    path = xsd.include?('/') ? xsd : "iso/#{xsd}"
-    @schema = File.open("lib/schema/#{path}") { |f| Nokogiri::XML::Schema(f) }
+    relative = xsd.include?('/') ? xsd : "iso/#{xsd}"
+    path = SEPA::SchemaValidation.schema_roots
+                                 .map { |root| File.join(root, relative) }
+                                 .find { |candidate| File.file?(candidate) }
+    raise "XSD #{relative} not found in #{SEPA::SchemaValidation.schema_roots.inspect}" unless path
+
+    @schema = File.open(path) { |f| Nokogiri::XML::Schema(f) }
     @doc = Nokogiri::XML(actual)
 
     expect(@schema).to be_valid(@doc)

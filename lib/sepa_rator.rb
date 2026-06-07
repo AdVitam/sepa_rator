@@ -76,3 +76,10 @@ require 'sepa_rator/profiles/nl'
 
 # Country defaults must load AFTER all variant profiles have been defined.
 require 'sepa_rator/profiles/country_defaults'
+
+module SEPA
+  # Entry point for companion schema gems (sepa_rator-at, …) at require time.
+  def self.register_schema_root(path)
+    SchemaValidation.register_schema_root(path)
+  end
+end

@@ -40,8 +40,20 @@ For the full per-profile detail (XSD, constraints, capabilities), see [DOCUMENTA
 ## Installation
 
 ```ruby
-gem 'sepa_rator', '~> 1.0'
+gem 'sepa_rator', '~> 2.0'
 ```
+
+### Country-specific schemas
+
+The core gem ships only the ISO baseline XSDs, which cover the ISO, EPC, CFONB, GB and NL profiles. Profiles validated against a national XSD variant need a companion gem:
+
+| Profiles | Companion gem |
+|---|---|
+| `at.*` (PSA 🇦🇹) | `gem 'sepa_rator-at'` |
+| `dk.*` (DK/GBIC 🇩🇪) | `gem 'sepa_rator-dk'` |
+| `sps.*` (SPS 🇨🇭) | `gem 'sepa_rator-sps'` |
+
+Bundler auto-requires them; no further setup needed. Without the gem, generating XML for such a profile raises a `SEPA::Error` naming the gem to add. Custom schema directories can also be registered with `SEPA.register_schema_root(path)`.
 
 ## Quick start
 

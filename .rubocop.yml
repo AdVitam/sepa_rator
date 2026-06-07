@@ -91,6 +91,11 @@ Metrics/ModuleLength:
 Naming/VariableNumber:
   Enabled: false
 
+# Gem entry shims must carry the gem's dashed name — it is the require contract.
+Naming/FileName:
+  Exclude:
+    - 'sepa_rator-*/lib/sepa_rator-*.rb'
+
 RSpec/IndexedLet:
   Enabled: false
 

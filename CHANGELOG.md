@@ -2,6 +2,17 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [2.0.0] - 2026-06-07
+
+### Changed
+
+- **BREAKING**: AT/DK/SPS XSD schemas extracted to companion gems `sepa_rator-at`, `sepa_rator-dk` and `sepa_rator-sps` — add the relevant gem(s) to your Gemfile to validate `at.*`/`dk.*`/`sps.*` profiles (core gem shrinks from ~2.8 MB to ~0.8 MB installed, 283 KB to 73 KB packaged)
+
+### Added
+
+- `SEPA.register_schema_root` to register additional XSD schema directories
+- Actionable error naming the missing companion gem when a country XSD is absent
+
 ## [1.3.1] - 2026-04-17
 
 ### Added
