@@ -12,6 +12,13 @@ SimpleCov.start do
 end
 
 require 'sepa_rator'
+
+# Country schema gems live in the monorepo; requiring their entry files
+# exercises the real schema-root registration path used by consumers.
+require_relative '../sepa_rator-at/lib/sepa_rator/at'
+require_relative '../sepa_rator-dk/lib/sepa_rator/dk'
+require_relative '../sepa_rator-sps/lib/sepa_rator/sps'
+
 require 'active_support/testing/time_helpers'
 
 # Requires supporting ruby files with custom matchers and macros, etc,
