@@ -10,11 +10,11 @@ module SEPA
     # Country-specific XSDs live in companion gems; maps an xsd_path prefix
     # to the gem that ships it, for actionable missing-schema errors.
     SCHEMA_GEMS = { 'at' => 'sepa_rator-at', 'dk' => 'sepa_rator-dk', 'sps' => 'sepa_rator-sps' }.freeze
-    # Eagerly-initialised module-level XSD cache, shared across every
-    # class that includes SchemaValidation. Keyed by `profile.xsd_path`
-    # so two profiles that share an ISO schema name but point to
-    # different XSD files (e.g. the ISO baseline and the DK GBIC5
-    # variant) never share a cache entry.
+    # Lazily-populated module-level XSD cache, shared across every class
+    # that includes SchemaValidation. Keyed by the resolved absolute path
+    # so a root registered after a first validation can never be shadowed
+    # by a stale entry, and two XSD files that share a relative name never
+    # share a cache entry.
     SCHEMA_CACHE = {} # rubocop:disable Style/MutableConstant -- intentional cache
     SCHEMA_CACHE_MUTEX = Mutex.new
 
@@ -25,6 +25,8 @@ module SEPA
 
       def register_schema_root(path)
         expanded = File.expand_path(path)
+        raise ArgumentError, "register_schema_root: #{expanded} is not a directory" unless File.directory?(expanded)
+
         schema_roots.unshift(expanded) unless schema_roots.include?(expanded)
       end
     end
@@ -45,21 +47,23 @@ module SEPA
     end
 
     def load_xsd(profile)
-      cache_key = profile.xsd_path
-      cached = SCHEMA_CACHE[cache_key]
+      path = resolve_xsd_path(profile)
+      cached = SCHEMA_CACHE[path]
       return cached if cached
 
       SCHEMA_CACHE_MUTEX.synchronize do
-        SCHEMA_CACHE[cache_key] ||= read_xsd(profile)
+        SCHEMA_CACHE[path] ||= read_xsd(profile, path)
       end
     end
 
-    def read_xsd(profile)
-      path = SchemaValidation.schema_roots
-                             .map { |root| File.join(root, profile.xsd_path) }
-                             .find { |candidate| File.exist?(candidate) }
-      raise_missing_schema!(profile) unless path
+    def resolve_xsd_path(profile)
+      SchemaValidation.schema_roots
+                      .map { |root| File.join(root, profile.xsd_path) }
+                      .find { |candidate| File.file?(candidate) } ||
+        raise_missing_schema!(profile)
+    end
 
+    def read_xsd(profile, path)
       # File.open (not File.read) so Nokogiri can resolve xs:include/xs:redefine
       # relative to the XSD file's directory (needed for AT/PSA schemas).
       File.open(path) { |f| Nokogiri::XML::Schema(f) }
@@ -69,12 +73,10 @@ module SEPA
 
     def raise_missing_schema!(profile)
       gem_name = SCHEMA_GEMS[profile.xsd_path.split('/').first]
-      hint = if gem_name
-               "Add gem '#{gem_name}' to your Gemfile to validate profile #{profile.id}."
-             else
-               "Searched roots: #{SchemaValidation.schema_roots.join(', ')}."
-             end
-      raise SEPA::Error, "[#{profile.id}] XSD file #{profile.xsd_path} not found. #{hint}"
+      hint = gem_name ? " Add gem '#{gem_name}' to your Gemfile to validate profile #{profile.id}." : ''
+      raise SEPA::Error,
+            "[#{profile.id}] XSD file #{profile.xsd_path} not found " \
+            "(searched roots: #{SchemaValidation.schema_roots.join(', ')}).#{hint}"
     end
   end
 end

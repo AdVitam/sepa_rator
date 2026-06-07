@@ -19,6 +19,21 @@ jobs:
       - name: Build gems
         run: bundle exec rake build_all
       - name: Push to RubyGems
-        run: for gem in pkg/*.gem; do gem push "$gem"; done
+        # Push every gem even if one fails, and tolerate re-runs after a
+        # partial release ("already been pushed" is not an error).
+        run: |
+          status=0
+          for gem in pkg/*.gem; do
+            output=$(gem push "$gem" 2>&1) || {
+              if echo "$output" | grep -qi 'already been pushed'; then
+                echo "skip: $gem already on RubyGems"
+              else
+                echo "FAILED: $gem"; echo "$output"; status=1
+              fi
+              continue
+            }
+            echo "$output"
+          done
+          exit $status
         env:
           GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}

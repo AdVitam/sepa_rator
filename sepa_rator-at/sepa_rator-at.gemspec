@@ -19,10 +19,10 @@ Gem::Specification.new do |s|
     'bug_tracker_uri' => 'https://github.com/AdVitam/sepa_rator/issues'
   }
 
-  s.files         = Dir['lib/**/*', 'README.md']
+  s.files         = Dir['lib/**/*', 'LICENSE.txt', 'README.md']
   s.require_paths = ['lib']
 
   s.required_ruby_version = '>= 3.2'
 
-  s.add_dependency 'sepa_rator', SEPA::VERSION
+  s.add_dependency 'sepa_rator', '~> 2.0'
 end

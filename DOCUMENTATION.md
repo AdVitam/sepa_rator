@@ -734,11 +734,15 @@ Countries with dedicated profiles: `:fr` (CFONB), `:de` (DK), `:ch` (SPS), `:gb`
 
 ### Country-specific XSDs
 
-The profiles under `Profiles::DK` validate against vendored DK GBIC XSDs
-(`lib/schema/dk/`). The profiles under `Profiles::SPS` validate against
-vendored SPS XSDs (`lib/schema/sps/`). The profiles under `Profiles::AT`
-validate against vendored PSA/Stuzza XSDs (`lib/schema/at/`); the original
-Austrian XSDs use XSD 1.1 `xs:assert` elements which have been stripped
-for Nokogiri/libxml2 compatibility — the cross-field validations are
-handled in Ruby. GB profiles use the ISO baseline XSDs — no UK-specific
-schema exists.
+Country-specific XSDs ship in companion gems built from this repository:
+`sepa_rator-at` (PSA/Stuzza, used by `Profiles::AT`), `sepa_rator-dk`
+(DK GBIC, used by `Profiles::DK`) and `sepa_rator-sps` (Swiss Payment
+Standards, used by `Profiles::SPS`). Bundler auto-requires their entry
+files (`sepa_rator/at`, …), which register the gem's schema directory via
+`SEPA.register_schema_root`. Generating XML for one of these profiles
+without the companion gem raises a `SEPA::Error` naming the gem to add.
+
+The original Austrian XSDs use XSD 1.1 `xs:assert` elements which have
+been stripped for Nokogiri/libxml2 compatibility — the cross-field
+validations are handled in Ruby. GB and NL profiles use the ISO baseline
+XSDs shipped with the core gem — no country-specific schema exists.

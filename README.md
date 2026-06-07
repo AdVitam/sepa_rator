@@ -53,7 +53,7 @@ The core gem ships only the ISO baseline XSDs, which cover the ISO, EPC, CFONB, 
 | `dk.*` (DK/GBIC 🇩🇪) | `gem 'sepa_rator-dk'` |
 | `sps.*` (SPS 🇨🇭) | `gem 'sepa_rator-sps'` |
 
-Bundler auto-requires them; no further setup needed. Without the gem, building a message for such a profile raises a `SEPA::Error` naming the gem to add. Custom schema directories can also be registered with `SEPA.register_schema_root(path)`.
+Bundler auto-requires them; no further setup needed. Without the gem, generating XML for such a profile raises a `SEPA::Error` naming the gem to add. Custom schema directories can also be registered with `SEPA.register_schema_root(path)`.
 
 ## Quick start
 

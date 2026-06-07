@@ -8,7 +8,7 @@ RSpec::Matchers.define :validate_against do |xsd|
     relative = xsd.include?('/') ? xsd : "iso/#{xsd}"
     path = SEPA::SchemaValidation.schema_roots
                                  .map { |root| File.join(root, relative) }
-                                 .find { |candidate| File.exist?(candidate) }
+                                 .find { |candidate| File.file?(candidate) }
     raise "XSD #{relative} not found in #{SEPA::SchemaValidation.schema_roots.inspect}" unless path
 
     @schema = File.open(path) { |f| Nokogiri::XML::Schema(f) }
