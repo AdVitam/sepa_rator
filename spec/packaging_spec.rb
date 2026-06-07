@@ -2,12 +2,11 @@
 
 require 'spec_helper'
 
-# Guards the gemspec file globs: the suite loads schemas straight from the
-# monorepo, so a broken `s.files` would ship an empty gem with specs green.
+# The suite loads schemas straight from the monorepo, so a broken
+# `s.files` glob would ship an empty gem with specs green.
 RSpec.describe 'gem packaging' do # rubocop:disable RSpec/DescribeClass
   def load_gemspec(dir, name)
-    # gem build runs from the gemspec's directory; Dir[] globs in the
-    # gemspec resolve against the CWD, so mirror that here.
+    # Dir[] globs in gemspecs resolve against the CWD, like `gem build`.
     root = File.expand_path('..', __dir__)
     Dir.chdir(File.join(root, dir)) { Gem::Specification.load("#{name}.gemspec") }
   end

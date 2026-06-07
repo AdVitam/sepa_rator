@@ -19,8 +19,7 @@ jobs:
       - name: Build gems
         run: bundle exec rake build_all
       - name: Push to RubyGems
-        # Push every gem even if one fails, and tolerate re-runs after a
-        # partial release ("already been pushed" is not an error).
+        # Re-runnable after a partial release: "already been pushed" is not an error.
         run: |
           status=0
           for gem in pkg/*.gem; do

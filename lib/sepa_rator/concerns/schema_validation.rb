@@ -7,14 +7,10 @@ module SEPA
     extend ActiveSupport::Concern
 
     DEFAULT_SCHEMA_ROOT = File.expand_path('../../schema', __dir__).freeze
-    # Country-specific XSDs live in companion gems; maps an xsd_path prefix
-    # to the gem that ships it, for actionable missing-schema errors.
+    # So missing-schema errors can name the companion gem to install.
     SCHEMA_GEMS = { 'at' => 'sepa_rator-at', 'dk' => 'sepa_rator-dk', 'sps' => 'sepa_rator-sps' }.freeze
-    # Lazily-populated module-level XSD cache, shared across every class
-    # that includes SchemaValidation. Keyed by the resolved absolute path
-    # so a root registered after a first validation can never be shadowed
-    # by a stale entry, and two XSD files that share a relative name never
-    # share a cache entry.
+    # Keyed by resolved absolute path: a root registered after a first
+    # validation must not be shadowed by a stale entry.
     SCHEMA_CACHE = {} # rubocop:disable Style/MutableConstant -- intentional cache
     SCHEMA_CACHE_MUTEX = Mutex.new
 

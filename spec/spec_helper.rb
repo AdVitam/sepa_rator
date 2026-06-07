@@ -13,8 +13,7 @@ end
 
 require 'sepa_rator'
 
-# Country schema gems live in the monorepo; requiring their entry files
-# exercises the real schema-root registration path used by consumers.
+# Via their entry files, so the real schema-root registration path is tested.
 require_relative '../sepa_rator-at/lib/sepa_rator/at'
 require_relative '../sepa_rator-dk/lib/sepa_rator/dk'
 require_relative '../sepa_rator-sps/lib/sepa_rator/sps'

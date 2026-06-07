@@ -78,8 +78,7 @@ require 'sepa_rator/profiles/nl'
 require 'sepa_rator/profiles/country_defaults'
 
 module SEPA
-  # Companion schema gems (sepa_rator-at, …) call this at require time to
-  # make their vendored XSD directory resolvable by profile.xsd_path.
+  # Entry point for companion schema gems (sepa_rator-at, …) at require time.
   def self.register_schema_root(path)
     SchemaValidation.register_schema_root(path)
   end
