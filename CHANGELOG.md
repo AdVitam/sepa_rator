@@ -2,6 +2,12 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [Unreleased]
+
+### Changed
+
+- Bump simplecov to 1.0.0, migrate `add_filter` to `skip`
+
 ## [2.0.0] - 2026-06-07
 
 ### Changed
