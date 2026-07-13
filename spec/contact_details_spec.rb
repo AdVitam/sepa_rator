@@ -182,19 +182,19 @@ RSpec.describe SEPA::ContactDetails do
     it 'does not accept entry without channel_type' do
       cd = SEPA::ContactDetails.new(other_contacts: [{ id: 'user123' }])
       expect(cd).not_to be_valid
-      expect(cd.errors[:other_contacts].first).to match(/entry 0 must have :channel_type/)
+      expect(cd.errors[:other_contacts].first).to include('entry 0 must have :channel_type')
     end
 
     it 'does not accept channel_type exceeding 4 characters' do
       cd = SEPA::ContactDetails.new(other_contacts: [{ channel_type: 'ABCDE' }])
       expect(cd).not_to be_valid
-      expect(cd.errors[:other_contacts].first).to match(/channel_type exceeds 4 characters/)
+      expect(cd.errors[:other_contacts].first).to include('channel_type exceeds 4 characters')
     end
 
     it 'does not accept id exceeding 128 characters' do
       cd = SEPA::ContactDetails.new(other_contacts: [{ channel_type: 'SKPE', id: 'X' * 129 }])
       expect(cd).not_to be_valid
-      expect(cd.errors[:other_contacts].first).to match(/id exceeds 128 characters/)
+      expect(cd.errors[:other_contacts].first).to include('id exceeds 128 characters')
     end
 
     it 'validates multiple entries independently' do
