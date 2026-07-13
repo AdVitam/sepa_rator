@@ -7,6 +7,7 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 ### Changed
 
 - Bump simplecov to 1.0.0, migrate `add_filter` to `skip`
+- Bundle update (rubocop, rubocop-rspec, nokogiri, ibandit, i18n and other transitive deps); migrate simple regex matchers to `include` (rubocop-rspec)
 
 ## [2.0.0] - 2026-06-07
 
