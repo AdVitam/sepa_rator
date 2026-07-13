@@ -242,7 +242,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ authority: { name: 'X' * 141 } }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/authority name exceeds 140/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('authority name exceeds 140')
     end
 
     it 'validates authority country code format' do
@@ -250,7 +250,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ authority: { country: 'DEU' } }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/authority country must be a 2-letter code/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('authority country must be a 2-letter code')
     end
 
     it 'validates detail date is a Date' do
@@ -258,7 +258,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ date: '2025-01-01' }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/date must be a Date/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('date must be a Date')
     end
 
     it 'validates detail country code format' do
@@ -266,7 +266,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ country: 'DEU' }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/country must be a 2-letter code/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('country must be a 2-letter code')
     end
 
     it 'validates detail amount requires value and currency' do
@@ -274,7 +274,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ amount: { value: 100 } }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount must have :value and :currency/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('amount must have :value and :currency')
     end
 
     it 'validates detail amount currency format' do
@@ -282,7 +282,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ amount: { value: 100, currency: 'EU' } }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount currency invalid/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('amount currency invalid')
     end
 
     it 'validates detail amount value is numeric' do
@@ -290,7 +290,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ amount: { value: 'abc', currency: 'EUR' } }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/amount value must be numeric/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('amount value must be numeric')
     end
 
     it 'validates type and type_proprietary are mutually exclusive' do
@@ -298,7 +298,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ type: 'A', type_proprietary: 'B' }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/mutually exclusive/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('mutually exclusive')
     end
 
     it 'validates detail type max 35 characters' do
@@ -306,7 +306,7 @@ RSpec.describe SEPA::CreditTransferTransaction do
         name: 'Test AG', iban: SEPA::TestData::CT_TX_IBAN, amount: 100,
         regulatory_reportings: [{ details: [{ type: 'X' * 36 }] }]
       )
-      expect(txn.errors_on(:regulatory_reportings).join).to match(/type too long/)
+      expect(txn.errors_on(:regulatory_reportings).join).to include('type too long')
     end
 
     it 'accepts valid regulatory reporting with all detail fields' do
