@@ -8,8 +8,10 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: ruby/setup-ruby@v1
@@ -18,6 +20,8 @@ jobs:
           bundler-cache: true
       - name: Build gems
         run: bundle exec rake build_all
+      # Credentials expire 15 minutes after this step, so build all gems first.
+      - uses: rubygems/configure-rubygems-credentials@6861877652452567c1a007a50badad3d316fc9ba
       - name: Push to RubyGems
         # Re-runnable after a partial release: "already been pushed" is not an error.
         run: |
@@ -34,5 +38,3 @@ jobs:
             echo "$output"
           done
           exit $status
-        env:
-          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
