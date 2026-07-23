@@ -38,3 +38,17 @@ jobs:
             echo "$output"
           done
           exit $status
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          notes=$(awk -v v="${TAG#v}" '
+            $0 ~ "^## \\[" v "\\]" {grab=1; next}
+            grab && /^## \[/ {exit}
+            grab && /^\[[^]]+\]:/ {exit}
+            grab {print}
+          ' CHANGELOG.md)
+          gh release create "$TAG" --title "$TAG" \
+            --notes "${notes:-See [CHANGELOG.md](CHANGELOG.md).}"
