@@ -2,6 +2,12 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [Unreleased]
+
+### Changed
+
+- Align the development and release toolchains with Ruby 4.0
+
 ## [2.0.1] - 2026-07-23
 
 ### Changed
