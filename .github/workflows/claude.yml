@@ -44,7 +44,7 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           settings: '{"includeCoAuthoredBy": false}'
           claude_args: >-
-            --model claude-opus-5-5
+            --model claude-opus-5
             --append-system-prompt "Réponds en français.
             Respecte le CLAUDE.md du dépôt.
             Avant de proposer une correction, lis les arbitrages déjà rendus sur la PR ou sur le ticket : ne rouvre pas un point tranché sans élément neuf.
