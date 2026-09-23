@@ -1,0 +1,102 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: claude-review-${{ github.repository }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          settings: '{"includeCoAuthoredBy": false}'
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            AVANT TOUTE ANALYSE - lis les arbitrages déjà rendus sur cette PR :
+              gh pr view ${{ github.event.pull_request.number }} --comments
+              gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/comments --jq '.[] | "\(.path):\(.line) [\(.user.login)] \(.body)"'
+
+            Le nombre de tes propres revues déjà postées + 1 = le ROUND courant. Il pilote la
+            règle 4. Ne re-signale pas un point déjà arbitré, sauf élément neuf ; une régression
+            ou un problème voisin se signale normalement.
+
+            CHERCHE :
+            - Les bugs et erreurs de logique
+            - Les failles de sécurité
+            - Les régressions par rapport à master
+            - Le code mort, le code inutile, la complexité qui ne protège aucun cas réel
+            - Les optimisations dont le gain est mesurable
+            - Les violations des conventions du projet (CLAUDE.md) ou du langage/framework
+
+            RÈGLE 1 - Signale la classe, jamais l'instance.
+            Avant de poster un finding, cherche toutes ses autres occurrences dans le diff et
+            énumère-les dans le même finding (`+N: fichier:ligne`). Un finding qui n'en cite
+            qu'une alors que la classe en compte d'autres est un finding raté : il coûtera un
+            round de plus pour chaque occurrence oubliée. Vérifie aussi les cas symétriques
+            (lecture/écriture, entrée/sortie, création/suppression) et les fichiers frères.
+            Si un round précédent a corrigé un défaut de la même classe, dis-le explicitement :
+            c'est un échec de généralisation, pas un finding neuf.
+
+            RÈGLE 2 - Preuve obligatoire.
+            Un finding n'est posté que si tu peux décrire un scénario d'échec concret : entrée
+            ou état précis, puis comportement faux, crash ou faille. Pas de scénario = pas de
+            finding. Cite les fichiers qui l'établissent.
+
+            RÈGLE 3 - Retirer avant d'ajouter.
+            Le correctif proposé doit préférer la suppression ou le resserrement d'une garde
+            existante à l'ajout de code. Signale activement la complexité introduite par les
+            rounds précédents : garde jamais atteinte, option sans appelant, test qui verrouille
+            un comportement hypothétique, résidu d'une suppression que tu as toi-même demandée.
+            Ne demande jamais de complexité pour un cas de bord qui n'arrive pas en pratique.
+
+            RÈGLE 4 - Extinction des suggestions.
+            À partir du round 4, ne poste plus que des 🔴 CRITIQUE et 🟠 IMPORTANT. Les
+            🟡 SUGGESTION sont abandonnées, pas reportées.
+
+            RÈGLE 5 - Verdict obligatoire.
+            Termine toujours par un verdict, posté en un seul `gh pr comment`. Aucun 🔴 ni 🟠
+            trouvé => la PR est bonne à merger, dis-le. Ne cherche pas à remplir un quota : une
+            revue sans finding est un résultat valide et attendu.
+
+            AUTRES RÈGLES :
+            - Classe par criticité (critique → important → suggestion)
+            - Ne commente PAS ce qui est bien fait
+            - Sois direct : problème → solution
+            - Réponds en français
+
+            Format d'un finding :
+            **[🔴 CRITIQUE|🟠 IMPORTANT|🟡 SUGGESTION]** `fichier:ligne` (+N: `autre:ligne`) - Problème, scénario d'échec, correction.
+
+            POSTER - un commentaire inline par finding, jamais une série de commentaires généraux :
+
+              mcp__github_inline_comment__create_inline_comment
+
+            Ancre chaque finding sur son `path` et sa `line`, côté droit du diff, avec
+            `confirmed: true` : c'est là qu'il peut être résolu, et que le round suivant verra
+            l'arbitrage rendu. Vérifie chaque `line` contre `gh pr diff` avant de poster : une
+            ligne hors diff ne peut pas être ancrée. Les rares findings dont la ligne
+            n'appartient pas au diff vont dans le verdict - n'y bascule jamais un finding par
+            confort.
+
+          claude_args: '--model claude-opus-5-5 --allowed-tools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*)"'
