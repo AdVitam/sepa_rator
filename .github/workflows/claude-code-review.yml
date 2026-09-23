@@ -99,4 +99,4 @@ jobs:
             n'appartient pas au diff vont dans le verdict - n'y bascule jamais un finding par
             confort.
 
-          claude_args: '--model claude-opus-5-5 --allowed-tools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*)"'
+          claude_args: '--model claude-opus-5 --allowed-tools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh api repos/*)"'
