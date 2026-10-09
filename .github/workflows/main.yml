@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         ruby: [ '3.2', '3.3', '3.4', '4.0' ]
-        rails: [ '7.0', '7.1', '8.1' ]
+        rails: [ '7.0', '7.1', '8.0', '8.1' ]
         exclude:
           - ruby: '4.0'
             rails: '7.0'
@@ -30,6 +30,25 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true # 'bundle install' and cache gems
+
+    - name: RSpec
+      run: bundle exec rake
+
+  minimum:
+    runs-on: ubuntu-latest
+
+    name: Minimum dependency versions
+    env:
+      BUNDLE_GEMFILE: gemfiles/minimum.gemfile
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '3.2'
         bundler-cache: true # 'bundle install' and cache gems
 
     - name: RSpec

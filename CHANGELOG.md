@@ -4,9 +4,20 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-10-09
+
 ### Changed
 
 - Align the development and release toolchains with Ruby 4.0
+- Bound runtime dependencies below the next major: `ibandit < 2`, `nokogiri < 2` (`activemodel < 9` unchanged)
+- Raise the declared minimums to the oldest versions that pass the test suite: `activemodel >= 7.0.1` (7.0.0 fails to load on Ruby 3.2), `ibandit >= 1.0.1` (1.0.0 raises `ArgumentError` on `valid?`), `nokogiri >= 1.13.5` (older releases cannot compile the SPS XSD pattern)
+- ibandit 1.36 changes the German "invalid check digits" error message
+
+### Added
+
+- CI job testing the minimum supported dependency versions (`gemfiles/minimum.gemfile`, Ruby 3.2)
+- Rails 8.0 in the CI matrix
+- Dependabot for bundler and GitHub Actions
 
 ## [2.0.1] - 2026-07-23
 

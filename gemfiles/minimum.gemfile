@@ -1,0 +1,22 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gemspec path: '..'
+
+Bundler.load_gemspec(File.expand_path('../sepa_rator.gemspec', __dir__)).runtime_dependencies.each do |dep|
+  floor = dep.requirement.requirements.find { |op, _| op == '>=' }
+  gem dep.name, "= #{floor.last}" if floor
+end
+
+# activesupport at the 7.0 floor lacks `require 'logger'`, which concurrent-ruby >= 1.3.5 no longer loads
+gem 'concurrent-ruby', '1.3.4'
+
+group :development, :test do
+  gem 'rake'
+  gem 'rspec'
+end
+
+group :test do
+  gem 'simplecov', require: false
+end
