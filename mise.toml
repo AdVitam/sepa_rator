@@ -1,2 +1,7 @@
+min_version = "2026.9.7"
+
 [tools]
-ruby = "4.0.6"
+ruby = "4.0"
+
+[settings]
+lockfile_platforms = ["linux-x64"]
