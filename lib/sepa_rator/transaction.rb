@@ -3,6 +3,7 @@
 module SEPA
   class Transaction
     include ActiveModel::Model
+    include CharsetApplicable
     extend Converter
 
     # Convention SEPA: 1999-01-01 signifies "execute as soon as possible" (ASAP).
@@ -31,9 +32,10 @@ module SEPA
                   :ultimate_debtor_name,
                   :ultimate_creditor_name
 
-    convert :name, :instruction, :reference, :remittance_information, :structured_remittance_information,
-            :structured_remittance_reference_type, :structured_remittance_issuer,
-            :purpose_code, :ultimate_debtor_name, :ultimate_creditor_name, to: :text
+    convert :name, :remittance_information, :structured_remittance_issuer,
+            :ultimate_debtor_name, :ultimate_creditor_name, to: :text
+    convert :instruction, :reference, :structured_remittance_information, to: :identifier
+    convert :structured_remittance_reference_type, :purpose_code, to: :code
     convert :amount, to: :decimal
 
     validates_length_of :name, within: 1..70
@@ -81,6 +83,12 @@ module SEPA
       self.reference ||= 'NOTPROVIDED'
       self.batch_booking = true if batch_booking.nil?
       self.currency ||= 'EUR'
+    end
+
+    def apply_charset(charset)
+      super
+      @additional_remittance_information = additional_remittance_information.map { |info| charset.text(info) } if additional_remittance_information.is_a?(Array)
+      self
     end
 
     # @return [Boolean] whether this transaction can be rendered under the

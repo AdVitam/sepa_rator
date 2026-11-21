@@ -11,6 +11,7 @@ module SEPA
       VALIDATORS = [Validators::DK::MinAmount].freeze
 
       FEATURES = {
+        charset: Charset::DK,
         min_amount: BigDecimal('0.01'),
         requires_structured_address: true
       }.freeze
@@ -18,6 +19,7 @@ module SEPA
       # GBIC3 (v03/v02) PostalAddressSEPA only supports Ctry + AdrLine,
       # not structured fields — so we must not require structured addresses.
       LEGACY_FEATURES = {
+        charset: Charset::DK,
         min_amount: BigDecimal('0.01')
       }.freeze
 

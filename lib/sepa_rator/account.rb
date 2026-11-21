@@ -3,6 +3,7 @@
 module SEPA
   class Account
     include ActiveModel::Model
+    include CharsetApplicable
     extend Converter
 
     attr_accessor :name, :iban, :bic, :address, :agent_lei, :contact_details

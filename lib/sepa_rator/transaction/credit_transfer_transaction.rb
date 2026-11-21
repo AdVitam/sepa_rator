@@ -3,6 +3,7 @@
 module SEPA
   class CreditTransferTransaction < Transaction
     include RegulatoryReportingValidator
+    include RegulatoryReportingCharset
 
     attr_accessor :service_level,
                   :category_purpose,
@@ -35,8 +36,8 @@ module SEPA
     validates_inclusion_of :charge_bearer, in: CHARGE_BEARERS, allow_nil: true
     validates :creditor_address, :creditor_contact_details, nested_model: true, allow_nil: true
 
-    convert :debtor_agent_instruction, :instruction_for_debtor_agent,
-            :credit_transfer_mandate_id, to: :text
+    convert :debtor_agent_instruction, :instruction_for_debtor_agent, to: :text
+    convert :credit_transfer_mandate_id, to: :identifier
 
     validates_length_of :debtor_agent_instruction, within: 1..140, allow_nil: true
     validates_length_of :instruction_for_debtor_agent, within: 1..140, allow_nil: true
@@ -60,6 +61,13 @@ module SEPA
       self.service_level ||= 'SEPA' if currency == 'EUR'
     end
 
+    def apply_charset(charset)
+      super
+      @regulatory_reportings = charset_regulatory_reportings(regulatory_reportings, charset)
+      @instructions_for_creditor_agent = charset_creditor_agent_instructions(charset)
+      self
+    end
+
     def credit_transfer_mandate?
       credit_transfer_mandate_id || credit_transfer_mandate_date_of_signature || credit_transfer_mandate_frequency
     end
@@ -81,6 +89,16 @@ module SEPA
     end
 
     private
+
+    def charset_creditor_agent_instructions(charset)
+      return instructions_for_creditor_agent unless instructions_for_creditor_agent.is_a?(Array)
+
+      instructions_for_creditor_agent.map do |instruction|
+        next instruction unless instruction.is_a?(Hash) && instruction[:instruction_info]
+
+        instruction.merge(instruction_info: charset.text(instruction[:instruction_info]))
+      end
+    end
 
     def requires_capability?(field_present, profile, capability)
       !field_present || profile.supports?(capability)

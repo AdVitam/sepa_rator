@@ -73,6 +73,16 @@ RSpec.describe SEPA::Account do
     end
   end
 
+  describe 'address country code' do
+    it 'rejects a lowercase country code' do
+      expect(SEPA::Address.new(country_code: 'fr')).not_to be_valid
+    end
+
+    it 'accepts an uppercase country code' do
+      expect(SEPA::Address.new(country_code: 'FR')).to be_valid
+    end
+  end
+
   describe :agent_lei do
     it 'accepts valid LEI' do
       expect(SEPA::Account).to accept(nil, SEPA::TestData::LEI, for: :agent_lei)

@@ -178,7 +178,7 @@ RSpec.describe SEPA::ProfileFeatures do
       features = described_class.default
       expect(features.bic_tag).to eq :BICFI
       expect(features.wrap_date).to be true
-      expect(features.charset).to eq :iso_latin
+      expect(features.charset).to eq SEPA::Charset::ISO
       expect(features.extras).to eq({})
     end
 
@@ -360,5 +360,28 @@ RSpec.describe SEPA::StageList do
 
   it 'replaces the whole list with an Array' do
     expect(described_class.merge([a, b], [c])).to eq [c]
+  end
+end
+
+RSpec.describe SEPA::ProfileRegistry, '.all' do
+  let(:charset_by_prefix) do
+    {
+      'iso.pain.001.002' => SEPA::Charset::EPC, 'iso.pain.001.003' => SEPA::Charset::EPC,
+      'iso.pain.008.002' => SEPA::Charset::EPC, 'iso.pain.008.003' => SEPA::Charset::EPC,
+      'iso.' => SEPA::Charset::ISO, 'epc.' => SEPA::Charset::EPC, 'cfonb.' => SEPA::Charset::EPC,
+      'nl.' => SEPA::Charset::EPC, 'gb.' => SEPA::Charset::EPC, 'dk.' => SEPA::Charset::DK,
+      'at.' => SEPA::Charset::AT, 'sps.' => SEPA::Charset::SPS
+    }
+  end
+
+  it 'gives every registered profile the charset of its family' do
+    profiles = described_class.all
+    expect(profiles.size).to be > 40
+
+    profiles.each do |profile|
+      expected = charset_by_prefix.find { |prefix, _| profile.id.start_with?(prefix) }&.last
+
+      expect(profile.features.charset).to eq(expected), "#{profile.id} uses #{profile.features.charset.id}"
+    end
   end
 end

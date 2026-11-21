@@ -14,36 +14,35 @@ module SEPA
     #
     # EPC sits between ISO and the national layers (CFONB, DK/DFÜ). Country
     # profiles that carry SEPA semantics compose from EPC, not from ISO.
-    #
-    # The SEPA character set is enforced at assignment time by the `Converter`
-    # DSL (text sanitisation), so no dedicated validator is needed here.
     module EPC
+      FEATURES = { charset: Charset::EPC }.freeze
+
       # ─── SEPA Credit Transfer ────────────────────────────────────────────
 
       SCT_03 = ProfileRegistry.register(
-        ISO::SCT_03.with(id: 'epc.sct.03', accept_transaction: ISO::CT_EPC_RULES)
+        ISO::SCT_03.with(id: 'epc.sct.03', features: FEATURES, accept_transaction: ISO::CT_EPC_RULES)
       )
 
       SCT_09 = ProfileRegistry.register(
-        ISO::SCT_09.with(id: 'epc.sct.09', accept_transaction: ISO::CT_EPC_RULES)
+        ISO::SCT_09.with(id: 'epc.sct.09', features: FEATURES, accept_transaction: ISO::CT_EPC_RULES)
       )
 
       SCT_13 = ProfileRegistry.register(
-        ISO::SCT_13.with(id: 'epc.sct.13', accept_transaction: ISO::CT_EPC_RULES)
+        ISO::SCT_13.with(id: 'epc.sct.13', features: FEATURES, accept_transaction: ISO::CT_EPC_RULES)
       )
 
       # ─── SEPA Direct Debit ───────────────────────────────────────────────
 
       SDD_02 = ProfileRegistry.register(
-        ISO::SDD_02.with(id: 'epc.sdd.02', accept_transaction: ISO::DD_EPC_RULES)
+        ISO::SDD_02.with(id: 'epc.sdd.02', features: FEATURES, accept_transaction: ISO::DD_EPC_RULES)
       )
 
       SDD_08 = ProfileRegistry.register(
-        ISO::SDD_08.with(id: 'epc.sdd.08', accept_transaction: ISO::DD_EPC_RULES)
+        ISO::SDD_08.with(id: 'epc.sdd.08', features: FEATURES, accept_transaction: ISO::DD_EPC_RULES)
       )
 
       SDD_12 = ProfileRegistry.register(
-        ISO::SDD_12.with(id: 'epc.sdd.12', accept_transaction: ISO::DD_EPC_RULES)
+        ISO::SDD_12.with(id: 'epc.sdd.12', features: FEATURES, accept_transaction: ISO::DD_EPC_RULES)
       )
     end
   end

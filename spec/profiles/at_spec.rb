@@ -45,6 +45,13 @@ RSpec.describe SEPA::Profiles::AT do
       end.to raise_error(SEPA::ValidationError, /structured fields/)
     end
 
+    it 'converts texts with the AT charset' do
+      xml = charset_credit_transfer_xml(profile, country_code: 'AT')
+
+      expect(profile.features.charset).to eq SEPA::Charset::AT
+      expect_charset_xml(xml, name: 'Jose Garcia & Co.', remittance: 'Cafe e', reference: 'Ref-1')
+    end
+
     it 'generates valid XML against the AT PSA XSD' do
       sct = fresh_sct
       sct.add_transaction(credit_transfer_transaction(

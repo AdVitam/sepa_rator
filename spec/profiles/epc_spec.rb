@@ -51,6 +51,13 @@ RSpec.describe SEPA::Profiles::EPC do
       expect { sct.to_xml }.to raise_error(SEPA::ValidationError, /not compatible/)
     end
 
+    it 'converts texts with the EPC charset' do
+      xml = charset_credit_transfer_xml(profile, country_code: 'DE')
+
+      expect(profile.features.charset).to eq SEPA::Charset::EPC
+      expect_charset_xml(xml, name: 'Jose Garcia + Co.', remittance: 'Cafe e', reference: 'Ref-1')
+    end
+
     it 'generates valid XML against the ISO v09 XSD' do
       sct = SEPA::CreditTransfer.new(profile: profile, name: SEPA::TestData::DEBTOR_NAME,
                                      bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)
@@ -88,6 +95,35 @@ RSpec.describe SEPA::Profiles::EPC do
       sdd = direct_debit_message(profile: profile)
       sdd.add_transaction(direct_debit_transaction)
       expect(sdd.to_xml).to validate_against('pain.008.001.08.xsd')
+    end
+
+    it 'converts texts with the EPC charset' do
+      sdd = direct_debit_message(profile: profile, name: 'Müller & Söhne_GmbH')
+      sdd.add_transaction(direct_debit_transaction(name: 'Zoë & Co'))
+      xml = sdd.to_xml
+
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Muller + Sohne-GmbH')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/Nm', 'Zoe + Co')
+    end
+
+    it 'converts a creditor_account override modified after admission without touching the caller object' do
+      override = SEPA::CreditorAccount.new(name: 'Creditor Inc.', bic: 'RABONL2U', iban: 'NL08RABO0135742099',
+                                           creditor_identifier: 'NL53ZZZ091734220000')
+      sdd = direct_debit_message(profile: profile)
+      sdd.add_transaction(direct_debit_transaction(creditor_account: override))
+      sdd.transactions.first.creditor_account.name = 'A & B_C'
+
+      expect(sdd.to_xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'A + B-C')
+      expect(override.name).to eq 'Creditor Inc.'
+    end
+
+    it 'groups transactions sharing one creditor_account override into a single PmtInf' do
+      override = SEPA::CreditorAccount.new(name: 'Creditor Inc.', bic: 'RABONL2U', iban: 'NL08RABO0135742099',
+                                           creditor_identifier: 'NL53ZZZ091734220000')
+      sdd = direct_debit_message(profile: profile)
+      2.times { sdd.add_transaction(direct_debit_transaction(creditor_account: override)) }
+
+      expect(Nokogiri::XML(sdd.to_xml).remove_namespaces!.xpath('//PmtInf').size).to eq 1
     end
   end
 

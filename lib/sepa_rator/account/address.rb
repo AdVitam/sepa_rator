@@ -3,6 +3,7 @@
 module SEPA
   class Address
     include ActiveModel::Model
+    include CharsetApplicable
     extend Converter
 
     # PostalAddress6 fields (all schemas)
@@ -31,7 +32,7 @@ module SEPA
     convert :building_number,      to: :text
     convert :post_code,            to: :text
     convert :town_name,            to: :text
-    convert :country_code,         to: :text
+    convert :country_code,         to: :code
     convert :address_line1,        to: :text
     convert :address_line2,        to: :text
     convert :department,           to: :text
@@ -52,7 +53,7 @@ module SEPA
     validates_length_of :building_number,      maximum: 16
     validates_length_of :post_code,            maximum: 16
     validates_length_of :town_name,            maximum: 140
-    validates_length_of :country_code,         is: 2
+    validates_format_of :country_code,         with: /\A[A-Z]{2}\z/
     validates_length_of :address_line1,        maximum: 70
     validates_length_of :address_line2,        maximum: 70
     validates_length_of :department,           maximum: 70,  allow_nil: true

@@ -290,8 +290,8 @@ RSpec.describe SEPA::DirectDebit do
 
         it 'contains <Dbtr>' do
           expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/Dbtr/Nm',
-                                  'Zahlemann + Söhne GbR')
-          expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier + Schulze oHG')
+                                  'Zahlemann & Söhne GbR')
+          expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/Dbtr/Nm', 'Meier & Schulze oHG')
         end
 
         it 'contains <DbtrAcct>' do
@@ -305,7 +305,7 @@ RSpec.describe SEPA::DirectDebit do
           expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[1]/RmtInf/Ustrd',
                                   'Unsere Rechnung vom 10.08.2013')
           expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/RmtInf/Ustrd',
-                                  'Vielen Dank für Ihren Einkauf')
+                                  'Vielen Dank für Ihren Einkauf!')
         end
       end
 

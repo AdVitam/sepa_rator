@@ -88,6 +88,13 @@ RSpec.describe SEPA::Profiles::SPS do
       end.not_to raise_error
     end
 
+    it 'converts texts with the SPS charset' do
+      xml = charset_credit_transfer_xml(profile, country_code: 'CH')
+
+      expect(profile.features.charset).to eq SEPA::Charset::SPS
+      expect_charset_xml(xml, name: 'José García & Co.', remittance: 'Café é', reference: 'Ref-1')
+    end
+
     it 'generates valid XML against the Swiss XSD' do
       sct = fresh_sct
       sct.add_transaction(credit_transfer_transaction(

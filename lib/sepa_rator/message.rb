@@ -10,8 +10,7 @@ module SEPA
     # Root element inside <Document>. Overridden by subclasses.
     XML_MAIN_TAG = nil
 
-    attr_reader :account, :grouped_transactions, :profile, :initiation_source_name
-    attr_accessor :initiation_source_provider
+    attr_reader :account, :grouped_transactions, :profile, :initiation_source_name, :initiation_source_provider
 
     def initiation_source_name=(value)
       if value && !profile.supports?(:initiation_source)
@@ -19,7 +18,11 @@ module SEPA
               "[#{profile.id}] initiation_source_name is set but the profile does not support InitnSrc"
       end
 
-      @initiation_source_name = value
+      @initiation_source_name = charset.text(value)
+    end
+
+    def initiation_source_provider=(value)
+      @initiation_source_provider = charset.text(value)
     end
 
     validates_presence_of :transactions
@@ -48,7 +51,7 @@ module SEPA
     def initialize(country: nil, version: :latest, profile: nil, **account_options)
       @profile = resolve_profile(country: country, version: version, profile: profile)
       @grouped_transactions = {}
-      @account = account_class.new(account_options)
+      @account = admit(account_class.new(account_options))
       validate_message_against_profile!
       validate_account_against_profile!(@account)
     end
@@ -60,14 +63,13 @@ module SEPA
     # @param options [Hash] transaction attributes
     # @raise [SEPA::ValidationError] if the transaction is invalid
     def add_transaction(options)
-      transaction = transaction_class.new(options)
+      transaction = admit(transaction_class.new(options))
       raise SEPA::ValidationError, transaction.errors.full_messages.join("\n") unless transaction.valid?
 
       validate_transaction_against_profile!(transaction)
 
       group = transaction_group(transaction)
-      @grouped_transactions[group] ||= []
-      @grouped_transactions[group] << transaction
+      (@grouped_transactions[group] ||= []) << transaction
       @transactions = nil
     end
 
@@ -82,10 +84,11 @@ module SEPA
     # @raise [SEPA::ValidationError] if the message or account is invalid
     # @raise [SEPA::SchemaValidationError] if the generated XML fails XSD validation
     def to_xml
-      raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
-
       # Fail-safe against post-insertion mutations of the account or
       # transactions (e.g. a caller flipping `currency` after adding).
+      [@account, *transactions].each { |model| model.apply_charset(charset) }
+      raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
+
       validate_message_against_profile!
       validate_account_against_profile!(@account)
       transactions.each { |transaction| validate_transaction_against_profile!(transaction) }
@@ -156,6 +159,10 @@ module SEPA
     end
 
     private
+
+    def charset = profile.features.charset
+
+    def admit(model) = model.detach_nested_models(@nested_copies ||= {}.compare_by_identity).apply_charset(charset)
 
     # Single entry point for validating a transaction against the message's
     # profile. Called both from `add_transaction` (at insertion) and from

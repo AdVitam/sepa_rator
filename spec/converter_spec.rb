@@ -5,93 +5,48 @@ require 'spec_helper'
 RSpec.describe SEPA::Converter do
   include SEPA::Converter::InstanceMethods
 
-  describe :convert_text do
-    it 'converts special chars' do
-      expect(convert_text('10€')).to eq('10E')
-      expect(convert_text('info@bundesbank.de')).to eq('info(at)bundesbank.de')
-      expect(convert_text('abc_def')).to eq('abc-def')
-    end
+  describe '.convert' do
+    let(:model) do
+      Class.new do
+        extend SEPA::Converter
 
-    it 'does not change allowed special character' do
-      expect(convert_text('üöäÜÖÄß')).to eq('üöäÜÖÄß')
-    end
+        attr_reader :label, :ref, :country, :amount
 
-    it 'accepts French accented characters' do
-      expect(convert_text('àâéèêëïîôùûüÿçœæ')).to eq('àâéèêëïîôùûüÿçœæ')
-    end
-
-    it 'accepts Spanish accented characters' do
-      expect(convert_text('áéíóúñÑ')).to eq('áéíóúñÑ')
-    end
-
-    it 'strips non-Latin characters (CJK, Arabic, Cyrillic)' do
-      expect(convert_text('Test你好мирعربي')).to eq('Test')
-    end
-
-    it 'converts & to +' do
-      expect(convert_text('A&B')).to eq('A+B')
-    end
-
-    it 'removes non-SEPA special characters' do
-      expect(convert_text('*$%')).to eq('')
-    end
-
-    it 'converts line breaks' do
-      expect(convert_text("one\ntwo")).to eq('one two')
-      expect(convert_text("one\ntwo\n")).to eq('one two')
-      expect(convert_text("\none\ntwo\n")).to eq('one two')
-      expect(convert_text("one\n\ntwo")).to eq('one two')
-    end
-
-    it 'converts number' do
-      expect(convert_text(1234)).to eq('1234')
-    end
-
-    it 'removes invalid chars' do
-      expect(convert_text('"=<>!')).to eq('')
-    end
-
-    it 'does not touch valid chars' do
-      expect(convert_text("abc-ABC-0123- ':?,-(+.)/")).to eq("abc-ABC-0123- ':?,-(+.)/")
-    end
-
-    it 'does not touch nil' do
-      expect(convert_text(nil)).to be_nil
-    end
-
-    context 'encoding handling' do
-      it 'handles ISO-8859-1 encoded strings' do
-        iso_string = (+'Stra\xDFe').force_encoding('ISO-8859-1')
-        result = convert_text(iso_string)
-        expect(result.encoding).to eq(Encoding::UTF_8)
-        expect(result).to include('Stra')
-      end
-
-      it 'replaces invalid byte sequences' do
-        invalid_string = (+"test\xFF\xFEdata").force_encoding('UTF-8')
-        result = convert_text(invalid_string)
-        expect(result.encoding).to eq(Encoding::UTF_8)
-        expect(result).to include('test')
-        expect(result).to include('data')
+        convert :label, to: :text
+        convert :ref, to: :identifier
+        convert :country, to: :code
+        convert :amount, to: :decimal
       end
     end
 
-    context 'XML injection protection' do
-      it 'strips HTML/XML tags' do
-        expect(convert_text('<script>alert(1)</script>')).to eq('scriptalert(1)/script')
-      end
+    it 'only sanitizes text, identifier and code setters' do
+      instance = model.new
+      instance.label = "José &\nCo\x00"
+      instance.ref = "Réf_é\n1"
+      instance.country = "fr\t"
 
-      it 'strips CDATA markers' do
-        expect(convert_text('test]]><![CDATA[injected')).to eq('testCDATAinjected')
-      end
+      expect(instance.label).to eq('José & Co')
+      expect(instance.ref).to eq('Réf_é 1')
+      expect(instance.country).to eq('fr')
+    end
 
-      it 'strips XML entity references' do
-        expect(convert_text('a&#x0;b&#60;c')).to eq('a+x0b+60c')
-      end
+    it 'keeps nil as nil' do
+      instance = model.new
+      instance.label = nil
 
-      it 'strips null bytes' do
-        expect(convert_text("test\x00injection")).to eq('testinjection')
-      end
+      expect(instance.label).to be_nil
+    end
+
+    it 'converts decimals' do
+      instance = model.new
+      instance.amount = 1.345
+
+      expect(instance.amount).to eq(BigDecimal('1.35'))
+    end
+
+    it 'raises for an unknown converter' do
+      expect { Class.new { extend SEPA::Converter }.convert(:x, to: :unknown) }
+        .to raise_error(ArgumentError, /does not exist/)
     end
   end
 

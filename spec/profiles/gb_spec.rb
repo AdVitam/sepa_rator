@@ -153,6 +153,13 @@ RSpec.describe SEPA::Profiles::GB do
 
     # ── XSD validation ───────────────────────────────────────────
 
+    it 'converts texts with the EPC charset' do
+      xml = charset_credit_transfer_xml(profile, country_code: 'GB')
+
+      expect(profile.features.charset).to eq SEPA::Charset::EPC
+      expect_charset_xml(xml, name: 'Jose Garcia + Co.', remittance: 'Cafe e', reference: 'Ref-1')
+    end
+
     it 'generates valid XML against the ISO v09 XSD' do
       sct = fresh_sct
       sct.add_transaction(credit_transfer_transaction(

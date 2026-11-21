@@ -25,7 +25,7 @@ module SEPA
         instr_for_dbtr_agt_format: :text,
         instr_for_cdtr_agt_code_type: :instruction3_code,
         regulatory_reporting_version: :v3,
-        charset: :iso_latin,
+        charset: Charset::ISO,
         min_amount: nil,
         requires_structured_address: false,
         requires_country_code_on_address: false,

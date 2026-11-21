@@ -19,6 +19,7 @@ module SEPA
       VALIDATORS = [Validators::MinAmount].freeze
 
       FEATURES = {
+        charset: Charset::AT,
         min_amount: BigDecimal('0.01'),
         requires_structured_address: true
       }.freeze
@@ -26,6 +27,7 @@ module SEPA
       # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine, not the
       # full structured fields — so we must not require structured addresses.
       LEGACY_FEATURES = {
+        charset: Charset::AT,
         min_amount: BigDecimal('0.01')
       }.freeze
 
