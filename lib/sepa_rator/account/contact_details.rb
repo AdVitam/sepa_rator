@@ -3,6 +3,7 @@
 module SEPA
   class ContactDetails
     include ActiveModel::Model
+    include CharsetApplicable
     extend Converter
 
     NAME_PREFIXES = %w[DOCT MADM MISS MIST MIKS].freeze

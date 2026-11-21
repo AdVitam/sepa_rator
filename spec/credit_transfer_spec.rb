@@ -1132,6 +1132,54 @@ RSpec.describe SEPA::CreditTransfer do
       end
     end
 
+    context 'with charset conversion' do
+      let(:base) { '//Document/CstmrCdtTrfInitn/PmtInf' }
+
+      it 'keeps Unicode under the ISO profiles' do
+        xml = charset_credit_transfer_xml(sct_09)
+
+        expect_charset_xml(xml, name: 'José García & Co.', remittance: 'Café é', reference: 'Réf-1')
+      end
+
+      it 'escapes markup characters in the XML' do
+        sct = build_ct(sct_03) { |m| m.add_transaction(credit_transfer_transaction(name: '<b>A</b> & B')) }
+
+        expect(sct.to_xml).to have_xml("#{base}/CdtTrfTxInf/Cdtr/Nm", '<b>A</b> & B')
+      end
+
+      it 'removes control characters from AddtlRmtInf' do
+        sct = build_ct(sct_03) do |m|
+          m.add_transaction(credit_transfer_transaction(
+                              remittance_information: nil,
+                              structured_remittance_information: 'RF712348231',
+                              additional_remittance_information: ["Invoice\x00 2024\n001\x01"]
+                            ))
+        end
+
+        expect(sct.to_xml).to have_xml("#{base}/CdtTrfTxInf/RmtInf/Strd/AddtlRmtInf", 'Invoice 2024 001')
+      end
+
+      it 'does not mutate the address object given by the caller' do
+        address = SEPA::Address.new(country_code: 'DE', town_name: 'Zürich', post_code: '10115',
+                                    street_name: 'Hauptstraße')
+        sct = build_ct(SEPA::Profiles::EPC::SCT_09, address: address)
+
+        expect(sct.account.address.town_name).to eq('Zurich')
+        expect(sct.account.address.street_name).to eq('Hauptstrase')
+        expect(address.town_name).to eq('Zürich')
+        expect(address.street_name).to eq('Hauptstraße')
+      end
+
+      it 'exposes converted values on the message account and transactions' do
+        sct = build_ct(SEPA::Profiles::EPC::SCT_09, name: 'José & Co') do |m|
+          m.add_transaction(credit_transfer_transaction(name: 'José & Co'))
+        end
+
+        expect(sct.account.name).to eq('Jose + Co')
+        expect(sct.transactions.first.name).to eq('Jose + Co')
+      end
+    end
+
     context 'with LEI on debtor agent (DbtrAgt)' do
       let(:account_attrs) { { agent_lei: SEPA::TestData::LEI } }
       let(:setup) { ->(sct) { sct.add_transaction(credit_transfer_transaction) } }

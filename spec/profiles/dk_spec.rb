@@ -48,6 +48,13 @@ RSpec.describe SEPA::Profiles::DK do
       end.to raise_error(SEPA::ValidationError, /structured fields/)
     end
 
+    it 'converts texts with the DK charset' do
+      xml = charset_credit_transfer_xml(profile, country_code: 'DK')
+
+      expect(profile.features.charset).to eq SEPA::Charset::DK
+      expect_charset_xml(xml, name: 'Jose Garcia & Co.', remittance: 'Cafe e', reference: 'Ref-1')
+    end
+
     it 'generates valid XML' do
       sct = fresh_sct
       sct.add_transaction(credit_transfer_transaction(

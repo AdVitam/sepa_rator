@@ -6,6 +6,7 @@
 - [Credit Transfer (pain.001)](#credit-transfer-pain001)
 - [Direct Debit (pain.008)](#direct-debit-pain008)
 - [Addresses](#addresses)
+- [Character Sets](#character-sets)
 - [Charge Bearer](#charge-bearer)
 - [UETR](#uetr-unique-end-to-end-transaction-reference)
 - [Instruction Priority](#instruction-priority)
@@ -314,6 +315,28 @@ Use `SEPA::Address.new(...)` (or `SEPA::DebtorAddress` / `SEPA::CreditorAddress`
 | `unit_number` | 16 | .13/.12 only |
 
 Fields not supported by a given schema are automatically rejected during XSD validation.
+
+---
+
+## Character Sets
+
+Text is converted when the message admits the account or transaction, using the character set of its profile (`message.profile.features.charset`). Characters outside the set are replaced, never rejected.
+
+| Profile | Character set | `&` | Other characters |
+| --- | --- | --- | --- |
+| ISO | Full Unicode (control and XML-unsafe characters removed) | kept | kept |
+| EPC, CFONB, NL, GB | Basic Latin `a-zA-Z0-9 /-?:().,'+` | `+` | `€` → `E`, `@` → `(at)`, `_` → `-`, accents transliterated one-to-one (EPC217-08: `é` → `e`, `Ä` → `A`, `ß` → `s`, `Æ` → `A`), anything else dropped |
+| DK | EPC set plus `ÄäÖöÜüß&*$%` (DFÜ-Abkommen Anlage 3) | kept | other accents transliterated as EPC |
+| AT | Max70Text set of the Austrian XSD (umlauts, `&`, `€`, `@`, `_` and more) | kept | anything else dropped |
+| SPS | Swiss Payment Standards: `U+0020-007E`, `U+00A0-017F`, `U+0218-021B`, `€` | kept | anything else dropped |
+
+Identifiers (`EndToEndId`, `InstrId`, `CdtrRefInf/Ref`, mandate id, initiating party id) are restricted to the SEPA identifier set (`A-Za-z0-9+?/-:().,'` and space) on every profile except ISO.
+
+To truncate before a length limit is applied, convert first:
+
+```ruby
+text = message.profile.features.charset.text(str)[0, 140]
+```
 
 ---
 

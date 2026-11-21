@@ -35,6 +35,7 @@ module SEPA
       end
 
       FEATURES = {
+        charset: Charset::SPS,
         requires_structured_address: true,
         requires_country_code_on_address: true
       }.freeze

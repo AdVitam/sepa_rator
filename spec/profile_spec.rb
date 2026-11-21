@@ -178,7 +178,7 @@ RSpec.describe SEPA::ProfileFeatures do
       features = described_class.default
       expect(features.bic_tag).to eq :BICFI
       expect(features.wrap_date).to be true
-      expect(features.charset).to eq :iso_latin
+      expect(features.charset).to eq SEPA::Charset::ISO
       expect(features.extras).to eq({})
     end
 

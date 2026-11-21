@@ -4,6 +4,18 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+### Fixed
+
+- Per-profile character sets: DK keeps `&*$%` and umlauts and transliterates other accents; EPC, CFONB, NL and GB transliterate to basic Latin per EPC217-08; AT and SPS follow their XSD sets; ISO keeps Unicode
+- Identifiers (`EndToEndId`, `InstrId`, `CdtrRefInf/Ref`, mandate id, initiating party id) are restricted to the SEPA identifier set
+- Free-text fields previously left unconverted (`AddtlRmtInf`, `InstrInf`, regulatory reporting, initiation source) are now cleaned
+- Country codes are validated as two uppercase letters
+
+### Changed
+
+- Text conversion happens when the message admits the account or transaction, using `profile.features.charset`
+- `convert_text` is removed in favour of `SEPA::Charset` (`profile.features.charset.text`)
+
 ## [2.0.2] - 2026-10-09
 
 ### Changed
