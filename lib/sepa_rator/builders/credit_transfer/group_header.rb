@@ -3,10 +3,7 @@
 module SEPA
   module Builders
     module CreditTransfer
-      # Emits the top-level GrpHdr block for pain.001 messages. Distinct
-      # from the DirectDebit variant because Credit Transfer adds the
-      # `InitnSrc` element (pain.001.001.13 only, gated on the
-      # `:initiation_source` capability).
+      # Distinct from the DirectDebit variant because pain.001.001.13 adds `InitnSrc`.
       class GroupHeader < Stage
         def call
           builder.GrpHdr do
@@ -26,7 +23,6 @@ module SEPA
         private
 
         def build_initiation_source
-          return unless profile.supports?(:initiation_source)
           return unless message.initiation_source_name
 
           builder.InitnSrc do

@@ -4,6 +4,10 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+### Changed
+
+- The initiation source capability is checked only by `initiation_source_name=`; the redundant checks at construction, in `to_xml` and in the group header builder are removed
+
 ## [2.1.0] - 2026-11-21
 
 ### Fixed

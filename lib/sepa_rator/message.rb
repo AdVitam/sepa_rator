@@ -52,7 +52,6 @@ module SEPA
       @profile = resolve_profile(country: country, version: version, profile: profile)
       @grouped_transactions = {}
       @account = admit(account_class.new(account_options))
-      validate_message_against_profile!
       validate_account_against_profile!(@account)
     end
 
@@ -89,7 +88,6 @@ module SEPA
       [@account, *transactions].each { |model| model.apply_charset(charset) }
       raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
 
-      validate_message_against_profile!
       validate_account_against_profile!(@account)
       transactions.each { |transaction| validate_transaction_against_profile!(transaction) }
 
@@ -178,17 +176,6 @@ module SEPA
 
       validate_transaction_addresses_against_profile!(transaction)
       run_profile_validators(transaction)
-    end
-
-    # Enforce message-level rules that don't belong to any specific account
-    # (e.g. `initiation_source_name` is an attribute of the pain.001 group
-    # header, not of the debtor/creditor account). Called both at
-    # construction and from `to_xml` as a fail-safe against late mutation.
-    def validate_message_against_profile!
-      return unless @initiation_source_name && !profile.supports?(:initiation_source)
-
-      raise SEPA::ValidationError,
-            "[#{profile.id}] initiation_source_name is set but the profile does not support InitnSrc"
     end
 
     # Enforce profile-level rules on any account (the message's own account,
