@@ -2,8 +2,6 @@
 
 CHARSET_PERSON = 'José García & Co.'
 
-# Builds a one-transaction credit transfer whose texts need charset conversion
-# and returns its XML (to_xml validates it against the profile XSD).
 def charset_credit_transfer_xml(profile, country_code: 'DE')
   sct = SEPA::CreditTransfer.new(profile: profile, name: CHARSET_PERSON,
                                  bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)

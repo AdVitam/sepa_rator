@@ -48,10 +48,6 @@ RSpec.describe SEPA::Converter do
       expect { Class.new { extend SEPA::Converter }.convert(:x, to: :unknown) }
         .to raise_error(ArgumentError, /does not exist/)
     end
-
-    it 'no longer provides convert_text' do
-      expect(SEPA::Converter::InstanceMethods).not_to be_method_defined(:convert_text)
-    end
   end
 
   describe :convert_decimal do

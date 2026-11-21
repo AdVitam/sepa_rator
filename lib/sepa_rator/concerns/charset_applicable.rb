@@ -2,8 +2,6 @@
 
 module SEPA
   module CharsetApplicable
-    # Rewrites text and identifier attributes (and those of nested models) in
-    # place to the profile's repertoire.
     def apply_charset(charset)
       self.class.text_attributes.each { |attribute| convert_attribute(attribute, charset, :text) }
       self.class.identifier_attributes.each { |attribute| convert_attribute(attribute, charset, :identifier) }
@@ -11,9 +9,8 @@ module SEPA
       self
     end
 
-    # Replaces caller-owned nested models with copies, once at admission, so
-    # later in-place conversions never reach them. `copies` maps each caller
-    # object to a single copy: direct debit groups compare accounts by identity.
+    # One copy per caller object: conversion must never mutate caller objects,
+    # and direct debit groups compare accounts by identity.
     def detach_nested_models(copies)
       each_nested_model do |name, nested|
         instance_variable_set(name, copies[nested] ||= nested.dup.detach_nested_models(copies))

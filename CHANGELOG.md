@@ -4,6 +4,8 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-21
+
 ### Fixed
 
 - Per-profile character sets: DK keeps `&*$%` and umlauts and transliterates other accents; EPC, CFONB, NL, GB and the EPC AOS schemas (`pain.001.002/003`, `pain.008.002/003`) transliterate to basic Latin per EPC217-08; AT and SPS follow their XSD sets; ISO keeps Unicode
