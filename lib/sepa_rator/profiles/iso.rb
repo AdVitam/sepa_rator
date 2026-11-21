@@ -120,7 +120,7 @@ module SEPA
           iso_schema: 'pain.001.002.03',
           xsd_path: 'iso/pain.001.002.03.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.001.002.03',
-          features: { requires_bic: true },
+          features: { requires_bic: true, charset: Charset::EPC },
           # EPC AOS drops InstrForCdtrAgt, InstrForDbtrAgt and RgltryRptg —
           # `{ replace: }` clears SCT_03's capabilities rather than appending.
           capabilities: { replace: [].freeze },
@@ -214,7 +214,7 @@ module SEPA
           iso_schema: 'pain.008.002.02',
           xsd_path: 'iso/pain.008.002.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.002.02',
-          features: { requires_bic: true },
+          features: { requires_bic: true, charset: Charset::EPC },
           accept_transaction: DD_EPC_RULES
         )
       )
@@ -225,6 +225,7 @@ module SEPA
           iso_schema: 'pain.008.003.02',
           xsd_path: 'iso/pain.008.003.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.003.02',
+          features: { charset: Charset::EPC },
           accept_transaction: DD_EPC_RULES
         )
       )

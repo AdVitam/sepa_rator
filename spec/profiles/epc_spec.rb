@@ -96,6 +96,15 @@ RSpec.describe SEPA::Profiles::EPC do
       sdd.add_transaction(direct_debit_transaction)
       expect(sdd.to_xml).to validate_against('pain.008.001.08.xsd')
     end
+
+    it 'converts texts with the EPC charset' do
+      sdd = direct_debit_message(profile: profile, name: 'Müller & Söhne_GmbH')
+      sdd.add_transaction(direct_debit_transaction(name: 'Zoë & Co'))
+      xml = sdd.to_xml
+
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Muller + Sohne-GmbH')
+      expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/Nm', 'Zoe + Co')
+    end
   end
 
   describe 'SCT 03 (legacy)' do

@@ -34,15 +34,15 @@ module SEPA
       # ─── SEPA Direct Debit ───────────────────────────────────────────────
 
       SDD_02 = ProfileRegistry.register(
-        ISO::SDD_02.with(id: 'epc.sdd.02', accept_transaction: ISO::DD_EPC_RULES)
+        ISO::SDD_02.with(id: 'epc.sdd.02', features: FEATURES, accept_transaction: ISO::DD_EPC_RULES)
       )
 
       SDD_08 = ProfileRegistry.register(
-        ISO::SDD_08.with(id: 'epc.sdd.08', accept_transaction: ISO::DD_EPC_RULES)
+        ISO::SDD_08.with(id: 'epc.sdd.08', features: FEATURES, accept_transaction: ISO::DD_EPC_RULES)
       )
 
       SDD_12 = ProfileRegistry.register(
-        ISO::SDD_12.with(id: 'epc.sdd.12', accept_transaction: ISO::DD_EPC_RULES)
+        ISO::SDD_12.with(id: 'epc.sdd.12', features: FEATURES, accept_transaction: ISO::DD_EPC_RULES)
       )
     end
   end

@@ -6,7 +6,7 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ### Fixed
 
-- Per-profile character sets: DK keeps `&*$%` and umlauts and transliterates other accents; EPC, CFONB, NL and GB transliterate to basic Latin per EPC217-08; AT and SPS follow their XSD sets; ISO keeps Unicode
+- Per-profile character sets: DK keeps `&*$%` and umlauts and transliterates other accents; EPC, CFONB, NL, GB and the EPC AOS schemas (`pain.001.002/003`, `pain.008.002/003`) transliterate to basic Latin per EPC217-08; AT and SPS follow their XSD sets; ISO keeps Unicode
 - Identifiers (`EndToEndId`, `InstrId`, `CdtrRefInf/Ref`, mandate id, initiating party id) are restricted to the SEPA identifier set
 - Free-text fields previously left unconverted (`AddtlRmtInf`, `InstrInf`, regulatory reporting, initiation source) are now cleaned
 - Country codes are validated as two uppercase letters

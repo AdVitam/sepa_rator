@@ -320,15 +320,15 @@ Fields not supported by a given schema are automatically rejected during XSD val
 
 ## Character Sets
 
-Text is converted when the message admits the account or transaction, using the character set of its profile (`message.profile.features.charset`). Characters outside the set are replaced, never rejected.
+Text is converted when the message admits the account or transaction, using the character set of its profile (`message.profile.features.charset`). Characters outside the set are replaced when an equivalent exists and dropped otherwise.
 
 | Profile | Character set | `&` | Other characters |
 | --- | --- | --- | --- |
-| ISO | Full Unicode (control and XML-unsafe characters removed) | kept | kept |
-| EPC, CFONB, NL, GB | Basic Latin `a-zA-Z0-9 /-?:().,'+` | `+` | `€` → `E`, `@` → `(at)`, `_` → `-`, accents transliterated one-to-one (EPC217-08: `é` → `e`, `Ä` → `A`, `ß` → `s`, `Æ` → `A`), anything else dropped |
+| ISO | Full Unicode (control characters removed) | kept | kept |
+| EPC, CFONB, NL, GB, EPC AOS (`pain.001.002/003`, `pain.008.002/003`) | Basic Latin `a-zA-Z0-9 /-?:().,'+` | `+` | `€` → `E`, `@` → `(at)`, `_` → `-`, accents transliterated one-to-one (EPC217-08: `é` → `e`, `Ä` → `A`, `ß` → `s`, `Æ` → `A`), anything else dropped |
 | DK | EPC set plus `ÄäÖöÜüß&*$%` (DFÜ-Abkommen Anlage 3) | kept | other accents transliterated as EPC |
-| AT | Max70Text set of the Austrian XSD (umlauts, `&`, `€`, `@`, `_` and more) | kept | anything else dropped |
-| SPS | Swiss Payment Standards: `U+0020-007E`, `U+00A0-017F`, `U+0218-021B`, `€` | kept | anything else dropped |
+| AT | Max70Text set of the Austrian XSD (umlauts, `&`, `€`, `@`, `_` and more) | kept | other accents transliterated as EPC, anything else dropped |
+| SPS | Swiss Payment Standards: `U+0020-007E`, `U+00A0-017F` (except soft hyphen), `U+0218-021B`, `€` | kept | transliterated as EPC, anything else dropped |
 
 Identifiers (`EndToEndId`, `InstrId`, `CdtrRefInf/Ref`, mandate id, initiating party id) are restricted to the SEPA identifier set (`A-Za-z0-9+?/-:().,'` and space) on every profile except ISO.
 
