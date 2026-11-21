@@ -51,7 +51,7 @@ module SEPA
     def initialize(country: nil, version: :latest, profile: nil, **account_options)
       @profile = resolve_profile(country: country, version: version, profile: profile)
       @grouped_transactions = {}
-      @account = account_class.new(account_options).apply_charset(charset)
+      @account = account_class.new(account_options).detach_nested_models.apply_charset(charset)
       validate_message_against_profile!
       validate_account_against_profile!(@account)
     end
@@ -63,7 +63,7 @@ module SEPA
     # @param options [Hash] transaction attributes
     # @raise [SEPA::ValidationError] if the transaction is invalid
     def add_transaction(options)
-      transaction = transaction_class.new(options).apply_charset(charset)
+      transaction = transaction_class.new(options).detach_nested_models.apply_charset(charset)
       raise SEPA::ValidationError, transaction.errors.full_messages.join("\n") unless transaction.valid?
 
       validate_transaction_against_profile!(transaction)

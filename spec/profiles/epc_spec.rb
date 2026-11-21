@@ -105,6 +105,17 @@ RSpec.describe SEPA::Profiles::EPC do
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'Muller + Sohne-GmbH')
       expect(xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/Dbtr/Nm', 'Zoe + Co')
     end
+
+    it 'converts a creditor_account override modified after admission without touching the caller object' do
+      override = SEPA::CreditorAccount.new(name: 'Creditor Inc.', bic: 'RABONL2U', iban: 'NL08RABO0135742099',
+                                           creditor_identifier: 'NL53ZZZ091734220000')
+      sdd = direct_debit_message(profile: profile)
+      sdd.add_transaction(direct_debit_transaction(creditor_account: override))
+      sdd.transactions.first.creditor_account.name = 'A & B_C'
+
+      expect(sdd.to_xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'A + B-C')
+      expect(override.name).to eq 'Creditor Inc.'
+    end
   end
 
   describe 'SCT 03 (legacy)' do
