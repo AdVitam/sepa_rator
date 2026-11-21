@@ -116,6 +116,15 @@ RSpec.describe SEPA::Profiles::EPC do
       expect(sdd.to_xml).to have_xml('//Document/CstmrDrctDbtInitn/PmtInf/Cdtr/Nm', 'A + B-C')
       expect(override.name).to eq 'Creditor Inc.'
     end
+
+    it 'groups transactions sharing one creditor_account override into a single PmtInf' do
+      override = SEPA::CreditorAccount.new(name: 'Creditor Inc.', bic: 'RABONL2U', iban: 'NL08RABO0135742099',
+                                           creditor_identifier: 'NL53ZZZ091734220000')
+      sdd = direct_debit_message(profile: profile)
+      2.times { sdd.add_transaction(direct_debit_transaction(creditor_account: override)) }
+
+      expect(Nokogiri::XML(sdd.to_xml).remove_namespaces!.xpath('//PmtInf').size).to eq 1
+    end
   end
 
   describe 'SCT 03 (legacy)' do

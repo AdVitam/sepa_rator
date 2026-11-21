@@ -12,10 +12,12 @@ module SEPA
     end
 
     # Replaces caller-owned nested models with copies, once at admission, so
-    # later in-place conversions never reach them and every holder of a nested
-    # model (e.g. a direct debit group key) keeps seeing the converted object.
-    def detach_nested_models
-      each_nested_model { |name, nested| instance_variable_set(name, nested.dup.detach_nested_models) }
+    # later in-place conversions never reach them. `copies` maps each caller
+    # object to a single copy: direct debit groups compare accounts by identity.
+    def detach_nested_models(copies)
+      each_nested_model do |name, nested|
+        instance_variable_set(name, copies[nested] ||= nested.dup.detach_nested_models(copies))
+      end
       self
     end
 
