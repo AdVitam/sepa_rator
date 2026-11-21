@@ -1178,6 +1178,17 @@ RSpec.describe SEPA::CreditTransfer do
         expect(sct.account.name).to eq('Jose + Co')
         expect(sct.transactions.first.name).to eq('Jose + Co')
       end
+
+      it 'converts values assigned after admission' do
+        sct = build_ct(SEPA::Profiles::EPC::SCT_09) { |m| m.add_transaction(credit_transfer_transaction) }
+        sct.account.name = 'A & B_C@x'
+        sct.transactions.first.name = 'Zoë & Co'
+
+        xml = sct.to_xml
+
+        expect(xml).to have_xml("#{base}/Dbtr/Nm", 'A + B-C(at)x')
+        expect(xml).to have_xml("#{base}/CdtTrfTxInf/Cdtr/Nm", 'Zoe + Co')
+      end
     end
 
     context 'with LEI on debtor agent (DbtrAgt)' do

@@ -85,10 +85,11 @@ module SEPA
     # @raise [SEPA::ValidationError] if the message or account is invalid
     # @raise [SEPA::SchemaValidationError] if the generated XML fails XSD validation
     def to_xml
-      raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
-
       # Fail-safe against post-insertion mutations of the account or
       # transactions (e.g. a caller flipping `currency` after adding).
+      [@account, *transactions].each { |model| model.apply_charset(charset) }
+      raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
+
       validate_message_against_profile!
       validate_account_against_profile!(@account)
       transactions.each { |transaction| validate_transaction_against_profile!(transaction) }
