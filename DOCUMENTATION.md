@@ -296,10 +296,10 @@ Use `SEPA::Address.new(...)` (or `SEPA::DebtorAddress` / `SEPA::CreditorAddress`
 | Field | Max length | Schema support |
 |-------|-----------|----------------|
 | `country_code` | 2 (ISO 3166) | All schemas |
-| `street_name` | 140 | All schemas |
-| `building_number` | 16 | All schemas |
-| `post_code` | 16 | All schemas |
-| `town_name` | 140 | All schemas |
+| `street_name` | 140 | All but `Ctry` + `AdrLine` schemas (1) |
+| `building_number` | 16 | All but `Ctry` + `AdrLine` schemas (1) |
+| `post_code` | 16 | All but `Ctry` + `AdrLine` schemas (1) |
+| `town_name` | 140 | All but `Ctry` + `AdrLine` schemas (1) |
 | `address_line1` | 70 | All schemas |
 | `address_line2` | 70 | All schemas |
 | `department` | 70 | .09/.08+ (PostalAddress24) |
@@ -314,7 +314,9 @@ Use `SEPA::Address.new(...)` (or `SEPA::DebtorAddress` / `SEPA::CreditorAddress`
 | `care_of` | 140 | .13/.12 only (PostalAddress27) |
 | `unit_number` | 16 | .13/.12 only |
 
-Fields not supported by a given schema are automatically rejected during XSD validation.
+(1) EPC AOS (`pain.001.002/003`, `pain.008.002/003`), AT v02/v03 and DK GBIC3 accept `country_code` and address lines only; other fields raise `SEPA::ValidationError` (`:structured_address` capability).
+
+Other fields not supported by a given schema are rejected during XSD validation.
 
 ---
 
@@ -539,7 +541,7 @@ The LEI is a 20-character identifier (ISO 17442) for legal entities in financial
 
 - **Format**: 18 alphanumeric + 2 check digits (e.g., `529900T8BM49AURSDO55`)
 - **Schema support**: `pain.001.001.09`/`.13`, `pain.008.001.08`/`.12` only
-- Using LEI with older schemas raises `SEPA::SchemaValidationError`
+- `initiating_party_lei` requires the `:lei` capability, `agent_lei` the `:agent_lei` capability (absent from AT v09/v08 and DK); a profile without it raises `SEPA::ValidationError`
 
 | Attribute | On | XML location |
 |-----------|-----|-------------|
@@ -585,13 +587,17 @@ sct = SEPA::CreditTransfer.new(
 )
 ```
 
-Note: `initiating_party_identifier` max length is 256 (v13 `GenericOrganisationIdentification3` uses `Max256Text`). Stricter v03/v09 limits (35 chars) are enforced by XSD validation.
+Note: `initiating_party_identifier` max length is 256 (v13 `GenericOrganisationIdentification3` uses `Max256Text`). Stricter v03/v09 limits (35 chars) are enforced by XSD validation. `initiating_party_scheme` requires `initiating_party_identifier`.
+
+`InitgPty` is built from the message account only: a per-transaction `creditor_account` that sets `initiating_party_bic`, `initiating_party_lei` or `initiating_party_identifier` raises `SEPA::ValidationError`.
+
+AT PSA profiles (v02/v03/v08/v09) write exactly one `InitgPty` child: `Id` with the single explicit identifier when one is set, `Nm` otherwise. Setting more than one identifier raises `SEPA::ValidationError`. The creditor identifier stays in `CdtrSchmeId`.
 
 ---
 
 ## Contact Details
 
-Contact information can be attached to parties via `SEPA::ContactDetails`. Fields follow the Contact13 (v13) superset; older schemas reject unsupported fields via XSD validation.
+Contact information can be attached to parties via `SEPA::ContactDetails`. Fields follow the Contact13 (v13) superset; older schemas reject unsupported fields via XSD validation. Profiles without `CtctDtls` (EPC AOS, AT v02/v03/v08/v09, DK, SPS v09) lack the `:contact_details` capability and raise `SEPA::ValidationError`.
 
 ### Fields
 
@@ -685,6 +691,31 @@ Profiles compose in layers: `ISO` → `EPC` → country-specific (`CFONB`, `DK`,
 Each country layer inherits the XSD, stage list and capabilities of its parent
 and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 
+### Capabilities
+
+A capability marks an optional element the profile's XSD accepts. Setting a
+field whose capability the profile lacks raises `SEPA::ValidationError` naming
+the field and the capability, before any XML is generated.
+
+| Capability | Fields | XML element |
+|------------|--------|-------------|
+| `:lei` | `initiating_party_lei` | `InitgPty/Id/OrgId/LEI` |
+| `:agent_lei` | `agent_lei` (account, transaction) | `FinInstnId/LEI` |
+| `:contact_details` | `contact_details`, `creditor_contact_details`, `debtor_contact_details` | `CtctDtls` |
+| `:account_address` | `address` (message account, `creditor_account`) | `Dbtr/PstlAdr` (CT), `Cdtr/PstlAdr` (DD) |
+| `:structured_address` | any address field other than `country_code`, `address_line1`, `address_line2` | `PstlAdr/StrtNm`, `PstCd`, `TwnNm`, … |
+| `:uetr` | `uetr` | `PmtId/UETR` |
+| `:pmtinf_debtor_agent_instruction` | `debtor_agent_instruction` | `PmtInf/InstrForDbtrAgt` |
+| `:txn_instruction_for_debtor_agent` | `instruction_for_debtor_agent`, `instruction_for_debtor_agent_code` | `CdtTrfTxInf/InstrForDbtrAgt` |
+| `:instructions_for_creditor_agent` | `instructions_for_creditor_agent` | `InstrForCdtrAgt` |
+| `:mandate_related_info` | `credit_transfer_mandate_*` | `MndtRltdInf` |
+| `:regulatory_reporting` | `regulatory_reportings` | `RgltryRptg` |
+| `:initiation_source` | `initiation_source_name` | `GrpHdr/InitnSrc` |
+
+`Profile#with(capabilities:)` takes an Array (appended), `{ add: [...] }`,
+`{ replace: [...] }` or `{ remove: [...] }`. A custom `Profile.new` must list
+every capability it supports.
+
 ### Credit Transfer (pain.001)
 
 | Profile constant                  | ISO schema            | Notes |
@@ -709,8 +740,8 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::GB::SCT_03`            | `pain.001.001.03`     | ISO 03 + EUR/GBP (CHAPS), structured addresses, country code required |
 | `Profiles::GB::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::GB::SCT_13`            | `pain.001.001.13`     | Same, for v13 |
-| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01 |
-| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses |
+| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01, single `InitgPty` child, no `CtctDtls` |
+| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, single `InitgPty` child, no `CtctDtls`, agent LEI or account address |
 | `Profiles::AT::SCT_13`            | `pain.001.001.13`     | Same, for v13 (ISO baseline XSD — no AT-specific v13 published) |
 | `Profiles::NL::SCT_03`            | `pain.001.001.03`     | EPC + Betaalvereniging NL IG, structured addresses required |
 | `Profiles::NL::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
@@ -767,5 +798,7 @@ without the companion gem raises a `SEPA::Error` naming the gem to add.
 
 The original Austrian XSDs use XSD 1.1 `xs:assert` elements which have
 been stripped for Nokogiri/libxml2 compatibility — the cross-field
-validations are handled in Ruby. GB and NL profiles use the ISO baseline
+validations are handled in Ruby. The PSA rules the XSDs leave to prose
+(a single `InitgPty` child, no `CtctDtls`, no agent LEI or account address on
+v08/v09) are enforced by the profile capabilities and the `InitgPty` builder. GB and NL profiles use the ISO baseline
 XSDs shipped with the core gem — no country-specific schema exists.

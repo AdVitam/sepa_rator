@@ -17,6 +17,21 @@ RSpec.describe SEPA::SchemaValidation do
     instance_double(SEPA::Profile, id: 'test.profile', xsd_path: xsd_path)
   end
 
+  describe '#validate_final_document!' do
+    it 'keeps the element name and redacts long values' do
+      sct = credit_transfer_message(profile: SEPA::Profiles::ISO::SCT_09)
+      sct.add_transaction(credit_transfer_transaction)
+      document = Nokogiri::XML(sct.to_xml)
+      document.at_xpath('//xmlns:Cdtr/xmlns:Nm').content = 'X' * 200
+
+      expect { validator.send(:validate_final_document!, document, SEPA::Profiles::ISO::SCT_09) }
+        .to raise_error(SEPA::SchemaValidationError) { |error|
+          expect(error.message).to include("Element 'Nm'", "'[REDACTED]'")
+          expect(error.message).not_to include('X' * 20, 'urn:iso')
+        }
+    end
+  end
+
   describe '.register_schema_root' do
     it 'prepends the expanded path to the schema roots' do
       Dir.mktmpdir do |dir|

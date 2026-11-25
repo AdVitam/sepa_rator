@@ -52,7 +52,7 @@ module SEPA
       @profile = resolve_profile(country: country, version: version, profile: profile)
       @grouped_transactions = {}
       @account = admit(account_class.new(account_options))
-      validate_account_against_profile!(@account)
+      validate_message_account_against_profile!
     end
 
     # Add a transaction to the message. The transaction is validated both
@@ -88,7 +88,7 @@ module SEPA
       [@account, *transactions].each { |model| model.apply_charset(charset) }
       raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
 
-      validate_account_against_profile!(@account)
+      validate_message_account_against_profile!
       transactions.each { |transaction| validate_transaction_against_profile!(transaction) }
 
       doc = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |builder|
@@ -166,11 +166,8 @@ module SEPA
     # profile. Called both from `add_transaction` (at insertion) and from
     # `to_xml` (as a fail-safe against post-insertion mutations).
     def validate_transaction_against_profile!(transaction)
-      # Validate the DD creditor_account override first — its specific error
-      # is more actionable than the generic "not compatible" fallback below.
-      if transaction.respond_to?(:creditor_account) && transaction.creditor_account
-        validate_account_against_profile!(transaction.creditor_account, label: 'creditor_account')
-      end
+      validate_creditor_account_override!(transaction.creditor_account) if transaction.respond_to?(:creditor_account) && transaction.creditor_account
+      assert_capabilities!(transaction, 'transaction')
 
       raise SEPA::ValidationError, "Transaction not compatible with profile #{profile.id}" unless transaction.compatible_with?(profile)
 
@@ -178,52 +175,59 @@ module SEPA
       run_profile_validators(transaction)
     end
 
-    # Enforce profile-level rules on any account (the message's own account,
-    # or a per-transaction `creditor_account` override in direct debit). The
-    # `label:` tweaks the error messages so the caller can tell which
-    # account failed.
-    def validate_account_against_profile!(account, label: 'account')
+    def validate_message_account_against_profile!
+      validate_account_against_profile!(@account, 'account')
+      return unless profile.features.exclusive_initiating_party && @account.initiating_party_identifiers.length > 1
+
+      raise SEPA::ValidationError,
+            "[#{profile.id}] InitgPty/Id holds a single identifier: set only one of " \
+            'initiating_party_bic, initiating_party_lei or initiating_party_identifier'
+    end
+
+    # `InitgPty` is built from the message account only.
+    def validate_creditor_account_override!(account)
+      validate_account_against_profile!(account, 'creditor_account')
+      return if account.initiating_party_identifiers.empty?
+
+      raise SEPA::ValidationError, "[#{profile.id}] creditor_account.initiating_party_* is ignored: set it on the message account instead"
+    end
+
+    # Shared by the message account and the direct debit `creditor_account` override.
+    def validate_account_against_profile!(account, label)
       raise SEPA::ValidationError, "[#{profile.id}] #{label} is missing the required BIC" if profile.features.requires_bic && (account.bic.nil? || account.bic.empty?)
 
-      unless profile.supports?(:lei)
-        if account.agent_lei && !account.agent_lei.empty?
-          raise SEPA::ValidationError,
-                "[#{profile.id}] #{label}.agent_lei is set but the profile does not support LEI"
-        end
-        if account.respond_to?(:initiating_party_lei) &&
-           account.initiating_party_lei && !account.initiating_party_lei.empty?
-          raise SEPA::ValidationError,
-                "[#{profile.id}] #{label}.initiating_party_lei is set but the profile does not support LEI"
-        end
-      end
-
-      assert_address_structured!(account.address, "#{label}.address")
+      assert_capabilities!(account, label)
+      assert_address_format!(account.address, "#{label}.address")
       assert_address_has_country_code!(account.address, "#{label}.address")
+    end
+
+    def assert_capabilities!(model, label)
+      field, capability = model.capability_violation(profile)
+      raise SEPA::ValidationError, "[#{profile.id}] #{label}.#{field} requires capability :#{capability}, not supported by this profile" if field
     end
 
     # Transaction-level addresses (`creditor_address`, `debtor_address`) are
     # serialised in `PmtInf/*/PstlAdr` and must satisfy the same structured
     # requirement as the message account when the profile mandates it.
     def validate_transaction_addresses_against_profile!(transaction)
-      if profile.features.requires_structured_address
-        assert_address_structured!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
-        assert_address_structured!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
-      end
-
+      assert_address_format!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
+      assert_address_format!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
       return unless profile.features.requires_country_code_on_address
 
       assert_address_has_country_code!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
       assert_address_has_country_code!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
     end
 
-    def assert_address_structured!(address, label)
-      return unless profile.features.requires_structured_address
+    def assert_address_format!(address, label)
       return if address.nil?
-      return if address.structured?
+
+      if profile.features.requires_structured_address && !address.structured?
+        raise SEPA::ValidationError, "[#{profile.id}] #{label} must use structured fields (StrtNm, PstCd, TwnNm, …), not AdrLine"
+      end
+      return if address.lines_only? || profile.supports?(:structured_address)
 
       raise SEPA::ValidationError,
-            "[#{profile.id}] #{label} must use structured fields " \
-            '(StrtNm, PstCd, TwnNm, …), not AdrLine'
+            "[#{profile.id}] #{label} requires capability :structured_address, not supported by this profile: set only country_code and address lines"
     end
 
     def assert_address_has_country_code!(address, label)

@@ -2,17 +2,36 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
-## [Unreleased]
+## [2.2.0] - 2026-11-25
+
+### Added
+
+- Profile capabilities `:agent_lei` (`FinInstnId/LEI`), `:contact_details` (`CtctDtls`), `:account_address` (message account `PstlAdr`) and `:structured_address` (`PstlAdr` beyond `Ctry` and `AdrLine`)
+- `Profile#with` accepts `{ remove: [...] }` for capabilities and validators
+- `ProfileFeatures#exclusive_initiating_party`: `InitgPty` holds `Nm` or `Id`, never both
+
+### Changed
+
+- **BREAKING**: `:lei` covers `InitgPty/Id/OrgId/LEI` only; a custom profile emitting `FinInstnId/LEI` must add `:agent_lei`
+- **BREAKING**: a custom `Profile.new` must declare `:contact_details`, `:account_address` and `:structured_address` to emit `CtctDtls`, the message account `PstlAdr` and structured address fields
+- **BREAKING**: a field the profile does not support raises `SEPA::ValidationError` naming the field and the capability, instead of `SEPA::SchemaValidationError` at `to_xml`
+- **BREAKING**: a per-transaction `creditor_account` setting `initiating_party_*` raises `SEPA::ValidationError` instead of being ignored
+- **BREAKING**: `initiating_party_scheme` without `initiating_party_identifier` is invalid instead of being dropped
+- Schema validation errors keep the element name; only values of 20 characters or more are redacted
+- `activesupport` is now a declared runtime dependency (same range as `activemodel`)
+- The initiation source capability is checked only by `initiation_source_name=`; the redundant checks at construction, in `to_xml` and in the group header builder are removed
+- `Profile#capabilities` is a frozen `Set`
 
 ### Fixed
 
 - Date validations (requested date, mandate date of signature) use `Date.current`, i.e. the application time zone when set. Around midnight a mandate signed today in e.g. Europe/Vienna was rejected as being in the future on a UTC clock. `Time.zone` is per thread and defaults to UTC under Rails (`config.time_zone`); without it the system date applies
 - `require 'sepa_rator'` works outside Rails: `date` and `time` are loaded explicitly
-
-### Changed
-
-- `activesupport` is now a declared runtime dependency (same range as `activemodel`)
-- The initiation source capability is checked only by `initiation_source_name=`; the redundant checks at construction, in `to_xml` and in the group header builder are removed
+- AT PSA profiles (v02/v03/v08/v09) write a single `InitgPty` child and keep the creditor identifier in `CdtrSchmeId` only
+- AT PSA profiles reject `CtctDtls`; v08/v09 also reject the agent LEI and the message account address
+- DK GBIC profiles reject `CtctDtls`; GBIC5 also rejects the agent LEI
+- EPC AOS direct debit profiles reject `CtctDtls`
+- SPS v09 rejects `CtctDtls`, which its XSD allows in `InitgPty` only
+- AT v02/v03, DK GBIC3 and the EPC AOS profiles reject structured address fields; their XSDs accept `Ctry` and `AdrLine` only
 
 ## [2.1.0] - 2026-11-21
 

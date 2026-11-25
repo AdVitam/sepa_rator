@@ -35,11 +35,17 @@ module SEPA
       validation_errors = xsd.validate(document)
       return if validation_errors.empty?
 
-      sanitized = validation_errors.map { |e| e.message.gsub(/'[^']{20,}'/, "'[REDACTED]'") }
+      sanitized = validation_errors.map { |e| sanitize_schema_error(e.message) }
       raise SEPA::SchemaValidationError.new(
         "Incompatible with profile #{profile.id}: #{sanitized.join(', ')}",
         validation_errors.map(&:message)
       )
+    end
+
+    # Values can carry personal data (IBAN, names); element names cannot, and
+    # dropping their namespace keeps them under the redaction threshold.
+    def sanitize_schema_error(message)
+      message.gsub(/\{[^}]*\}/, '').gsub(/'[^']{20,}'/, "'[REDACTED]'")
     end
 
     def load_xsd(profile)

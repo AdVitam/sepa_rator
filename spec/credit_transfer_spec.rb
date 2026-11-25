@@ -34,7 +34,7 @@ RSpec.describe SEPA::CreditTransfer do
           SEPA::CreditTransfer.new(profile: sct_03, name: SEPA::TestData::DEBTOR_NAME,
                                    bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
                                    agent_lei: SEPA::TestData::LEI)
-        end.to raise_error(SEPA::ValidationError, /agent_lei.*does not support LEI/)
+        end.to raise_error(SEPA::ValidationError, /account\.agent_lei requires capability :agent_lei/)
       end
 
       it 'rejects an account with initiating_party_lei on a non-LEI profile' do
@@ -42,7 +42,7 @@ RSpec.describe SEPA::CreditTransfer do
           SEPA::CreditTransfer.new(profile: sct_03, name: SEPA::TestData::DEBTOR_NAME,
                                    bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
                                    initiating_party_lei: SEPA::TestData::LEI)
-        end.to raise_error(SEPA::ValidationError, /initiating_party_lei.*does not support LEI/)
+        end.to raise_error(SEPA::ValidationError, /account\.initiating_party_lei requires capability :lei/)
       end
 
       it 'accepts agent_lei on a LEI-capable profile (v09)' do
@@ -72,7 +72,7 @@ RSpec.describe SEPA::CreditTransfer do
       sct = build_ct(sct_03) # no :uetr capability
       expect do
         sct.add_transaction(credit_transfer_transaction(uetr: '550e8400-e29b-41d4-a716-446655440000'))
-      end.to raise_error(SEPA::ValidationError, /not compatible/)
+      end.to raise_error(SEPA::ValidationError, /transaction\.uetr requires capability :uetr/)
     end
   end
 
@@ -102,7 +102,7 @@ RSpec.describe SEPA::CreditTransfer do
                                        bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN)
         sct.add_transaction(credit_transfer_transaction)
         sct.account.agent_lei = SEPA::TestData::LEI
-        expect { sct.to_xml }.to raise_error(SEPA::ValidationError, /does not support LEI/)
+        expect { sct.to_xml }.to raise_error(SEPA::ValidationError, /account\.agent_lei requires capability :agent_lei/)
       end
     end
 
@@ -671,7 +671,7 @@ RSpec.describe SEPA::CreditTransfer do
       end
 
       it 'is rejected by pain.001.001.03 at add_transaction time' do
-        expect { build_ct(sct_03, &setup) }.to raise_error(SEPA::ValidationError, /not compatible/)
+        expect { build_ct(sct_03, &setup) }.to raise_error(SEPA::ValidationError, /transaction\.uetr requires capability :uetr/)
       end
     end
 
@@ -863,7 +863,7 @@ RSpec.describe SEPA::CreditTransfer do
       end
 
       it 'is rejected at add_transaction time for v03' do
-        expect { build_ct(sct_03, &setup) }.to raise_error(SEPA::ValidationError, /not compatible/)
+        expect { build_ct(sct_03, &setup) }.to raise_error(SEPA::ValidationError, /transaction\.debtor_agent_instruction requires capability :pmtinf_debtor_agent_instruction/)
       end
     end
 
@@ -891,7 +891,7 @@ RSpec.describe SEPA::CreditTransfer do
 
       %i[sct_03 sct_09].each do |profile_key|
         it "is rejected at add_transaction time for #{profile_key}" do
-          expect { build_ct(send(profile_key), &setup) }.to raise_error(SEPA::ValidationError, /not compatible/)
+          expect { build_ct(send(profile_key), &setup) }.to raise_error(SEPA::ValidationError, /transaction\.credit_transfer_mandate_id requires capability :mandate_related_info/)
         end
       end
     end
@@ -1213,10 +1213,8 @@ RSpec.describe SEPA::CreditTransfer do
       end
 
       it 'rejects an account with agent_lei for a v03 profile at construction' do
-        # agent_lei is a LEI-capability field; v03 profiles do not advertise :lei,
-        # so constructing the Message must fail immediately.
         expect { build_ct(sct_03, account_attrs) }
-          .to raise_error(SEPA::ValidationError, /agent_lei.*does not support LEI/)
+          .to raise_error(SEPA::ValidationError, /account\.agent_lei requires capability :agent_lei/)
       end
     end
 

@@ -61,7 +61,6 @@ module SEPA
         end
 
         def emit_pmtinf_debtor_agent_instruction(group)
-          return unless profile.supports?(:pmtinf_debtor_agent_instruction)
           return unless group.debtor_agent_instruction
 
           builder.InstrForDbtrAgt(group.debtor_agent_instruction)

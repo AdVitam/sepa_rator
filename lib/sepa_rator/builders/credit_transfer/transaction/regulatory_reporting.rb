@@ -8,7 +8,6 @@ module SEPA
         # Version is driven by `profile.features.regulatory_reporting_version`.
         class RegulatoryReporting < Stage
           def call
-            return unless profile.supports?(:regulatory_reporting)
             return unless transaction.regulatory_reportings
 
             version = profile.features.regulatory_reporting_version

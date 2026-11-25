@@ -70,6 +70,9 @@ module SEPA
             instructions_for_creditor_agent
             txn_instruction_for_debtor_agent
             regulatory_reporting
+            contact_details
+            account_address
+            structured_address
           ].freeze,
           transaction_stages: CREDIT_TRANSFER_STAGES,
           payment_info_stages: CREDIT_TRANSFER_PAYMENT_INFO_STAGES,
@@ -85,7 +88,7 @@ module SEPA
           xsd_path: 'iso/pain.001.001.09.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.001.001.09',
           features: { bic_tag: :BICFI, wrap_date: true, org_bic_tag: :AnyBIC },
-          capabilities: %i[uetr lei pmtinf_debtor_agent_instruction]
+          capabilities: %i[uetr lei agent_lei pmtinf_debtor_agent_instruction]
         )
       )
 
@@ -121,9 +124,8 @@ module SEPA
           xsd_path: 'iso/pain.001.002.03.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.001.002.03',
           features: { requires_bic: true, charset: Charset::EPC },
-          # EPC AOS drops InstrForCdtrAgt, InstrForDbtrAgt and RgltryRptg —
-          # `{ replace: }` clears SCT_03's capabilities rather than appending.
-          capabilities: { replace: [].freeze },
+          # EPC AOS drops InstrForCdtrAgt, InstrForDbtrAgt, RgltryRptg, CtctDtls and structured PstlAdr.
+          capabilities: { replace: %i[account_address].freeze },
           transaction_stages: [
             CT_STAGE::PaymentId,
             CT_STAGE::Amount,
@@ -178,7 +180,7 @@ module SEPA
             org_bic_tag: :BICOrBEI
           ),
           validators: [].freeze,
-          capabilities: [].freeze,
+          capabilities: %i[contact_details account_address structured_address].freeze,
           transaction_stages: DIRECT_DEBIT_STAGES,
           payment_info_stages: DIRECT_DEBIT_PAYMENT_INFO_STAGES,
           group_header_stages: DIRECT_DEBIT_GROUP_HEADER_STAGES,
@@ -193,7 +195,7 @@ module SEPA
           xsd_path: 'iso/pain.008.001.08.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.001.08',
           features: { bic_tag: :BICFI, org_bic_tag: :AnyBIC },
-          capabilities: %i[uetr lei],
+          capabilities: %i[uetr lei agent_lei],
           # v08+ lifts the v1 sequence type constraint (RPRE supported).
           accept_transaction: nil
         )
@@ -215,6 +217,7 @@ module SEPA
           xsd_path: 'iso/pain.008.002.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.002.02',
           features: { requires_bic: true, charset: Charset::EPC },
+          capabilities: { remove: %i[contact_details structured_address] },
           accept_transaction: DD_EPC_RULES
         )
       )
@@ -226,6 +229,7 @@ module SEPA
           xsd_path: 'iso/pain.008.003.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.003.02',
           features: { charset: Charset::EPC },
+          capabilities: { remove: %i[contact_details structured_address] },
           accept_transaction: DD_EPC_RULES
         )
       )

@@ -27,6 +27,8 @@ module SEPA
     validates :debtor_address, :debtor_contact_details, :creditor_account, nested_model: true, allow_nil: true
     validate { |t| t.validate_requested_date_after(Date.current.next) }
 
+    requires_capabilities debtor_contact_details: :contact_details
+
     validate do |t|
       errors.add(:original_mandate_id, 'is invalid') if original_mandate_id && !original_mandate_id.to_s.match?(MandateIdentifierValidator::REGEX)
 
@@ -55,17 +57,8 @@ module SEPA
       original_mandate_id || original_debtor_account || same_mandate_new_debtor_agent || original_creditor_account
     end
 
-    def compatible_capabilities?(profile)
-      requires_capability?(uetr, profile, :uetr) &&
-        requires_capability?(agent_lei, profile, :lei) &&
-        requires_capability?(creditor_account&.agent_lei, profile, :lei) &&
-        (!profile.features.requires_bic || (bic && !bic.empty?))
-    end
-
-    private
-
-    def requires_capability?(field_present, profile, capability)
-      !field_present || profile.supports?(capability)
+    def compatible_with?(profile)
+      super && (creditor_account.nil? || creditor_account.capability_violation(profile).nil?)
     end
   end
 end

@@ -5,10 +5,8 @@ module SEPA
     module CreditTransfer
       module Transaction
         # MndtRltdInf — CreditTransferMandateData1 (pain.001.001.13 only).
-        # No-op for profiles that don't advertise the :mandate_related_info capability.
         class CreditTransferMandate < Stage
           def call
-            return unless profile.supports?(:mandate_related_info)
             return unless transaction.credit_transfer_mandate?
 
             builder.MndtRltdInf do

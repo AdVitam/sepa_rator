@@ -14,6 +14,8 @@ module SEPA
     :min_amount,
     :requires_structured_address,
     :requires_country_code_on_address,
+    # PSA subsets: `InitgPty` holds exactly one of `Nm` or `Id`.
+    :exclusive_initiating_party,
     :extras
   ) do
     def self.default
@@ -29,6 +31,7 @@ module SEPA
         min_amount: nil,
         requires_structured_address: false,
         requires_country_code_on_address: false,
+        exclusive_initiating_party: false,
         extras: {}.freeze
       )
     end
@@ -97,8 +100,9 @@ module SEPA
       # Freeze collection fields so a caller cannot mutate a registered
       # profile's arrays under our feet. Individual stages/validators are
       # classes (already immutable by reference).
-      %i[validators capabilities transaction_stages payment_info_stages group_header_stages]
+      %i[validators transaction_stages payment_info_stages group_header_stages]
         .each { |key| attrs[key] = attrs[key].dup.freeze unless attrs[key].frozen? }
+      attrs[:capabilities] = attrs[:capabilities].to_set.freeze
 
       # Catch "forgot to point at a stage class" coquilles at registration
       # time instead of at XML build time.
@@ -143,13 +147,10 @@ module SEPA
       end
     end
 
-    # Merge helper for the flat list fields `validators` and `capabilities`.
-    # Stage lists use `StageList.merge` instead, which supports positional
-    # operations (`insert_after:`, `replace:`/`with:`, `remove:`).
-    #
-    # Array = append (common case), `{ replace: [...] }` = drop the parent
-    # list, `{ add: [...] }` = explicit append.
+    # Flat lists only (`validators`, `capabilities`): order is irrelevant, so no
+    # positional operations as in `StageList.merge`.
     def merge_list(old, value, unique:)
+      old = old.to_a
       combined =
         case value
         when Array
@@ -158,10 +159,11 @@ module SEPA
           case value
           in { replace: new } then Array(new)
           in { add: new } then old + Array(new)
+          in { remove: removed } then old - Array(removed)
           else
             raise ArgumentError,
                   "merge_list: unsupported Hash operation #{value.inspect}. " \
-                  'Expected `{ replace: [...] }` or `{ add: [...] }`.'
+                  'Expected `{ replace: [...] }`, `{ add: [...] }` or `{ remove: [...] }`.'
           end
         else
           raise ArgumentError,
