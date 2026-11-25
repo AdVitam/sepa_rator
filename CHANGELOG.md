@@ -6,7 +6,7 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ### Fixed
 
-- Date validations (requested date, mandate date of signature) use `Date.current`, i.e. the application time zone when set. Around midnight a mandate signed today in e.g. Europe/Vienna was rejected as being in the future on a UTC clock
+- Date validations (requested date, mandate date of signature) use `Date.current`, i.e. the application time zone when set. Around midnight a mandate signed today in e.g. Europe/Vienna was rejected as being in the future on a UTC clock. `Time.zone` is per thread and defaults to UTC under Rails (`config.time_zone`); without it the system date applies
 - `require 'sepa_rator'` works outside Rails: `date` and `time` are loaded explicitly
 
 ### Changed
