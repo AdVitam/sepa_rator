@@ -216,7 +216,7 @@ module SEPA
           iso_schema: 'pain.008.002.02',
           xsd_path: 'iso/pain.008.002.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.002.02',
-          features: { requires_bic: true, charset: Charset::EPC },
+          features: { requires_bic: true, charset: Charset::EPC, smnda_in_debtor_agent: true },
           capabilities: { remove: %i[contact_details structured_address] },
           accept_transaction: DD_EPC_RULES
         )
@@ -228,7 +228,7 @@ module SEPA
           iso_schema: 'pain.008.003.02',
           xsd_path: 'iso/pain.008.003.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.003.02',
-          features: { charset: Charset::EPC },
+          features: { charset: Charset::EPC, smnda_in_debtor_agent: true },
           capabilities: { remove: %i[contact_details structured_address] },
           accept_transaction: DD_EPC_RULES
         )

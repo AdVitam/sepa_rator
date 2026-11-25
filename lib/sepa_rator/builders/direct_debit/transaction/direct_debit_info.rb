@@ -30,11 +30,15 @@ module SEPA
             if transaction.original_debtor_account
               XmlBuilder.build_iban_account(builder, :OrgnlDbtrAcct, transaction.original_debtor_account)
             elsif transaction.same_mandate_new_debtor_agent
-              builder.OrgnlDbtrAgt do
-                builder.FinInstnId do
-                  builder.Othr { builder.Id('SMNDA') }
-                end
-              end
+              build_smnda
+            end
+          end
+
+          def build_smnda
+            if profile.features.smnda_in_debtor_agent
+              builder.OrgnlDbtrAgt { builder.FinInstnId { builder.Othr { builder.Id('SMNDA') } } }
+            else
+              builder.OrgnlDbtrAcct { builder.Id { builder.Othr { builder.Id('SMNDA') } } }
             end
           end
 

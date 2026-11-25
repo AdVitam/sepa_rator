@@ -26,7 +26,21 @@ RSpec.describe SEPA::Profile, '#supports?' do
     { field: 'creditor_address', capability: :structured_address, family: :credit_transfer,
       transaction: -> { { creditor_address: SEPA::CreditorAddress.new(**structured) } } },
     { field: 'debtor_address', capability: :structured_address, family: :direct_debit,
-      transaction: -> { { debtor_address: SEPA::DebtorAddress.new(**structured) } } }
+      transaction: -> { { debtor_address: SEPA::DebtorAddress.new(**structured) } } },
+    { field: 'transaction.uetr', capability: :uetr,
+      transaction: -> { { uetr: '550e8400-e29b-41d4-a716-446655440000' } } },
+    { field: 'transaction.debtor_agent_instruction', capability: :pmtinf_debtor_agent_instruction, family: :credit_transfer,
+      transaction: -> { { debtor_agent_instruction: 'Please process urgently' } } },
+    { field: 'transaction.instruction_for_debtor_agent', capability: :txn_instruction_for_debtor_agent, family: :credit_transfer,
+      transaction: -> { { instruction_for_debtor_agent: 'Urgent transfer' } } },
+    { field: 'transaction.instructions_for_creditor_agent', capability: :instructions_for_creditor_agent, family: :credit_transfer,
+      transaction: -> { { instructions_for_creditor_agent: [{ code: 'HOLD' }] } } },
+    { field: 'transaction.regulatory_reportings', capability: :regulatory_reporting, family: :credit_transfer,
+      transaction: -> { { regulatory_reportings: [{ indicator: 'CRED', details: [{ country: 'DE' }] }] } } },
+    { field: 'transaction.credit_transfer_mandate_id', capability: :mandate_related_info, family: :credit_transfer,
+      transaction: -> { { credit_transfer_mandate_id: 'MNDT-001' } } },
+    { field: 'initiation_source_name', capability: :initiation_source, family: :credit_transfer,
+      message: -> { { initiation_source_name: 'MyApp' } } }
   ].freeze
 
   def account_address(profile)
@@ -43,10 +57,17 @@ RSpec.describe SEPA::Profile, '#supports?' do
     account = scenario.fetch(:account, -> { {} }).call
                       .transform_values { |value| value == :address ? account_address(profile) : value }
     transaction = scenario.fetch(:transaction, -> { {} }).call
+    attributes = scenario.fetch(:message, -> { {} }).call
     if profile.family == :credit_transfer
-      build_ct(profile, account) { |sct| sct.add_transaction(credit_transfer_transaction(transaction)) }
+      build_ct(profile, account) do |sct|
+        attributes.each { |name, value| sct.public_send(:"#{name}=", value) }
+        sct.add_transaction(credit_transfer_transaction(transaction))
+      end
     else
-      build_dd(profile, account) { |sdd| sdd.add_transaction(direct_debit_transaction(transaction)) }
+      build_dd(profile, account) do |sdd|
+        attributes.each { |name, value| sdd.public_send(:"#{name}=", value) }
+        sdd.add_transaction(direct_debit_transaction(transaction))
+      end
     end
   end
 
@@ -69,5 +90,11 @@ RSpec.describe SEPA::Profile, '#supports?' do
         end
       end
     end
+  end
+
+  uncovered = SEPA::ProfileRegistry.all.flat_map { |profile| profile.capabilities.to_a }.uniq -
+              scenarios.map { |scenario| scenario[:capability] }
+  it 'has a scenario for every declared capability', uncovered: uncovered do |example|
+    expect(example.metadata[:uncovered]).to be_empty
   end
 end

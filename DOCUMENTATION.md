@@ -296,27 +296,27 @@ Use `SEPA::Address.new(...)` (or `SEPA::DebtorAddress` / `SEPA::CreditorAddress`
 | Field | Max length | Schema support |
 |-------|-----------|----------------|
 | `country_code` | 2 (ISO 3166) | All schemas |
-| `street_name` | 140 | All but `Ctry` + `AdrLine` schemas (1) |
+| `street_name` | 140 (70 in v03/v09) | All but `Ctry` + `AdrLine` schemas (1) |
 | `building_number` | 16 | All but `Ctry` + `AdrLine` schemas (1) |
 | `post_code` | 16 | All but `Ctry` + `AdrLine` schemas (1) |
-| `town_name` | 140 | All but `Ctry` + `AdrLine` schemas (1) |
+| `town_name` | 140 (35 in v03/v09) | All but `Ctry` + `AdrLine` schemas (1) |
 | `address_line1` | 70 | All schemas |
 | `address_line2` | 70 | All schemas |
-| `department` | 70 | .09/.08+ (PostalAddress24) |
-| `sub_department` | 70 | .09/.08+ |
-| `building_name` | 140 | .09/.08+ |
+| `department` | 70 | .03/.02+ (PostalAddress6) |
+| `sub_department` | 70 | .03/.02+ |
+| `country_sub_division` | 35 | .03/.02+ |
+| `building_name` | 140 (35 in v09/v08) | .09/.08+ (PostalAddress24) |
 | `floor` | 70 | .09/.08+ |
 | `post_box` | 16 | .09/.08+ |
 | `room` | 70 | .09/.08+ |
-| `town_location_name` | 140 | .09/.08+ |
-| `district_name` | 140 | .09/.08+ |
-| `country_sub_division` | 35 | .09/.08+ |
+| `town_location_name` | 140 (35 in v09/v08) | .09/.08+ |
+| `district_name` | 140 (35 in v09/v08) | .09/.08+ |
 | `care_of` | 140 | .13/.12 only (PostalAddress27) |
 | `unit_number` | 16 | .13/.12 only |
 
 (1) EPC AOS (`pain.001.002/003`, `pain.008.002/003`), AT v02/v03 and DK GBIC3 accept `country_code` and address lines only; other fields raise `SEPA::ValidationError` (`:structured_address` capability).
 
-Other fields not supported by a given schema are rejected during XSD validation.
+The model accepts the v13/v12 superset: per-version field availability and the stricter limits shown in parentheses are enforced by the final XSD validation, which rejects fields a given schema does not support.
 
 ---
 
@@ -421,7 +421,9 @@ For Direct Debit transactions, mandate amendment fields trigger `AmdmntInd = tru
 | `same_mandate_new_debtor_agent` | Boolean | Set to `true` when the debtor moved to a new bank (SMNDA) |
 | `original_creditor_account` | `SEPA::CreditorAccount` | Original creditor when name or identifier changed |
 
-These can be combined. `OrgnlMndtId` is always emitted first in the XML (per XSD sequence order).
+These can be combined, except `same_mandate_new_debtor_agent` with `original_debtor_account`, which raises `SEPA::ValidationError` (SMNDA means a new bank, the original account a change within the same bank). `OrgnlMndtId` is always emitted first in the XML (per XSD sequence order).
+
+`same_mandate_new_debtor_agent` is written as `OrgnlDbtrAcct/Id/Othr/Id = SMNDA` (current EPC rulebook). The EPC AOS profiles (`Profiles::ISO::SDD_EPC_002_02`, `SDD_EPC_003_02`) keep the legacy `OrgnlDbtrAgt/FinInstnId/Othr/Id = SMNDA`.
 
 ---
 
@@ -444,7 +446,7 @@ sct.initiation_source_provider = 'Advitam'
 
 Assigning `initiation_source_name` on a profile that does not advertise
 the `:initiation_source` capability raises `SEPA::ValidationError` at the
-setter — use `SEPA::Profiles::ISO::SCT_13` or a compatible country
+setter (standard "requires capability :initiation_source" message) — use `SEPA::Profiles::ISO::SCT_13` or a compatible country
 profile if you need this element.
 
 ---
@@ -597,25 +599,25 @@ AT PSA profiles (v02/v03/v08/v09) write exactly one `InitgPty` child: `Id` with 
 
 ## Contact Details
 
-Contact information can be attached to parties via `SEPA::ContactDetails`. Fields follow the Contact13 (v13) superset; older schemas reject unsupported fields via XSD validation. Profiles without `CtctDtls` (EPC AOS, AT v02/v03/v08/v09, DK, SPS v09) lack the `:contact_details` capability and raise `SEPA::ValidationError`.
+Contact information can be attached to parties via `SEPA::ContactDetails`. Fields follow the Contact13 (v13) superset; older schemas (ContactDetails2 in v03, Contact4 in v09) reject unsupported fields via XSD validation. Profiles without `CtctDtls` (EPC AOS, AT v02/v03/v08/v09, DK, SPS v09) lack the `:contact_details` capability and raise `SEPA::ValidationError`.
 
 ### Fields
 
 | Field | Max length | Schema support |
 |-------|-----------|----------------|
-| `name_prefix` | Enum | All schemas. Values: `DOCT`, `MADM`, `MISS`, `MIST`, `MIKS` (MIKS: v09+ only) |
+| `name_prefix` | Enum | All schemas. Values: `DOCT`, `MADM`, `MISS`, `MIST`, `MIKS` (MIKS: v09+ only, not in ContactDetails2) |
 | `name` | 140 | All schemas |
 | `phone_number` | 30 | All schemas |
 | `mobile_number` | 30 | All schemas |
 | `fax_number` | 30 | All schemas |
 | `url_address` | 2048 | v13 only |
-| `email_address` | 2048 | All schemas (v13 XSD enforces max 256) |
+| `email_address` | 2048 (256 in v13) | All schemas |
 | `email_purpose` | 35 | v09+ |
 | `job_title` | 35 | v09+ |
 | `responsibility` | 35 | v09+ |
 | `department` | 70 | v09+ |
-| `other_contacts` | Array | v09+. Each: `{ channel_type: Max4Text, id: Max128Text }` |
-| `preferred_method` | Enum | v09+. Values: `LETT`, `MAIL`, `PHON`, `FAXX`, `CELL`, `ONLI` (ONLI: v13 only) |
+| `other_contacts` | Array | v09+ (v03 `Othr` is a plain Max35Text, no structured entries). Each: `{ channel_type: Max4Text, id: Max128Text }` |
+| `preferred_method` | Enum | v09+. Values: `LETT`, `MAIL`, `PHON`, `FAXX`, `CELL`, `ONLI` (ONLI: v13 only, not in Contact4) |
 
 ### Usage
 
@@ -695,7 +697,10 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 
 A capability marks an optional element the profile's XSD accepts. Setting a
 field whose capability the profile lacks raises `SEPA::ValidationError` naming
-the field and the capability, before any XML is generated.
+the field and the capability, before any XML is generated. Country subset
+profiles declare only what their own XSD contains (e.g. `at.sct.03`, `at.sct.09`,
+`dk.sct.03.gbic3`, `dk.sct.09.gbic5` and `dk.sdd.08.gbic5` omit the capabilities
+for the elements listed in the tables below).
 
 | Capability | Fields | XML element |
 |------------|--------|-------------|
@@ -731,8 +736,8 @@ every capability it supports.
 | `Profiles::CFONB::SCT_03`         | `pain.001.001.03`     | EPC + structured addresses required (CFONB rule) |
 | `Profiles::CFONB::SCT_09`         | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::CFONB::SCT_13`         | `pain.001.001.13`     | Same, for v13 |
-| `Profiles::DK::SCT_03_GBIC3`      | `pain.001.001.03`     | EPC + DK GBIC3 (structured addresses) |
-| `Profiles::DK::SCT_09_GBIC5`      | `pain.001.001.09`     | EPC + DK GBIC5 (min_amount 0.01, structured addresses) |
+| `Profiles::DK::SCT_03_GBIC3`      | `pain.001.001.03`     | EPC + DK GBIC3 (`Ctry` + `AdrLine` only), no `InstrForDbtrAgt`, `InstrForCdtrAgt` or `RgltryRptg` |
+| `Profiles::DK::SCT_09_GBIC5`      | `pain.001.001.09`     | EPC + DK GBIC5 (min_amount 0.01, structured addresses), no UETR, `InstrForDbtrAgt` (payment info or transaction), `InstrForCdtrAgt` or `RgltryRptg` |
 | `Profiles::DK::SCT_13_GBIC5`      | `pain.001.001.13`     | Same, for v13 |
 | `Profiles::SPS::SCT_03`           | `pain.001.001.03`     | ISO 03 + EUR/CHF, structured addresses, country code required |
 | `Profiles::SPS::SCT_09`           | `pain.001.001.09`     | Same, for v09 |
@@ -740,8 +745,8 @@ every capability it supports.
 | `Profiles::GB::SCT_03`            | `pain.001.001.03`     | ISO 03 + EUR/GBP (CHAPS), structured addresses, country code required |
 | `Profiles::GB::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::GB::SCT_13`            | `pain.001.001.13`     | Same, for v13 |
-| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01, single `InitgPty` child, no `CtctDtls` |
-| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, single `InitgPty` child, no `CtctDtls`, agent LEI or account address |
+| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01, single `InitgPty` child, no `CtctDtls`, `InstrForDbtrAgt`, `InstrForCdtrAgt` or `RgltryRptg` |
+| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, single `InitgPty` child, no `CtctDtls`, agent LEI, account address, transaction-level `InstrForDbtrAgt`, `InstrForCdtrAgt` or `RgltryRptg` |
 | `Profiles::AT::SCT_13`            | `pain.001.001.13`     | Same, for v13 (ISO baseline XSD — no AT-specific v13 published) |
 | `Profiles::NL::SCT_03`            | `pain.001.001.03`     | EPC + Betaalvereniging NL IG, structured addresses required |
 | `Profiles::NL::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
@@ -762,8 +767,8 @@ every capability it supports.
 | `Profiles::CFONB::SDD_02`         | `pain.008.001.02`     | EPC + structured addresses required |
 | `Profiles::CFONB::SDD_08`         | `pain.008.001.08`     | Same, for v08 |
 | `Profiles::CFONB::SDD_12`         | `pain.008.001.12`     | Same, for v12 |
-| `Profiles::DK::SDD_02_GBIC3`      | `pain.008.001.02`     | EPC + DK GBIC3 (structured addresses) |
-| `Profiles::DK::SDD_08_GBIC5`      | `pain.008.001.08`     | EPC + DK GBIC5 |
+| `Profiles::DK::SDD_02_GBIC3`      | `pain.008.001.02`     | EPC + DK GBIC3 (`Ctry` + `AdrLine` only) |
+| `Profiles::DK::SDD_08_GBIC5`      | `pain.008.001.08`     | EPC + DK GBIC5, no UETR |
 | `Profiles::DK::SDD_12_GBIC5`      | `pain.008.001.12`     | Same, for v12 |
 | `Profiles::SPS::SDD_02`           | `pain.008.001.02`     | ISO 02 + EUR only, structured addresses |
 | `Profiles::SPS::SDD_08`           | `pain.008.001.08`     | Same, for v08 |

@@ -251,6 +251,22 @@ RSpec.describe SEPA::DirectDebitTransaction do
     end
   end
 
+  context 'SMNDA amendment' do
+    it 'rejects same_mandate_new_debtor_agent combined with original_debtor_account' do
+      tx = SEPA::DirectDebitTransaction.new(direct_debit_transaction.merge(
+                                              same_mandate_new_debtor_agent: true,
+                                              original_debtor_account: 'NL08RABO0135742099'
+                                            ))
+      expect(tx).not_to be_valid
+      expect(tx.errors[:same_mandate_new_debtor_agent]).to include('cannot be combined with original_debtor_account')
+    end
+
+    it 'accepts either one alone' do
+      expect(SEPA::DirectDebitTransaction.new(direct_debit_transaction.merge(same_mandate_new_debtor_agent: true))).to be_valid
+      expect(SEPA::DirectDebitTransaction.new(direct_debit_transaction.merge(original_debtor_account: 'NL08RABO0135742099'))).to be_valid
+    end
+  end
+
   context 'Agent LEI' do
     it 'allows valid LEI' do
       expect(SEPA::DirectDebitTransaction).to accept(nil, SEPA::TestData::LEI, for: :agent_lei)

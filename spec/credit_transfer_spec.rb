@@ -841,7 +841,7 @@ RSpec.describe SEPA::CreditTransfer do
 
       it 'is rejected at assignment for v03 (InitnSrc is v13-only)' do
         expect { build_ct(sct_03, &setup) }
-          .to raise_error(SEPA::ValidationError, /initiation_source_name.*does not support InitnSrc/)
+          .to raise_error(SEPA::ValidationError, /initiation_source_name requires capability :initiation_source, not supported by this profile/)
       end
     end
 

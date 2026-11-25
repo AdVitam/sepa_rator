@@ -2,6 +2,21 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING**: `same_mandate_new_debtor_agent` (SMNDA) is written as `OrgnlDbtrAcct/Id/Othr/Id` (current EPC rulebook) instead of `OrgnlDbtrAgt/FinInstnId/Othr/Id`; the EPC AOS profiles (`iso.pain.008.002.02`, `iso.pain.008.003.02`) keep the legacy location
+- **BREAKING**: combining `same_mandate_new_debtor_agent` with `original_debtor_account` raises `SEPA::ValidationError`
+- `initiation_source_name` on a profile without the capability raises the standard "requires capability :initiation_source" message
+
+### Fixed
+
+- AT PSA (`at.sct.03`, `at.sct.09`) and DK GBIC (`dk.sct.03.gbic3`, `dk.sct.09.gbic5`) credit transfer profiles no longer declare `:txn_instruction_for_debtor_agent`, `:instructions_for_creditor_agent` and `:regulatory_reporting`, absent from their XSD; `dk.sct.09.gbic5` also drops `:uetr` and `:pmtinf_debtor_agent_instruction`, `dk.sdd.08.gbic5` drops `:uetr`. Using them raises `SEPA::ValidationError` instead of failing XSD validation
+- `dk.sdd.02.gbic3`: SMNDA amendments failed XSD validation (GBIC3 only allows a BIC in `OrgnlDbtrAgt`)
+- SMNDA was silently dropped when `original_debtor_account` was also set
+- DOCUMENTATION: address and contact detail tables list the per-version availability and limits (PostalAddress6/24/27, ContactDetails2/Contact4/Contact13)
+
 ## [2.2.0] - 2026-11-25
 
 ### Added
