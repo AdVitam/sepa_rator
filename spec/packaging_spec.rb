@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
+require 'open3'
 
 # The suite loads schemas straight from the monorepo, so a broken
 # `s.files` glob would ship an empty gem with specs green.
@@ -43,5 +44,20 @@ RSpec.describe 'gem packaging' do # rubocop:disable RSpec/DescribeClass
         end
       end
     end
+  end
+
+  # spec_helper loads ActiveSupport helpers that hide missing requires in the gem.
+  it 'builds a message in a bare Ruby process' do
+    script = <<~RUBY
+      require 'sepa_rator'
+      sct = SEPA::CreditTransfer.new(name: 'Schuldner GmbH', bic: 'BANKDEFFXXX', iban: 'DE87200500001234567890')
+      sct.add_transaction(name: 'Telekomiker AG', bic: 'PBNKDEFF370', iban: 'DE37112589611964645802',
+                          amount: 102.50, requested_date: Date.today + 1)
+      sct.to_xml
+    RUBY
+    _out, err, status = Open3.capture3(RbConfig.ruby, '-Ilib', '-rbundler/setup', '-e', script,
+                                       chdir: File.expand_path('..', __dir__))
+
+    expect(status).to be_success, err
   end
 end
