@@ -93,6 +93,15 @@ RSpec.describe SEPA::Profile do
       expect(derived.capabilities).to contain_exactly(:uetr, :lei, :mandate_related_info)
     end
 
+    it 'drops parent capabilities when given `{ remove: [...] }`' do
+      derived = base.with(capabilities: { remove: %i[lei] })
+      expect(derived.capabilities).to contain_exactly(:uetr)
+    end
+
+    it 'stores capabilities as a frozen Set' do
+      expect(base.capabilities).to be_a(Set).and be_frozen
+    end
+
     it 'supports the same replace/add operators for validators' do
       validator_c = Class.new
       expect(base.with(validators: { replace: [validator_c] }).validators).to eq [validator_c]

@@ -3,8 +3,8 @@
 module SEPA
   # Collection of stateless helpers used by builder stages to emit common
   # XML fragments (addresses, contacts, agent BIC, remittance info, etc.).
-  # Most helpers are data-only; `build_agent_bic` is the exception that
-  # takes a profile to select the right BIC tag and LEI emission.
+  # Most helpers are data-only; `build_agent_bic` and `build_initiating_party`
+  # take a profile to select tags and the `InitgPty` layout.
   module XmlBuilder
     module_function
 
@@ -58,14 +58,24 @@ module SEPA
       end
     end
 
-    def build_agent_bic(builder, bic, profile, fallback: true, lei: nil)
-      lei_emitted = lei && profile.supports?(:lei)
+    def build_initiating_party(builder, account, profile)
+      builder.InitgPty do
+        if profile.features.exclusive_initiating_party
+          account.initiating_party_identifiers.empty? ? builder.Nm(account.name) : account.initiating_party_id(builder, profile)
+        else
+          builder.Nm(account.name)
+          account.initiating_party_id(builder, profile)
+          build_contact_details(builder, account.contact_details)
+        end
+      end
+    end
 
+    def build_agent_bic(builder, bic, profile, fallback: true, lei: nil)
       builder.FinInstnId do
         # XSD sequence: BICFI/BIC → ClrSysMmbId → LEI → Nm → PstlAdr → Othr
         builder.__send__(profile.features.bic_tag, bic) if bic
-        builder.LEI(lei) if lei_emitted
-        if !bic && !lei_emitted && fallback
+        builder.LEI(lei) if lei
+        if !bic && !lei && fallback
           builder.Othr do
             builder.Id('NOTPROVIDED')
           end
@@ -97,20 +107,6 @@ module SEPA
           builder.Issr(transaction.structured_remittance_issuer) if transaction.structured_remittance_issuer
         end
         builder.Ref(transaction.structured_remittance_information)
-      end
-    end
-
-    def build_initiating_party(builder, account, profile)
-      builder.InitgPty do
-        if !profile.single_child?('GrpHdr/InitgPty')
-          builder.Nm(account.name)
-          account.initiating_party_id(builder, profile)
-          build_contact_details(builder, account.contact_details)
-        elsif account.explicit_initiating_party_id?
-          account.initiating_party_id(builder, profile)
-        else
-          builder.Nm(account.name)
-        end
       end
     end
 

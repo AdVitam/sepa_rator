@@ -49,7 +49,9 @@ module SEPA
 
       SCT_09 = ProfileRegistry.register(
         ISO::SCT_09.with(id: 'sps.sct.09', xsd_path: 'sps/pain.001.001.09.ch.03.xsd',
-                         features: FEATURES, accept_transaction: CT_SPS_RULES)
+                         features: FEATURES, accept_transaction: CT_SPS_RULES,
+                         # The SPS XSD allows CtctDtls in InitgPty only; contact_details also feeds Dbtr and Cdtr.
+                         capabilities: { remove: %i[contact_details] })
       )
 
       SCT_13 = ProfileRegistry.register(

@@ -165,36 +165,145 @@ RSpec.describe SEPA::Profiles::AT do
     end
   end
 
-  describe 'agent identification (PSA: exactly one element in FinInstnId)' do
-    let(:lei) { '529900T8BM49AURSDO55' }
+  describe 'PSA subsets' do
+    psa = {
+      described_class::SCT_03 => 'at/pain.001.001.03.at.004.xsd',
+      described_class::SCT_09 => 'at/pain.001.001.09.at.005.xsd',
+      described_class::SDD_02 => 'at/pain.008.001.02.at.004.xsd',
+      described_class::SDD_08 => 'at/pain.008.001.08.at.004.xsd'
+    }.freeze
 
-    it 'rejects a message account with both a BIC and an agent LEI' do
-      expect { credit_transfer_message(profile: described_class::SCT_13, agent_lei: lei) }
-        .to raise_error(SEPA::ValidationError, /account accepts a bic or an agent_lei, not both/)
+    # Elements the PSA subsets reduce to a single child, kept out of the XSD
+    # check: the AT XSDs allow the ISO sequence and leave the rule to prose.
+    def single_child_paths = %w[//GrpHdr/InitgPty //GrpHdr/InitgPty/Id/OrgId //RmtInf //FinInstnId]
+
+    def xml_doc(xml) = Nokogiri::XML(xml).remove_namespaces!
+
+    def children_of(xml, xpath) = xml_doc(xml).at_xpath(xpath).element_children.map(&:name)
+
+    def psa_address(profile)
+      klass = profile.family == :credit_transfer ? SEPA::CreditorAddress : SEPA::DebtorAddress
+      if profile.features.requires_structured_address
+        klass.new(country_code: 'AT', street_name: 'Hauptstrasse', building_number: '1', post_code: '1010', town_name: 'Wien')
+      else
+        klass.new(country_code: 'AT', address_line1: 'Hauptstrasse 1', address_line2: '1010 Wien')
+      end
     end
 
-    it 'rejects a transaction with both a BIC and an agent LEI' do
-      sct = credit_transfer_message(profile: described_class::SCT_13)
-
-      expect { sct.add_transaction(credit_transfer_transaction(agent_lei: lei)) }
-        .to raise_error(SEPA::ValidationError, /transaction accepts a bic or an agent_lei, not both/)
+    def psa_message(profile, account = {})
+      if profile.family == :credit_transfer
+        build_ct(profile, account) { |sct| sct.add_transaction(credit_transfer_transaction(creditor_address: psa_address(profile))) }
+      else
+        build_dd(profile, account) { |sdd| sdd.add_transaction(direct_debit_transaction(debtor_address: psa_address(profile))) }
+      end
     end
 
-    it 'rejects a creditor account override with both a BIC and an agent LEI' do
-      sdd = direct_debit_message(profile: described_class::SDD_12)
-      override = SEPA::CreditorAccount.new(name: 'Other Creditor', bic: SEPA::TestData::DEBTOR_BIC,
-                                           iban: SEPA::TestData::DEBTOR_IBAN, agent_lei: lei,
-                                           creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
+    psa.each do |profile, xsd|
+      context profile.id do
+        it 'writes a single child wherever the subset requires it' do
+          doc = xml_doc(psa_message(profile).to_xml)
 
-      expect { sdd.add_transaction(direct_debit_transaction(creditor_account: override)) }
-        .to raise_error(SEPA::ValidationError, /creditor_account accepts a bic or an agent_lei, not both/)
+          single_child_paths.each do |path|
+            doc.xpath(path).each { |node| expect(node.element_children.size).to eq(1), path }
+          end
+        end
+
+        it 'writes only the name in InitgPty without an explicit identifier' do
+          xml = psa_message(profile).to_xml
+
+          expect(children_of(xml, '//GrpHdr/InitgPty')).to eq(['Nm'])
+          expect(xml).to validate_against(xsd)
+        end
+
+        it 'writes only the initiating party BIC in InitgPty' do
+          xml = psa_message(profile, initiating_party_bic: 'RLNWATWWXXX').to_xml
+
+          expect(children_of(xml, '//GrpHdr/InitgPty')).to eq(['Id'])
+          expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId').size).to eq(1)
+          expect(xml).to validate_against(xsd)
+        end
+
+        it 'rejects contact details' do
+          expect { psa_message(profile, contact_details: SEPA::ContactDetails.new(name: 'Jane Doe')) }
+            .to raise_error(SEPA::ValidationError, /account\.contact_details requires capability :contact_details/)
+        end
+      end
     end
 
-    it 'keeps both on profiles without the rule' do
-      sct = credit_transfer_message(profile: SEPA::Profiles::EPC::SCT_13, agent_lei: lei)
-      sct.add_transaction(credit_transfer_transaction(agent_lei: lei))
+    { described_class::SCT_03 => { initiating_party_identifier: 'ACME-001' },
+      described_class::SCT_09 => { initiating_party_identifier: 'ACME-001' },
+      described_class::SDD_08 => { initiating_party_lei: SEPA::TestData::LEI } }.each do |profile, second|
+      it "rejects more than one initiating party identifier on #{profile.id}" do
+        expect { psa_message(profile, initiating_party_bic: 'RLNWATWWXXX', **second) }
+          .to raise_error(SEPA::ValidationError, %r{InitgPty/Id holds a single identifier})
+      end
+    end
 
-      expect(sct.to_xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', lei)
+    it 'keeps the creditor identifier in CdtrSchmeId only' do
+      sdd = psa_message(described_class::SDD_08)
+      doc = xml_doc(sdd.to_xml)
+
+      expect(doc.at_xpath('//GrpHdr/InitgPty//Othr')).to be_nil
+      expect(doc.at_xpath('//CdtrSchmeId//Othr/Id').text).to eq(SEPA::TestData::CREDITOR_IDENTIFIER)
+    end
+
+    it 'writes the initiating party LEI alone on v08/v09' do
+      xml = psa_message(described_class::SDD_08, initiating_party_lei: SEPA::TestData::LEI).to_xml
+
+      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['LEI'])
+      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
+    end
+
+    it 'writes the initiating party identifier alone for a debtor' do
+      xml = psa_message(described_class::SCT_09, initiating_party_identifier: 'ACME-001').to_xml
+
+      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['Othr'])
+      expect(xml).to validate_against('at/pain.001.001.09.at.005.xsd')
+    end
+
+    it 'rejects an agent LEI and an account address on v08/v09' do
+      address = SEPA::CreditorAddress.new(country_code: 'AT', street_name: 'Hauptstrasse', building_number: '1',
+                                          post_code: '1010', town_name: 'Wien')
+      expect { psa_message(described_class::SDD_08, agent_lei: SEPA::TestData::LEI) }
+        .to raise_error(SEPA::ValidationError, /account\.agent_lei requires capability :agent_lei/)
+      expect { psa_message(described_class::SDD_08, address: address) }
+        .to raise_error(SEPA::ValidationError, /account\.address requires capability :account_address/)
+    end
+
+    it 'keeps every amendment detail and both original creditor scheme children' do
+      sdd = direct_debit_message(profile: described_class::SDD_08)
+      sdd.add_transaction(direct_debit_transaction(
+                            original_mandate_id: 'OLD-MANDATE',
+                            original_creditor_account: SEPA::CreditorAccount.new(
+                              name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER
+                            )
+                          ))
+      xml = sdd.to_xml
+
+      expect(children_of(xml, '//AmdmntInfDtls')).to eq(%w[OrgnlMndtId OrgnlCdtrSchmeId])
+      expect(children_of(xml, '//OrgnlCdtrSchmeId')).to eq(%w[Nm Id])
+      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
+    end
+  end
+
+  describe 'ISO-based v12/v13' do
+    it 'keeps name, creditor identifier and contact details in InitgPty' do
+      sdd = direct_debit_message(profile: described_class::SDD_12,
+                                 contact_details: SEPA::ContactDetails.new(name: 'Jane Doe'))
+      sdd.add_transaction(direct_debit_transaction)
+      doc = Nokogiri::XML(sdd.to_xml).remove_namespaces!
+
+      expect(doc.at_xpath('//GrpHdr/InitgPty').element_children.map(&:name)).to eq(%w[Nm Id CtctDtls])
+      expect(doc.at_xpath('//GrpHdr/InitgPty//Othr/Id').text).to eq(SEPA::TestData::CREDITOR_IDENTIFIER)
+    end
+
+    it 'accepts a BIC and an agent LEI together' do
+      sct = credit_transfer_message(profile: described_class::SCT_13, agent_lei: SEPA::TestData::LEI)
+      sct.add_transaction(credit_transfer_transaction(
+                            creditor_address: SEPA::CreditorAddress.new(country_code: 'AT', town_name: 'Wien')
+                          ))
+
+      expect(sct.to_xml).to validate_against('iso/pain.001.001.13.xsd')
     end
   end
 
@@ -235,124 +344,6 @@ RSpec.describe SEPA::Profiles::AT do
                                   bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
                                   creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
       expect(sdd.profile).to equal(described_class::SDD_12)
-    end
-  end
-
-  describe 'initiating party (PSA: exactly one element in InitgPty)' do
-    def xml_doc(xml)
-      Nokogiri::XML(xml).remove_namespaces!
-    end
-
-    def children_of(xml, xpath)
-      xml_doc(xml).at_xpath(xpath).element_children.map(&:name)
-    end
-
-    def initiating_party_children(xml)
-      children_of(xml, '//GrpHdr/InitgPty')
-    end
-
-    def at_sdd_08(attributes = {})
-      sdd = direct_debit_message(profile: described_class::SDD_08, **attributes)
-      sdd.add_transaction(direct_debit_transaction)
-      sdd.to_xml
-    end
-
-    def at_sct_09(attributes = {})
-      sct = SEPA::CreditTransfer.new(profile: described_class::SCT_09, name: SEPA::TestData::DEBTOR_NAME,
-                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
-                                     **attributes)
-      sct.add_transaction(credit_transfer_transaction(
-                            creditor_address: SEPA::CreditorAddress.new(country_code: 'AT', town_name: 'Wien')
-                          ))
-      sct.to_xml
-    end
-
-    it 'declares the rule on every AT profile' do
-      [described_class::SCT_03, described_class::SCT_09, described_class::SCT_13,
-       described_class::SDD_02, described_class::SDD_08, described_class::SDD_12].each do |profile|
-        expect(profile.single_child?('GrpHdr/InitgPty')).to be(true), profile.id
-      end
-    end
-
-    { described_class::SDD_08 => 'at/pain.008.001.08.at.004.xsd',
-      described_class::SDD_02 => 'at/pain.008.001.02.at.004.xsd' }.each do |profile, xsd|
-      it "writes only the name for #{profile.id} although the creditor identifier is set" do
-        sdd = direct_debit_message(profile: profile)
-        sdd.add_transaction(direct_debit_transaction)
-        xml = sdd.to_xml
-
-        expect(initiating_party_children(xml)).to eq(['Nm'])
-        expect(xml_doc(xml).at_xpath('//CdtrSchmeId//Othr/Id').text).to eq(sdd.account.creditor_identifier)
-        expect(xml).to satisfy_single_child_rules_of(profile)
-        expect(xml).to validate_against(xsd)
-      end
-    end
-
-    it 'writes only the BIC when the creditor sets an initiating party BIC' do
-      xml = at_sdd_08(initiating_party_bic: 'RLNWATWWXXX')
-
-      expect(initiating_party_children(xml)).to eq(['Id'])
-      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['AnyBIC'])
-      expect(xml_doc(xml).at_xpath('//InitgPty//AnyBIC').text).to eq('RLNWATWWXXX')
-      expect(xml_doc(xml).at_xpath('//CdtrSchmeId//Othr/Id').text).to eq(SEPA::TestData::CREDITOR_IDENTIFIER)
-      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
-      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
-    end
-
-    it 'writes only the initiating party BIC in OrgId on legacy profiles' do
-      sdd = direct_debit_message(profile: described_class::SDD_02, initiating_party_bic: 'RLNWATWWXXX')
-      sdd.add_transaction(direct_debit_transaction)
-      xml = sdd.to_xml
-
-      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['BICOrBEI'])
-      expect(xml).to validate_against('at/pain.008.001.02.at.004.xsd')
-    end
-
-    it 'writes only the LEI when the creditor sets an initiating party LEI' do
-      xml = at_sdd_08(initiating_party_lei: '529900T8BM49AURSDO55')
-
-      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['LEI'])
-      expect(xml_doc(xml).at_xpath('//InitgPty//LEI').text).to eq('529900T8BM49AURSDO55')
-      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
-      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
-    end
-
-    it 'writes only the identifier when the debtor sets an initiating party identifier' do
-      xml = at_sct_09(initiating_party_identifier: 'ACME-001')
-
-      expect(initiating_party_children(xml)).to eq(['Id'])
-      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['Othr'])
-      expect(xml_doc(xml).at_xpath('//InitgPty//Othr/Id').text).to eq('ACME-001')
-      expect(xml).to satisfy_single_child_rules_of(described_class::SCT_09)
-      expect(xml).to validate_against('at/pain.001.001.09.at.005.xsd')
-    end
-
-    it 'keeps name and id with the creditor identifier on profiles without the rule' do
-      sdd = direct_debit_message(profile: SEPA::Profiles::EPC::SDD_08)
-      sdd.add_transaction(direct_debit_transaction)
-      xml = sdd.to_xml
-
-      expect(initiating_party_children(xml)).to eq(%w[Nm Id])
-      expect(xml_doc(xml).at_xpath('//InitgPty//Othr/Id').text).to eq(SEPA::TestData::CREDITOR_IDENTIFIER)
-      expect(xml).to validate_against('pain.008.001.08.xsd')
-    end
-  end
-
-  describe 'amendment details (PSA: at least one element)' do
-    it 'keeps every amendment detail and both original creditor scheme children' do
-      sdd = direct_debit_message(profile: described_class::SDD_08)
-      sdd.add_transaction(direct_debit_transaction(
-                            original_mandate_id: 'OLD-MANDATE',
-                            original_creditor_account: SEPA::CreditorAccount.new(
-                              name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER
-                            )
-                          ))
-      xml = sdd.to_xml
-      doc = Nokogiri::XML(xml).remove_namespaces!
-
-      expect(doc.at_xpath('//AmdmntInfDtls').element_children.map(&:name)).to eq(%w[OrgnlMndtId OrgnlCdtrSchmeId])
-      expect(doc.at_xpath('//OrgnlCdtrSchmeId').element_children.map(&:name)).to eq(%w[Nm Id])
-      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
     end
   end
 end

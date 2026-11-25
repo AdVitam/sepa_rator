@@ -8,7 +8,6 @@ module SEPA
         # schemas and as a structured {Cd, InstrInf} block in pain.001.001.13.
         class TxnInstructionForDebtorAgent < Stage
           def call
-            return unless profile.supports?(:txn_instruction_for_debtor_agent)
             return unless transaction.instruction_for_debtor_agent || transaction.instruction_for_debtor_agent_code
 
             case profile.features.instr_for_dbtr_agt_format

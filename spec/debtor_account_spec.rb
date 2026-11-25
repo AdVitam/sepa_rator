@@ -59,5 +59,12 @@ RSpec.describe SEPA::DebtorAccount do
     it 'does not accept values exceeding 35 characters' do
       expect(SEPA::DebtorAccount).not_to accept('', 'X' * 36, for: :initiating_party_scheme)
     end
+
+    it 'requires an initiating party identifier' do
+      account = SEPA::DebtorAccount.new(name: SEPA::TestData::DEBTOR_NAME, iban: SEPA::TestData::DEBTOR_IBAN,
+                                        initiating_party_scheme: 'SIREN')
+      expect(account).not_to be_valid
+      expect(account.errors[:initiating_party_identifier]).not_to be_empty
+    end
   end
 end

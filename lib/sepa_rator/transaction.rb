@@ -4,6 +4,7 @@ module SEPA
   class Transaction
     include ActiveModel::Model
     include CharsetApplicable
+    include CapabilityRequirements
     extend Converter
 
     # Convention SEPA: 1999-01-01 signifies "execute as soon as possible" (ASAP).
@@ -60,6 +61,8 @@ module SEPA
     validates_with IBANValidator
     validates_with LEIValidator, field_name: :agent_lei, message: 'is invalid'
 
+    requires_capabilities uetr: :uetr, agent_lei: :agent_lei
+
     validate do |t|
       if t.remittance_information && (t.structured_remittance_information || t.additional_remittance_information)
         t.errors.add(:base, 'remittance_information and structured remittance fields are mutually exclusive')
@@ -92,17 +95,15 @@ module SEPA
     end
 
     # @return [Boolean] whether this transaction can be rendered under the
-    #   given profile. Delegates to `profile.accepts?` for profile-level rules
-    #   (e.g. EPC currency restrictions) and to `#compatible_capabilities?` for
-    #   capability-level checks (UETR, LEI, mandate info, …).
+    #   given profile: profile-level rules (`profile.accepts?`, e.g. EPC
+    #   currency restrictions), declared capabilities and feature formats.
     def compatible_with?(profile)
-      profile.accepts?(self) && compatible_capabilities?(profile)
+      profile.accepts?(self) && capability_violation(profile).nil? && compatible_features?(profile)
     end
 
-    # @abstract Subclasses override to check that fields requiring capabilities
-    #   (uetr, lei, etc.) are only set when the profile advertises them.
-    def compatible_capabilities?(_profile)
-      true
+    # @return [Boolean] whether the set fields fit the profile's features
+    def compatible_features?(profile)
+      !profile.features.requires_bic || (bic && !bic.empty?)
     end
 
     protected

@@ -14,6 +14,7 @@ require 'sepa_rator/validator'
 require 'sepa_rator/nested_model_validator'
 require 'sepa_rator/concerns/charset_applicable'
 require 'sepa_rator/concerns/regulatory_reporting_charset'
+require 'sepa_rator/concerns/capability_requirements'
 require 'sepa_rator/concerns/schema_validation'
 require 'sepa_rator/concerns/xml_builder'
 require 'sepa_rator/concerns/regulatory_reporting_validator'
@@ -64,8 +65,6 @@ require 'sepa_rator/message/credit_transfer'
 
 # Profile validators (national rules) — loaded before profiles that use them.
 require 'sepa_rator/validators/min_amount'
-require 'sepa_rator/validators/single_agent_identification'
-require 'sepa_rator/validators/single_initiating_party'
 require 'sepa_rator/validators/dk/min_amount'
 
 # Profiles — loaded last, after message/transaction classes and stages.

@@ -50,6 +50,16 @@ module SEPA
     validate :validate_regulatory_reportings
     validate :validate_credit_transfer_mandate_date_of_signature
 
+    requires_capabilities debtor_agent_instruction: :pmtinf_debtor_agent_instruction,
+                          credit_transfer_mandate_id: :mandate_related_info,
+                          credit_transfer_mandate_date_of_signature: :mandate_related_info,
+                          credit_transfer_mandate_frequency: :mandate_related_info,
+                          instruction_for_debtor_agent: :txn_instruction_for_debtor_agent,
+                          instruction_for_debtor_agent_code: :txn_instruction_for_debtor_agent,
+                          instructions_for_creditor_agent: :instructions_for_creditor_agent,
+                          regulatory_reportings: :regulatory_reporting,
+                          creditor_contact_details: :contact_details
+
     def initialize(attributes = {})
       super
       # Ergonomic default: EUR transactions get SvcLvl=SEPA unless the
@@ -72,20 +82,11 @@ module SEPA
       credit_transfer_mandate_id || credit_transfer_mandate_date_of_signature || credit_transfer_mandate_frequency
     end
 
-    # Driven by capabilities advertised on the profile. Profile-level rules
-    # (currency, service level, charge bearer) flow via `profile.accept_transaction`
-    # in the base Transaction#compatible_with?.
-    def compatible_capabilities?(profile)
-      requires_capability?(uetr, profile, :uetr) &&
-        requires_capability?(agent_lei, profile, :lei) &&
-        requires_capability?(debtor_agent_instruction, profile, :pmtinf_debtor_agent_instruction) &&
-        requires_capability?(credit_transfer_mandate?, profile, :mandate_related_info) &&
-        requires_capability?(instruction_for_debtor_agent, profile, :txn_instruction_for_debtor_agent) &&
-        requires_capability?(regulatory_reportings&.any?, profile, :regulatory_reporting) &&
+    def compatible_features?(profile)
+      super &&
         instr_for_dbtr_agt_code_compatible?(profile) &&
         instructions_for_creditor_agent_compatible?(profile) &&
-        regulatory_reportings_compatible?(profile) &&
-        (!profile.features.requires_bic || (bic && !bic.empty?))
+        regulatory_reportings_compatible?(profile)
     end
 
     private
@@ -100,23 +101,15 @@ module SEPA
       end
     end
 
-    def requires_capability?(field_present, profile, capability)
-      !field_present || profile.supports?(capability)
-    end
-
     # `instruction_for_debtor_agent_code` is the `Cd` element inside the
     # structured InstrForDbtrAgt block, which only exists when the profile
     # emits that block in structured form (pain.001.001.13+).
     def instr_for_dbtr_agt_code_compatible?(profile)
-      return true unless instruction_for_debtor_agent_code
-
-      profile.supports?(:txn_instruction_for_debtor_agent) &&
-        profile.features.instr_for_dbtr_agt_format == :structured
+      !instruction_for_debtor_agent_code || profile.features.instr_for_dbtr_agt_format == :structured
     end
 
     def instructions_for_creditor_agent_compatible?(profile)
       return true unless instructions_for_creditor_agent&.any?
-      return false unless profile.supports?(:instructions_for_creditor_agent)
 
       instructions_for_creditor_agent.all? { |instr| valid_instruction_code?(instr[:code], profile) }
     end

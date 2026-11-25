@@ -12,17 +12,18 @@ module SEPA
     validates_length_of :initiating_party_scheme,     within: 1..35,  allow_nil: true
     validates_with LEIValidator, field_name: :initiating_party_lei, message: 'is invalid'
     validates_with BICValidator, field_name: :initiating_party_bic, message: 'is invalid'
+    validates_presence_of :initiating_party_identifier, if: :initiating_party_scheme
 
-    def explicit_initiating_party_id?
-      !(initiating_party_identifier || initiating_party_bic || initiating_party_lei).nil?
-    end
+    requires_capabilities initiating_party_lei: :lei
 
     def initiating_party_id(builder, profile)
-      return unless explicit_initiating_party_id?
+      return if initiating_party_identifiers.empty?
 
       build_organisation_id(builder, initiating_party_identifier, profile,
                             lei: initiating_party_lei, org_bic: initiating_party_bic,
                             scheme: initiating_party_scheme)
     end
+
+    def initiating_party_identifiers = [initiating_party_bic, initiating_party_lei, initiating_party_identifier].compact
   end
 end

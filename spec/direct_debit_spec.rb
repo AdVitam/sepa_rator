@@ -439,7 +439,18 @@ RSpec.describe SEPA::DirectDebit do
           )
           expect do
             sdd.add_transaction(direct_debit_transaction.merge(creditor_account: override))
-          end.to raise_error(SEPA::ValidationError, /creditor_account\.agent_lei.*does not support LEI/)
+          end.to raise_error(SEPA::ValidationError, /creditor_account\.agent_lei requires capability :agent_lei/)
+        end
+
+        it 'rejects a per-transaction creditor_account override that sets an initiating party' do
+          sdd = build_dd(sdd_02)
+          override = SEPA::CreditorAccount.new(
+            name: 'Creditor Inc.', bic: 'RABONL2U', iban: 'NL08RABO0135742099',
+            creditor_identifier: 'NL53ZZZ091734220000', initiating_party_bic: 'RABONL2U'
+          )
+          expect do
+            sdd.add_transaction(direct_debit_transaction.merge(creditor_account: override))
+          end.to raise_error(SEPA::ValidationError, /creditor_account\.initiating_party_\* is ignored/)
         end
 
         it 'rejects a per-transaction creditor_account override that is missing a required BIC' do
@@ -732,7 +743,7 @@ RSpec.describe SEPA::DirectDebit do
     end
 
     it 'is rejected at add_transaction time for pain.008.001.02' do
-      expect { build_dd(sdd_02, &setup) }.to raise_error(SEPA::ValidationError, /not compatible/)
+      expect { build_dd(sdd_02, &setup) }.to raise_error(SEPA::ValidationError, /transaction\.uetr requires capability :uetr/)
     end
   end
 
@@ -857,7 +868,7 @@ RSpec.describe SEPA::DirectDebit do
     end
 
     it 'is rejected at add_transaction time for pain.008.001.02' do
-      expect { build_dd(sdd_02, &setup) }.to raise_error(SEPA::ValidationError, /not compatible/)
+      expect { build_dd(sdd_02, &setup) }.to raise_error(SEPA::ValidationError, /transaction\.agent_lei requires capability :agent_lei/)
     end
   end
 

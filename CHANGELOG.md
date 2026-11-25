@@ -2,17 +2,32 @@
 
 Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unmaintained since 2022).
 
-## [Unreleased]
+## [2.2.0] - 2026-11-25
 
-### Fixed
+### Added
 
-- AT (PSA) profiles follow the PSA "exactly one subsequent element" rules, lost when the XSD 1.1 asserts were stripped (v08/v09) and never enforced for the documentation-only v02/v03 rules. `<InitgPty>` holds the name, or the id when `initiating_party_identifier`, `initiating_party_bic` or `initiating_party_lei` is set; `InitgPty/Id/OrgId` holds that single identification and never the creditor identifier, which stays in `CdtrSchmeId`. Austrian banks rejected the previous output
-- AT (PSA) profiles raise `SEPA::ValidationError` on data a single-child element cannot hold: several initiating party identifications, `contact_details` on the message account, or both a `bic` and an `agent_lei` on an account or transaction
-- AT (PSA) documents are checked after XSD validation for every single-child path of the profile; a violation raises `SEPA::SchemaValidationError`. New profile feature `single_child_paths` and `Profile#single_child?`
+- Profile capabilities `:agent_lei` (`FinInstnId/LEI`), `:contact_details` (`CtctDtls`) and `:account_address` (message account `PstlAdr`)
+- `Profile#with` accepts `{ remove: [...] }` for capabilities and validators
+- `ProfileFeatures#exclusive_initiating_party`: `InitgPty` holds `Nm` or `Id`, never both
 
 ### Changed
 
+- **BREAKING**: `:lei` covers `InitgPty/Id/OrgId/LEI` only; a custom profile emitting `FinInstnId/LEI` must add `:agent_lei`
+- **BREAKING**: a custom `Profile.new` must declare `:contact_details` and `:account_address` to emit `CtctDtls` and the message account `PstlAdr`
+- **BREAKING**: a field the profile does not support raises `SEPA::ValidationError` naming the field and the capability, instead of `SEPA::SchemaValidationError` at `to_xml`
+- **BREAKING**: a per-transaction `creditor_account` setting `initiating_party_*` raises `SEPA::ValidationError` instead of being ignored
+- **BREAKING**: `initiating_party_scheme` without `initiating_party_identifier` is invalid instead of being dropped
+- Schema validation errors keep the element name; only values of 20 characters or more are redacted
 - The initiation source capability is checked only by `initiation_source_name=`; the redundant checks at construction, in `to_xml` and in the group header builder are removed
+- `Profile#capabilities` is a frozen `Set`
+
+### Fixed
+
+- AT PSA profiles (v02/v03/v08/v09) write a single `InitgPty` child and keep the creditor identifier in `CdtrSchmeId` only
+- AT PSA profiles reject `CtctDtls`; v08/v09 also reject the agent LEI and the message account address
+- DK GBIC profiles reject `CtctDtls`; GBIC5 also rejects the agent LEI
+- EPC AOS direct debit profiles reject `CtctDtls`
+- SPS v09 rejects `CtctDtls`, which its XSD allows in `InitgPty` only
 
 ## [2.1.0] - 2026-11-21
 
