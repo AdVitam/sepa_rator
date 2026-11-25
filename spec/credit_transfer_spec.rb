@@ -45,6 +45,72 @@ RSpec.describe SEPA::CreditTransfer do
         end.to raise_error(SEPA::ValidationError, /initiating_party_lei.*does not support LEI/)
       end
 
+      context 'with a single-child InitgPty profile (AT)' do
+        let(:at_sct) { SEPA::Profiles::AT::SCT_09 }
+
+        def at_message(**attrs)
+          SEPA::CreditTransfer.new(profile: at_sct, name: SEPA::TestData::DEBTOR_NAME,
+                                   bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN, **attrs)
+        end
+
+        it 'rejects several initiating party identifications' do
+          expect do
+            at_message(initiating_party_identifier: 'ID-1', initiating_party_lei: SEPA::TestData::LEI)
+          end.to raise_error(SEPA::ValidationError, /single initiating party identification/)
+        end
+
+        it 'rejects BIC combined with another identification' do
+          expect do
+            at_message(initiating_party_bic: 'DEUTDEFF', initiating_party_identifier: 'ID-1')
+          end.to raise_error(SEPA::ValidationError, /single initiating party identification/)
+        end
+
+        it 'rejects identifications set again after construction' do
+          message = at_message(initiating_party_identifier: 'ID-1')
+          message.add_transaction(credit_transfer_transaction)
+          message.account.initiating_party_lei = SEPA::TestData::LEI
+          expect { message.to_xml }.to raise_error(SEPA::ValidationError, /single initiating party identification/)
+        end
+
+        it 'accepts one identification and ignores empty strings' do
+          expect { at_message(initiating_party_identifier: 'ID-1', initiating_party_lei: '') }.not_to raise_error
+          expect { at_message(initiating_party_lei: SEPA::TestData::LEI) }.not_to raise_error
+        end
+
+        it 'rejects contact_details on the account' do
+          expect do
+            at_message(contact_details: SEPA::ContactDetails.new(name: 'Jane'))
+          end.to raise_error(SEPA::ValidationError, /contact_details is not allowed/)
+        end
+
+        it 'leaves several identifications and contact_details allowed on other profiles' do
+          expect do
+            SEPA::CreditTransfer.new(profile: SEPA::Profiles::ISO::SCT_09, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
+                                     initiating_party_identifier: 'ID-1', initiating_party_lei: SEPA::TestData::LEI,
+                                     contact_details: SEPA::ContactDetails.new(name: 'Jane'))
+          end.not_to raise_error
+        end
+
+        it 'does not count the creditor_identifier of a direct debit account' do
+          expect do
+            SEPA::DirectDebit.new(profile: SEPA::Profiles::AT::SDD_08, name: SEPA::TestData::CREDITOR_NAME,
+                                  bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
+                                  creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER,
+                                  initiating_party_bic: 'DEUTDEFF')
+          end.not_to raise_error
+        end
+
+        it 'rejects BIC and LEI together on a direct debit account' do
+          expect do
+            SEPA::DirectDebit.new(profile: SEPA::Profiles::AT::SDD_08, name: SEPA::TestData::CREDITOR_NAME,
+                                  bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
+                                  creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER,
+                                  initiating_party_bic: 'DEUTDEFF', initiating_party_lei: SEPA::TestData::LEI)
+          end.to raise_error(SEPA::ValidationError, /single initiating party identification/)
+        end
+      end
+
       it 'accepts agent_lei on a LEI-capable profile (v09)' do
         expect do
           SEPA::CreditTransfer.new(profile: sct_09, name: SEPA::TestData::DEBTOR_NAME,

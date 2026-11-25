@@ -636,6 +636,8 @@ contact = SEPA::ContactDetails.new(
 
 XSD element order in `PartyIdentification`: `Nm` → `PstlAdr` → `Id` → `CtryOfRes` → `CtctDtls`
 
+AT (PSA) profiles allow a single child in `InitgPty`: the name, or the id when an `initiating_party_*` identification is set (one at most). `contact_details` on the message account raises `SEPA::ValidationError` there.
+
 ---
 
 ## Remittance Information
@@ -709,8 +711,8 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::GB::SCT_03`            | `pain.001.001.03`     | ISO 03 + EUR/GBP (CHAPS), structured addresses, country code required |
 | `Profiles::GB::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
 | `Profiles::GB::SCT_13`            | `pain.001.001.13`     | Same, for v13 |
-| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01, one element in `InitgPty` |
-| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, one element in `InitgPty` |
+| `Profiles::AT::SCT_03`            | `pain.001.001.03`     | EPC 03 + PSA/Stuzza XSD, min_amount 0.01, PSA single-child rules |
+| `Profiles::AT::SCT_09`            | `pain.001.001.09`     | EPC 09 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, PSA single-child rules |
 | `Profiles::AT::SCT_13`            | `pain.001.001.13`     | Same, for v13 (ISO baseline XSD — no AT-specific v13 published) |
 | `Profiles::NL::SCT_03`            | `pain.001.001.03`     | EPC + Betaalvereniging NL IG, structured addresses required |
 | `Profiles::NL::SCT_09`            | `pain.001.001.09`     | Same, for v09 |
@@ -740,8 +742,8 @@ and adds its own rules (extra validators, stricter `accept_transaction`, etc.).
 | `Profiles::GB::SDD_02`            | `pain.008.001.02`     | ISO 02 + EUR only, structured addresses |
 | `Profiles::GB::SDD_08`            | `pain.008.001.08`     | Same, for v08 |
 | `Profiles::GB::SDD_12`            | `pain.008.001.12`     | Same, for v12 |
-| `Profiles::AT::SDD_02`            | `pain.008.001.02`     | EPC 02 + PSA/Stuzza XSD, min_amount 0.01, one element in `InitgPty` |
-| `Profiles::AT::SDD_08`            | `pain.008.001.08`     | EPC 08 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, one element in `InitgPty` |
+| `Profiles::AT::SDD_02`            | `pain.008.001.02`     | EPC 02 + PSA/Stuzza XSD, min_amount 0.01, PSA single-child rules |
+| `Profiles::AT::SDD_08`            | `pain.008.001.08`     | EPC 08 + PSA/Stuzza XSD, min_amount 0.01, structured addresses, PSA single-child rules |
 | `Profiles::AT::SDD_12`            | `pain.008.001.12`     | Same, for v12 (ISO baseline XSD — no AT-specific v12 published) |
 | `Profiles::NL::SDD_02`            | `pain.008.001.02`     | EPC + Betaalvereniging NL IG, structured addresses required |
 | `Profiles::NL::SDD_08`            | `pain.008.001.08`     | Same, for v08 |

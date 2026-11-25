@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_support/concern'
+require 'concurrent/map'
 
 module SEPA
   module SchemaValidation
@@ -13,6 +14,7 @@ module SEPA
     # effect immediately.
     SCHEMA_CACHE = {} # rubocop:disable Style/MutableConstant -- intentional cache
     SCHEMA_CACHE_MUTEX = Mutex.new
+    SINGLE_CHILD_XPATHS = Concurrent::Map.new
 
     class << self
       def schema_roots
@@ -33,13 +35,36 @@ module SEPA
       xsd = load_xsd(profile)
 
       validation_errors = xsd.validate(document)
-      return if validation_errors.empty?
+      return check_single_child_rules!(document, profile) if validation_errors.empty?
 
       sanitized = validation_errors.map { |e| e.message.gsub(/'[^']{20,}'/, "'[REDACTED]'") }
       raise SEPA::SchemaValidationError.new(
         "Incompatible with profile #{profile.id}: #{sanitized.join(', ')}",
         validation_errors.map(&:message)
       )
+    end
+
+    # The XSDs only document these "exactly one subsequent element" rules, so
+    # they are enforced here on the already-built document.
+    def check_single_child_rules!(document, profile)
+      paths = profile.features.single_child_paths
+      return if paths.empty?
+
+      violations = document.xpath(single_child_xpath(paths), 'ns' => profile.namespace)
+                           .reject { |node| node.element_children.one? }
+      return if violations.empty?
+
+      names = violations.map { |node| (node.ancestors.reverse.drop(1) << node).map(&:name).join('/') }.uniq
+      raise SEPA::SchemaValidationError.new(
+        "Incompatible with profile #{profile.id}: exactly one child element required in #{names.join(', ')}",
+        names
+      )
+    end
+
+    def single_child_xpath(paths)
+      SINGLE_CHILD_XPATHS.compute_if_absent(paths) do
+        paths.map { |path| "//ns:#{path.gsub('/', '/ns:')}" }.join(' | ')
+      end
     end
 
     def load_xsd(profile)

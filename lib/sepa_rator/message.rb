@@ -52,7 +52,7 @@ module SEPA
       @profile = resolve_profile(country: country, version: version, profile: profile)
       @grouped_transactions = {}
       @account = admit(account_class.new(account_options))
-      validate_account_against_profile!(@account)
+      validate_message_account!
     end
 
     # Add a transaction to the message. The transaction is validated both
@@ -88,7 +88,7 @@ module SEPA
       [@account, *transactions].each { |model| model.apply_charset(charset) }
       raise SEPA::ValidationError, errors.full_messages.join("\n") unless valid?
 
-      validate_account_against_profile!(@account)
+      validate_message_account!
       transactions.each { |transaction| validate_transaction_against_profile!(transaction) }
 
       doc = Nokogiri::XML::Builder.new(encoding: 'UTF-8') do |builder|
@@ -176,6 +176,11 @@ module SEPA
 
       validate_transaction_addresses_against_profile!(transaction)
       run_profile_validators(transaction)
+    end
+
+    def validate_message_account!
+      validate_account_against_profile!(@account)
+      Validators::SingleInitiatingParty.validate(@account, profile)
     end
 
     # Enforce profile-level rules on any account (the message's own account,

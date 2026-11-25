@@ -40,8 +40,9 @@ module SEPA
 
           def build_original_creditor_scheme
             original = transaction.original_creditor_account
+            id_only = original.creditor_identifier && profile.single_child?('OrgnlCdtrSchmeId')
             builder.OrgnlCdtrSchmeId do
-              builder.Nm(original.name) if original.name
+              builder.Nm(original.name) if original.name && !id_only
               next unless original.creditor_identifier
 
               builder.Id do

@@ -105,4 +105,38 @@ RSpec.describe SEPA::SchemaValidation do
         .to raise_error(SEPA::Error, /not found \(searched roots: .*schema.*\)\.\z/)
     end
   end
+
+  describe 'single-child rules' do
+    def ct_xml(paths)
+      profile = SEPA::Profiles::ISO::SCT_09.with(features: { single_child_paths: paths })
+      sct = credit_transfer_message(profile: profile)
+      sct.add_transaction(credit_transfer_transaction)
+      sct.to_xml
+    end
+
+    it 'raises when an element with several children is listed' do
+      expect { ct_xml(%w[GrpHdr]) }
+        .to raise_error(SEPA::SchemaValidationError, %r{#{SEPA::Profiles::ISO::SCT_09.id}.*Document/CstmrCdtTrfInitn/GrpHdr})
+    end
+
+    it 'raises when a listed element has no child' do
+      expect { ct_xml(%w[GrpHdr/MsgId]) }
+        .to raise_error(SEPA::SchemaValidationError, %r{CstmrCdtTrfInitn/GrpHdr/MsgId})
+    end
+
+    it 'accepts a document where every listed element has exactly one child' do
+      xml = ct_xml(%w[GrpHdr/InitgPty])
+
+      expect(xml).to satisfy_single_child_rules_of(
+        SEPA::Profiles::ISO::SCT_09.with(features: { single_child_paths: %w[GrpHdr/InitgPty] })
+      )
+    end
+
+    it 'does not check profiles without rules' do
+      sdd = direct_debit_message(profile: SEPA::Profiles::EPC::SDD_08)
+      sdd.add_transaction(direct_debit_transaction)
+
+      expect { sdd.to_xml }.not_to raise_error
+    end
+  end
 end

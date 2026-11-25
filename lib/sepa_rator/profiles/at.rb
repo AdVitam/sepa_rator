@@ -16,6 +16,7 @@ module SEPA
     # v09/v08 schemas so Nokogiri/libxml2 (XSD 1.0 only) can load them.
     module AT
       VALIDATORS = [Validators::MinAmount].freeze
+      SDD_VALIDATORS = [*VALIDATORS, Validators::SingleAmendmentDetail].freeze
 
       # "GENAU/NUR EIN FOLGE-ELEMENT" types of the PSA XSDs: asserts in v08/v09,
       # documentation only in v02/v03, so `single_child_paths` enforces them.
@@ -64,11 +65,11 @@ module SEPA
 
       SDD_08 = ProfileRegistry.register(
         EPC::SDD_08.with(id: 'at.sdd.08', xsd_path: 'at/pain.008.001.08.at.004.xsd',
-                         features: SDD_FEATURES, validators: VALIDATORS)
+                         features: SDD_FEATURES, validators: SDD_VALIDATORS)
       )
 
       SDD_12 = ProfileRegistry.register(
-        EPC::SDD_12.with(id: 'at.sdd.12', features: SDD_FEATURES, validators: VALIDATORS)
+        EPC::SDD_12.with(id: 'at.sdd.12', features: SDD_FEATURES, validators: SDD_VALIDATORS)
       )
     end
   end

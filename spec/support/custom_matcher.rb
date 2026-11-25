@@ -63,3 +63,19 @@ RSpec::Matchers.define :accept do |*values, options|
     end
   end
 end
+
+RSpec::Matchers.define :satisfy_single_child_rules_of do |profile|
+  match do |actual|
+    doc = Nokogiri::XML(actual)
+    doc.remove_namespaces!
+
+    @violations = profile.features.single_child_paths.flat_map do |path|
+      doc.xpath("//#{path}").reject { |node| node.element_children.size == 1 }.map { |node| [path, node.element_children.map(&:name)] }
+    end
+    @violations.empty?
+  end
+
+  failure_message do
+    "expected exactly one child element for #{@violations.map { |path, children| "#{path} (#{children.inspect})" }.join(', ')}"
+  end
+end

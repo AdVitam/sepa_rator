@@ -13,7 +13,8 @@ module SEPA
     end
 
     def initiating_party_id(builder, profile)
-      build_organisation_id(builder, creditor_identifier, profile,
+      identifier = creditor_identifier unless profile.single_child?('GrpHdr/InitgPty/Id/OrgId')
+      build_organisation_id(builder, identifier, profile,
                             lei: initiating_party_lei, org_bic: initiating_party_bic)
     end
   end

@@ -206,8 +206,32 @@ RSpec.describe SEPA::Profiles::AT do
   end
 
   describe 'initiating party (PSA: exactly one element in InitgPty)' do
+    def xml_doc(xml)
+      Nokogiri::XML(xml).remove_namespaces!
+    end
+
+    def children_of(xml, xpath)
+      xml_doc(xml).at_xpath(xpath).element_children.map(&:name)
+    end
+
     def initiating_party_children(xml)
-      Nokogiri::XML(xml).remove_namespaces!.at_xpath('//GrpHdr/InitgPty').element_children.map(&:name)
+      children_of(xml, '//GrpHdr/InitgPty')
+    end
+
+    def at_sdd_08(attributes = {})
+      sdd = direct_debit_message(profile: described_class::SDD_08, **attributes)
+      sdd.add_transaction(direct_debit_transaction)
+      sdd.to_xml
+    end
+
+    def at_sct_09(attributes = {})
+      sct = SEPA::CreditTransfer.new(profile: described_class::SCT_09, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
+                                     **attributes)
+      sct.add_transaction(credit_transfer_transaction(
+                            creditor_address: SEPA::CreditorAddress.new(country_code: 'AT', town_name: 'Wien')
+                          ))
+      sct.to_xml
     end
 
     it 'declares the rule on every AT profile' do
@@ -225,39 +249,97 @@ RSpec.describe SEPA::Profiles::AT do
         xml = sdd.to_xml
 
         expect(initiating_party_children(xml)).to eq(['Nm'])
-        expect(Nokogiri::XML(xml).remove_namespaces!.at_xpath('//CdtrSchmeId//Othr/Id').text)
-          .to eq(sdd.account.creditor_identifier)
+        expect(xml_doc(xml).at_xpath('//CdtrSchmeId//Othr/Id').text).to eq(sdd.account.creditor_identifier)
+        expect(xml).to satisfy_single_child_rules_of(profile)
         expect(xml).to validate_against(xsd)
       end
     end
 
-    it 'writes only the id when the creditor sets an initiating party BIC' do
-      sdd = direct_debit_message(profile: described_class::SDD_08, initiating_party_bic: 'RLNWATWWXXX')
-      sdd.add_transaction(direct_debit_transaction)
-      xml = sdd.to_xml
+    it 'writes only the BIC when the creditor sets an initiating party BIC' do
+      xml = at_sdd_08(initiating_party_bic: 'RLNWATWWXXX')
 
       expect(initiating_party_children(xml)).to eq(['Id'])
+      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['AnyBIC'])
+      expect(xml_doc(xml).at_xpath('//InitgPty//AnyBIC').text).to eq('RLNWATWWXXX')
+      expect(xml_doc(xml).at_xpath('//CdtrSchmeId//Othr/Id').text).to eq(SEPA::TestData::CREDITOR_IDENTIFIER)
+      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
       expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
     end
 
-    it 'writes only the id when the debtor sets an initiating party identifier' do
-      sct = SEPA::CreditTransfer.new(profile: described_class::SCT_09, name: SEPA::TestData::DEBTOR_NAME,
-                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
-                                     initiating_party_identifier: 'ACME-001')
-      sct.add_transaction(credit_transfer_transaction(
-                            creditor_address: SEPA::CreditorAddress.new(country_code: 'AT', town_name: 'Wien')
-                          ))
-      xml = sct.to_xml
+    it 'writes only the LEI when the creditor sets an initiating party LEI' do
+      xml = at_sdd_08(initiating_party_lei: '529900T8BM49AURSDO55')
+
+      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['LEI'])
+      expect(xml_doc(xml).at_xpath('//InitgPty//LEI').text).to eq('529900T8BM49AURSDO55')
+      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
+      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
+    end
+
+    it 'writes only the identifier when the debtor sets an initiating party identifier' do
+      xml = at_sct_09(initiating_party_identifier: 'ACME-001')
 
       expect(initiating_party_children(xml)).to eq(['Id'])
+      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['Othr'])
+      expect(xml_doc(xml).at_xpath('//InitgPty//Othr/Id').text).to eq('ACME-001')
+      expect(xml).to satisfy_single_child_rules_of(described_class::SCT_09)
       expect(xml).to validate_against('at/pain.001.001.09.at.005.xsd')
     end
 
-    it 'keeps name and id on profiles without the rule' do
+    it 'keeps name and id with the creditor identifier on profiles without the rule' do
       sdd = direct_debit_message(profile: SEPA::Profiles::EPC::SDD_08)
       sdd.add_transaction(direct_debit_transaction)
+      xml = sdd.to_xml
 
-      expect(initiating_party_children(sdd.to_xml)).to eq(%w[Nm Id])
+      expect(initiating_party_children(xml)).to eq(%w[Nm Id])
+      expect(xml_doc(xml).at_xpath('//InitgPty//Othr/Id').text).to eq(SEPA::TestData::CREDITOR_IDENTIFIER)
+      expect(xml).to validate_against('pain.008.001.08.xsd')
+    end
+  end
+
+  describe 'original creditor scheme (PSA: exactly one element in OrgnlCdtrSchmeId)' do
+    def amended_xml(original_creditor)
+      sdd = direct_debit_message(profile: described_class::SDD_08)
+      sdd.add_transaction(direct_debit_transaction(
+                            original_creditor_account: SEPA::CreditorAccount.new(**original_creditor)
+                          ))
+      sdd.to_xml
+    end
+
+    def scheme_children(xml)
+      Nokogiri::XML(xml).remove_namespaces!.at_xpath('//OrgnlCdtrSchmeId').element_children.map(&:name)
+    end
+
+    it 'writes only the id when the original creditor has a name and an identifier' do
+      xml = amended_xml(name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
+
+      expect(scheme_children(xml)).to eq(['Id'])
+      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
+      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
+    end
+
+    it 'writes only the name when the original creditor has no identifier' do
+      xml = amended_xml(name: 'Old Creditor')
+
+      expect(scheme_children(xml)).to eq(['Nm'])
+      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
+      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
+    end
+  end
+
+  describe 'amendment details (PSA: exactly one element in AmdmntInfDtls)' do
+    [described_class::SDD_08, described_class::SDD_12].each do |profile|
+      it "rejects two amendment details under #{profile.id}" do
+        sdd = direct_debit_message(profile: profile)
+
+        expect do
+          sdd.add_transaction(direct_debit_transaction(
+                                original_mandate_id: 'OLD-MANDATE',
+                                original_creditor_account: SEPA::CreditorAccount.new(
+                                  name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER
+                                )
+                              ))
+        end.to raise_error(SEPA::ValidationError, /only one amendment detail/)
+      end
     end
   end
 end
