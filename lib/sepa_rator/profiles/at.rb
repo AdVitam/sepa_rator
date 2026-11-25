@@ -6,7 +6,8 @@ module SEPA
     #
     # PSA publishes Austrian "Technical Validation Subsets" (v02/v03/v08/v09)
     # that tighten the ISO baseline: minimum amount of 0.01, structured
-    # postal addresses (v09/v08), `InitgPty` holding exactly one of `Nm` or
+    # postal addresses (v09/v08) or `Ctry` + `AdrLine` only (v03/v02),
+    # `InitgPty` holding exactly one of `Nm` or
     # `Id`, no `CtctDtls`, and (v09/v08) no LEI in `FinInstnId` and no postal
     # address on the message account. v13/v12 have no PSA subset and follow
     # the ISO schema. The vendored XSDs live in the `sepa_rator-at` gem
@@ -33,12 +34,11 @@ module SEPA
         capabilities: { remove: %i[contact_details agent_lei account_address] }
       }.freeze
 
-      # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine, not the
-      # full structured fields — so we must not require structured addresses.
+      # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine.
       LEGACY_SUBSET = {
         features: { charset: Charset::AT, min_amount: BigDecimal('0.01'), exclusive_initiating_party: true },
         validators: VALIDATORS,
-        capabilities: { remove: %i[contact_details] }
+        capabilities: { remove: %i[contact_details structured_address] }
       }.freeze
 
       # ─── SEPA Credit Transfer ────────────────────────────────────────────

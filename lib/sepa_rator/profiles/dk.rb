@@ -6,7 +6,8 @@ module SEPA
     #
     # DK publishes its own XSDs (GBIC3 for v03/v02, GBIC5 for v09/v08) that
     # tighten the ISO baseline with a minimum transaction amount of 0.01,
-    # structured postal addresses, no `CtctDtls` and (GBIC5) no LEI in
+    # structured postal addresses (GBIC5) or `Ctry` + `AdrLine` only (GBIC3),
+    # no `CtctDtls` and (GBIC5) no LEI in
     # `FinInstnId`. v13/v12 have no DK schema and follow the ISO one. The
     # vendored XSDs live in the `sepa_rator-dk` gem (downloaded from
     # https://www.ebics.de).
@@ -19,8 +20,7 @@ module SEPA
         requires_structured_address: true
       }.freeze
 
-      # GBIC3 (v03/v02) PostalAddressSEPA only supports Ctry + AdrLine,
-      # not structured fields — so we must not require structured addresses.
+      # GBIC3 (v03/v02) PostalAddressSEPA only supports Ctry + AdrLine.
       LEGACY_FEATURES = {
         charset: Charset::DK,
         min_amount: BigDecimal('0.01')
@@ -31,7 +31,7 @@ module SEPA
       SCT_03_GBIC3 = ProfileRegistry.register(
         EPC::SCT_03.with(id: 'dk.sct.03.gbic3', xsd_path: 'dk/pain.001.001.03_GBIC_3.xsd',
                          features: LEGACY_FEATURES, validators: VALIDATORS,
-                         capabilities: { remove: %i[contact_details] })
+                         capabilities: { remove: %i[contact_details structured_address] })
       )
 
       SCT_09_GBIC5 = ProfileRegistry.register(
@@ -49,7 +49,7 @@ module SEPA
       SDD_02_GBIC3 = ProfileRegistry.register(
         EPC::SDD_02.with(id: 'dk.sdd.02.gbic3', xsd_path: 'dk/pain.008.001.02_GBIC_3.xsd',
                          features: LEGACY_FEATURES, validators: VALIDATORS,
-                         capabilities: { remove: %i[contact_details] })
+                         capabilities: { remove: %i[contact_details structured_address] })
       )
 
       SDD_08_GBIC5 = ProfileRegistry.register(

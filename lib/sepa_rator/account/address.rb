@@ -78,5 +78,9 @@ module SEPA
     def uses_address_lines?
       !address_line1.nil? || !address_line2.nil?
     end
+
+    ELEMENT_FIELDS = (XmlBuilder::POSTAL_ADDRESS_FIELDS.map(&:last) - %i[country_code address_line1 address_line2]).freeze
+
+    def lines_only? = ELEMENT_FIELDS.none? { |field| public_send(field) }
   end
 end

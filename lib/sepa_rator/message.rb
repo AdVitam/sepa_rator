@@ -199,7 +199,7 @@ module SEPA
       raise SEPA::ValidationError, "[#{profile.id}] #{label} is missing the required BIC" if profile.features.requires_bic && (account.bic.nil? || account.bic.empty?)
 
       assert_capabilities!(account, label)
-      assert_address_structured!(account.address, "#{label}.address")
+      assert_address_format!(account.address, "#{label}.address")
       assert_address_has_country_code!(account.address, "#{label}.address")
     end
 
@@ -212,25 +212,24 @@ module SEPA
     # serialised in `PmtInf/*/PstlAdr` and must satisfy the same structured
     # requirement as the message account when the profile mandates it.
     def validate_transaction_addresses_against_profile!(transaction)
-      if profile.features.requires_structured_address
-        assert_address_structured!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
-        assert_address_structured!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
-      end
-
+      assert_address_format!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
+      assert_address_format!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
       return unless profile.features.requires_country_code_on_address
 
       assert_address_has_country_code!(transaction.creditor_address, 'creditor_address') if transaction.respond_to?(:creditor_address)
       assert_address_has_country_code!(transaction.debtor_address, 'debtor_address') if transaction.respond_to?(:debtor_address)
     end
 
-    def assert_address_structured!(address, label)
-      return unless profile.features.requires_structured_address
+    def assert_address_format!(address, label)
       return if address.nil?
-      return if address.structured?
+
+      if profile.features.requires_structured_address && !address.structured?
+        raise SEPA::ValidationError, "[#{profile.id}] #{label} must use structured fields (StrtNm, PstCd, TwnNm, …), not AdrLine"
+      end
+      return if address.lines_only? || profile.supports?(:structured_address)
 
       raise SEPA::ValidationError,
-            "[#{profile.id}] #{label} must use structured fields " \
-            '(StrtNm, PstCd, TwnNm, …), not AdrLine'
+            "[#{profile.id}] #{label} requires capability :structured_address, not supported by this profile: set only country_code and address lines"
     end
 
     def assert_address_has_country_code!(address, label)

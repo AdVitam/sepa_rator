@@ -6,6 +6,7 @@ require 'spec_helper'
 # or reject it before generation with a precise error, never in between.
 RSpec.describe SEPA::Profile, '#supports?' do
   contact = -> { SEPA::ContactDetails.new(name: 'Jane Doe', phone_number: '+43-1234567') }
+  structured = { country_code: 'AT', street_name: 'Hauptstrasse', building_number: '1', post_code: '1010', town_name: 'Wien' }.freeze
 
   scenarios = [
     { field: 'account.initiating_party_lei', capability: :lei,
@@ -21,7 +22,11 @@ RSpec.describe SEPA::Profile, '#supports?' do
     { field: 'transaction.debtor_contact_details', capability: :contact_details, family: :direct_debit,
       transaction: -> { { debtor_contact_details: contact.call } } },
     { field: 'account.address', capability: :account_address,
-      account: -> { { address: :address } } }
+      account: -> { { address: :address } } },
+    { field: 'creditor_address', capability: :structured_address, family: :credit_transfer,
+      transaction: -> { { creditor_address: SEPA::CreditorAddress.new(**structured) } } },
+    { field: 'debtor_address', capability: :structured_address, family: :direct_debit,
+      transaction: -> { { debtor_address: SEPA::DebtorAddress.new(**structured) } } }
   ].freeze
 
   def account_address(profile)

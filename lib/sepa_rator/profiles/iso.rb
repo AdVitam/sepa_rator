@@ -72,6 +72,7 @@ module SEPA
             regulatory_reporting
             contact_details
             account_address
+            structured_address
           ].freeze,
           transaction_stages: CREDIT_TRANSFER_STAGES,
           payment_info_stages: CREDIT_TRANSFER_PAYMENT_INFO_STAGES,
@@ -123,7 +124,7 @@ module SEPA
           xsd_path: 'iso/pain.001.002.03.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.001.002.03',
           features: { requires_bic: true, charset: Charset::EPC },
-          # EPC AOS drops InstrForCdtrAgt, InstrForDbtrAgt, RgltryRptg and CtctDtls.
+          # EPC AOS drops InstrForCdtrAgt, InstrForDbtrAgt, RgltryRptg, CtctDtls and structured PstlAdr.
           capabilities: { replace: %i[account_address].freeze },
           transaction_stages: [
             CT_STAGE::PaymentId,
@@ -179,7 +180,7 @@ module SEPA
             org_bic_tag: :BICOrBEI
           ),
           validators: [].freeze,
-          capabilities: %i[contact_details account_address].freeze,
+          capabilities: %i[contact_details account_address structured_address].freeze,
           transaction_stages: DIRECT_DEBIT_STAGES,
           payment_info_stages: DIRECT_DEBIT_PAYMENT_INFO_STAGES,
           group_header_stages: DIRECT_DEBIT_GROUP_HEADER_STAGES,
@@ -216,7 +217,7 @@ module SEPA
           xsd_path: 'iso/pain.008.002.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.002.02',
           features: { requires_bic: true, charset: Charset::EPC },
-          capabilities: { remove: %i[contact_details] },
+          capabilities: { remove: %i[contact_details structured_address] },
           accept_transaction: DD_EPC_RULES
         )
       )
@@ -228,7 +229,7 @@ module SEPA
           xsd_path: 'iso/pain.008.003.02.xsd',
           namespace: 'urn:iso:std:iso:20022:tech:xsd:pain.008.003.02',
           features: { charset: Charset::EPC },
-          capabilities: { remove: %i[contact_details] },
+          capabilities: { remove: %i[contact_details structured_address] },
           accept_transaction: DD_EPC_RULES
         )
       )

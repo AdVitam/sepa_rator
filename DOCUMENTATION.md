@@ -296,10 +296,10 @@ Use `SEPA::Address.new(...)` (or `SEPA::DebtorAddress` / `SEPA::CreditorAddress`
 | Field | Max length | Schema support |
 |-------|-----------|----------------|
 | `country_code` | 2 (ISO 3166) | All schemas |
-| `street_name` | 140 | All schemas |
-| `building_number` | 16 | All schemas |
-| `post_code` | 16 | All schemas |
-| `town_name` | 140 | All schemas |
+| `street_name` | 140 | All but `Ctry` + `AdrLine` schemas (1) |
+| `building_number` | 16 | All but `Ctry` + `AdrLine` schemas (1) |
+| `post_code` | 16 | All but `Ctry` + `AdrLine` schemas (1) |
+| `town_name` | 140 | All but `Ctry` + `AdrLine` schemas (1) |
 | `address_line1` | 70 | All schemas |
 | `address_line2` | 70 | All schemas |
 | `department` | 70 | .09/.08+ (PostalAddress24) |
@@ -314,7 +314,9 @@ Use `SEPA::Address.new(...)` (or `SEPA::DebtorAddress` / `SEPA::CreditorAddress`
 | `care_of` | 140 | .13/.12 only (PostalAddress27) |
 | `unit_number` | 16 | .13/.12 only |
 
-Fields not supported by a given schema are automatically rejected during XSD validation.
+(1) EPC AOS (`pain.001.002/003`, `pain.008.002/003`), AT v02/v03 and DK GBIC3 accept `country_code` and address lines only; other fields raise `SEPA::ValidationError` (`:structured_address` capability).
+
+Other fields not supported by a given schema are rejected during XSD validation.
 
 ---
 
@@ -701,6 +703,7 @@ the field and the capability, before any XML is generated.
 | `:agent_lei` | `agent_lei` (account, transaction) | `FinInstnId/LEI` |
 | `:contact_details` | `contact_details`, `creditor_contact_details`, `debtor_contact_details` | `CtctDtls` |
 | `:account_address` | `address` (message account, `creditor_account`) | `Dbtr/PstlAdr` (CT), `Cdtr/PstlAdr` (DD) |
+| `:structured_address` | any address field other than `country_code`, `address_line1`, `address_line2` | `PstlAdr/StrtNm`, `PstCd`, `TwnNm`, … |
 | `:uetr` | `uetr` | `PmtId/UETR` |
 | `:pmtinf_debtor_agent_instruction` | `debtor_agent_instruction` | `PmtInf/InstrForDbtrAgt` |
 | `:txn_instruction_for_debtor_agent` | `instruction_for_debtor_agent`, `instruction_for_debtor_agent_code` | `CdtTrfTxInf/InstrForDbtrAgt` |
