@@ -2,15 +2,7 @@
 
 module SEPA
   module Profiles
-    # Deutsche Kreditwirtschaft (DK) / DFÜ-Abkommen profiles for EBICS.
-    #
-    # DK publishes its own XSDs (GBIC3 for v03/v02, GBIC5 for v09/v08) that
-    # tighten the ISO baseline with a minimum transaction amount of 0.01,
-    # structured postal addresses (GBIC5) or `Ctry` + `AdrLine` only (GBIC3),
-    # no `CtctDtls` and (GBIC5) no LEI in
-    # `FinInstnId`. v13/v12 have no DK schema and follow the ISO one. The
-    # vendored XSDs live in the `sepa_rator-dk` gem (downloaded from
-    # https://www.ebics.de).
+    # DK (DFÜ-Abkommen, EBICS) GBIC3/GBIC5 subsets; v13/v12 have no DK schema: plain ISO.
     module DK
       VALIDATORS = [Validators::DK::MinAmount].freeze
 

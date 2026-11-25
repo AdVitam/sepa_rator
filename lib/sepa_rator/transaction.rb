@@ -94,14 +94,10 @@ module SEPA
       self
     end
 
-    # @return [Boolean] whether this transaction can be rendered under the
-    #   given profile: profile-level rules (`profile.accepts?`, e.g. EPC
-    #   currency restrictions), declared capabilities and feature formats.
     def compatible_with?(profile)
       profile.accepts?(self) && capability_violation(profile).nil? && compatible_features?(profile)
     end
 
-    # @return [Boolean] whether the set fields fit the profile's features
     def compatible_features?(profile)
       !profile.features.requires_bic || (bic && !bic.empty?)
     end

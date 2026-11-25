@@ -147,13 +147,8 @@ module SEPA
       end
     end
 
-    # Merge helper for the flat list fields `validators` and `capabilities`.
-    # Stage lists use `StageList.merge` instead, which supports positional
-    # operations (`insert_after:`, `replace:`/`with:`, `remove:`).
-    #
-    # Array = append (common case), `{ replace: [...] }` = drop the parent
-    # list, `{ add: [...] }` = explicit append, `{ remove: [...] }` = drop
-    # the given entries from the parent list.
+    # Flat lists only (`validators`, `capabilities`): order is irrelevant, so no
+    # positional operations as in `StageList.merge`.
     def merge_list(old, value, unique:)
       old = old.to_a
       combined =

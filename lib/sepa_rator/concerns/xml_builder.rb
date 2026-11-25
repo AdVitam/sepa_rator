@@ -1,10 +1,8 @@
 # frozen_string_literal: true
 
 module SEPA
-  # Collection of stateless helpers used by builder stages to emit common
-  # XML fragments (addresses, contacts, agent BIC, remittance info, etc.).
-  # Most helpers are data-only; `build_agent_bic` and `build_initiating_party`
-  # take a profile to select tags and the `InitgPty` layout.
+  # Stateless XML fragments shared by builder stages; only `build_agent_bic` and
+  # `build_initiating_party` depend on the profile (BIC tag, `InitgPty` layout).
   module XmlBuilder
     module_function
 

@@ -4,7 +4,6 @@ module SEPA
   module Builders
     module CreditTransfer
       module Transaction
-        # Unbounded InstrForCdtrAgt blocks.
         class InstructionsForCreditorAgent < Stage
           def call
             return unless transaction.instructions_for_creditor_agent

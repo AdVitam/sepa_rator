@@ -13,14 +13,12 @@ module SEPA
     end
 
     class_methods do
-      # @param requirements [Hash{Symbol => Symbol}] field => capability
       def requires_capabilities(**requirements)
         self.capability_requirements = capability_requirements.merge(requirements).freeze
       end
     end
 
-    # @return [Array(Symbol, Symbol), nil] the first `[field, capability]`
-    #   pair whose field is set while the profile lacks the capability
+    # @return [Array(Symbol, Symbol), nil] first `[field, capability]` the profile cannot serialise
     def capability_violation(profile)
       capability_requirements.find do |field, capability|
         !profile.supports?(capability) && field_set?(public_send(field))

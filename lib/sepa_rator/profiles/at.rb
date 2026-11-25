@@ -2,23 +2,8 @@
 
 module SEPA
   module Profiles
-    # PSA (Payment Services Austria) / Stuzza profiles.
-    #
-    # PSA publishes Austrian "Technical Validation Subsets" (v02/v03/v08/v09)
-    # that tighten the ISO baseline: minimum amount of 0.01, structured
-    # postal addresses (v09/v08) or `Ctry` + `AdrLine` only (v03/v02),
-    # `InitgPty` holding exactly one of `Nm` or
-    # `Id`, no `CtctDtls`, and (v09/v08) no LEI in `FinInstnId` and no postal
-    # address on the message account. v13/v12 have no PSA subset and follow
-    # the ISO schema. The vendored XSDs live in the `sepa_rator-at` gem
-    # (downloaded from https://zv.psa.at).
-    #
-    # The original PSA XSDs use a STUZZA-specific targetNamespace
-    # (`ISO:pain.*:APC:STUZZA:payments:*`); the vendored copies keep the
-    # ISO namespace because Austrian banks require the ISO namespace for
-    # transmission.  XSD 1.1 `xs:assert` elements (cross-field checks
-    # already handled in Ruby) have been stripped from v09/v08 schemas so
-    # Nokogiri/libxml2 (XSD 1.0 only) can load them.
+    # Vendored PSA XSDs keep the ISO namespace banks require, not STUZZA's, and drop
+    # XSD 1.1 asserts libxml2 cannot load. v13/v12 have no PSA subset: plain ISO.
     module AT
       VALIDATORS = [Validators::MinAmount].freeze
 

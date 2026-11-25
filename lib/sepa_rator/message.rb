@@ -192,9 +192,7 @@ module SEPA
       raise SEPA::ValidationError, "[#{profile.id}] creditor_account.initiating_party_* is ignored: set it on the message account instead"
     end
 
-    # Enforce profile-level rules on any account (the message's own account,
-    # or a per-transaction `creditor_account` override in direct debit). The
-    # `label` names the account in error messages.
+    # Shared by the message account and the direct debit `creditor_account` override.
     def validate_account_against_profile!(account, label)
       raise SEPA::ValidationError, "[#{profile.id}] #{label} is missing the required BIC" if profile.features.requires_bic && (account.bic.nil? || account.bic.empty?)
 

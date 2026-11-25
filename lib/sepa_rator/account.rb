@@ -30,8 +30,6 @@ module SEPA
 
     protected
 
-    # Builds `<Id><OrgId>` with the schema-appropriate BIC tag (BICOrBEI/AnyBIC)
-    # and an optional LEI.
     def build_organisation_id(builder, identifier, profile, **options)
       builder.Id do
         builder.OrgId do
