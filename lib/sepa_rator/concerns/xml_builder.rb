@@ -100,6 +100,23 @@ module SEPA
       end
     end
 
+    # Writes `<InitgPty>`. Profiles with `single_initiating_party_element`
+    # (PSA) get exactly one child: the id when the account sets an explicit
+    # initiating party identification, otherwise the name.
+    def build_initiating_party(builder, account, profile)
+      builder.InitgPty do
+        if !profile.features.single_initiating_party_element
+          builder.Nm(account.name)
+          account.initiating_party_id(builder, profile)
+          build_contact_details(builder, account.contact_details)
+        elsif account.explicit_initiating_party_id?
+          account.initiating_party_id(builder, profile)
+        else
+          builder.Nm(account.name)
+        end
+      end
+    end
+
     def build_contact_details(builder, contact_details)
       return unless contact_details
 

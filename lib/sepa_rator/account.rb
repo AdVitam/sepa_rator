@@ -21,6 +21,12 @@ module SEPA
     # @abstract Override in subclasses to emit an `<Id>` block inside `<InitgPty>`.
     def initiating_party_id(_builder, _profile); end
 
+    # @return [Boolean] whether the caller set an initiating party
+    #   identification of its own (beyond the account's defaults)
+    def explicit_initiating_party_id?
+      false
+    end
+
     protected
 
     # Builds `<Id><OrgId>` with the schema-appropriate BIC tag (BICOrBEI/AnyBIC)

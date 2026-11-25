@@ -15,20 +15,26 @@ module SEPA
     # transmission.  XSD 1.1 `xs:assert` elements (cross-field checks
     # already handled in Ruby) have been stripped from v09/v08 schemas so
     # Nokogiri/libxml2 (XSD 1.0 only) can load them.
+    #
+    # PSA allows exactly one element in `<InitgPty>` ("GENAU EIN
+    # FOLGE-ELEMENT"), a rule the stripped schemas no longer enforce, so
+    # these profiles set `single_initiating_party_element`.
     module AT
       VALIDATORS = [Validators::MinAmount].freeze
 
       FEATURES = {
         charset: Charset::AT,
         min_amount: BigDecimal('0.01'),
-        requires_structured_address: true
+        requires_structured_address: true,
+        single_initiating_party_element: true
       }.freeze
 
       # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine, not the
       # full structured fields — so we must not require structured addresses.
       LEGACY_FEATURES = {
         charset: Charset::AT,
-        min_amount: BigDecimal('0.01')
+        min_amount: BigDecimal('0.01'),
+        single_initiating_party_element: true
       }.freeze
 
       # ─── SEPA Credit Transfer ────────────────────────────────────────────

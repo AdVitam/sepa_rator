@@ -14,6 +14,8 @@ module SEPA
     :min_amount,
     :requires_structured_address,
     :requires_country_code_on_address,
+    # `<InitgPty>` holds exactly one element (name or id), e.g. PSA (AT)
+    :single_initiating_party_element,
     :extras
   ) do
     def self.default
@@ -29,6 +31,7 @@ module SEPA
         min_amount: nil,
         requires_structured_address: false,
         requires_country_code_on_address: false,
+        single_initiating_party_element: false,
         extras: {}.freeze
       )
     end

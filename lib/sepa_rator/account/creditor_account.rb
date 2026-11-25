@@ -8,6 +8,10 @@ module SEPA
     validates_with LEIValidator, field_name: :initiating_party_lei, message: 'is invalid'
     validates_with BICValidator, field_name: :initiating_party_bic, message: 'is invalid'
 
+    def explicit_initiating_party_id?
+      !(initiating_party_lei || initiating_party_bic).nil?
+    end
+
     def initiating_party_id(builder, profile)
       build_organisation_id(builder, creditor_identifier, profile,
                             lei: initiating_party_lei, org_bic: initiating_party_bic)

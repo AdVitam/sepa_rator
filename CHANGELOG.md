@@ -4,6 +4,10 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ## [Unreleased]
 
+### Fixed
+
+- AT (PSA) profiles write exactly one element in `<InitgPty>`, as the PSA schemas require: the name, or the id when an initiating party identification (`initiating_party_identifier`, `initiating_party_bic`, `initiating_party_lei`) is set. Direct debits used to write the name and the creditor identifier, which Austrian banks reject; the rule was lost when the XSD 1.1 asserts were stripped. New profile feature `single_initiating_party_element`
+
 ### Changed
 
 - The initiation source capability is checked only by `initiation_source_name=`; the redundant checks at construction, in `to_xml` and in the group header builder are removed

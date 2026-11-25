@@ -11,11 +11,7 @@ module SEPA
             builder.CreDtTm(message.creation_date_time)
             builder.NbOfTxs(message.transactions.length)
             builder.CtrlSum(XmlBuilder.format_amount(message.amount_total))
-            builder.InitgPty do
-              builder.Nm(message.account.name)
-              message.account.initiating_party_id(builder, profile)
-              XmlBuilder.build_contact_details(builder, message.account.contact_details)
-            end
+            XmlBuilder.build_initiating_party(builder, message.account, profile)
             build_initiation_source
           end
         end

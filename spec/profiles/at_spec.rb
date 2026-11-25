@@ -204,4 +204,60 @@ RSpec.describe SEPA::Profiles::AT do
       expect(sdd.profile).to equal(described_class::SDD_12)
     end
   end
+
+  describe 'initiating party (PSA: exactly one element in InitgPty)' do
+    def initiating_party_children(xml)
+      Nokogiri::XML(xml).remove_namespaces!.at_xpath('//GrpHdr/InitgPty').element_children.map(&:name)
+    end
+
+    it 'declares the feature on every AT profile' do
+      [described_class::SCT_03, described_class::SCT_09, described_class::SCT_13,
+       described_class::SDD_02, described_class::SDD_08, described_class::SDD_12].each do |profile|
+        expect(profile.features.single_initiating_party_element).to be(true), profile.id
+      end
+    end
+
+    { described_class::SDD_08 => 'at/pain.008.001.08.at.004.xsd',
+      described_class::SDD_02 => 'at/pain.008.001.02.at.004.xsd' }.each do |profile, xsd|
+      it "writes only the name for #{profile.id} although the creditor identifier is set" do
+        sdd = direct_debit_message(profile: profile)
+        sdd.add_transaction(direct_debit_transaction)
+        xml = sdd.to_xml
+
+        expect(initiating_party_children(xml)).to eq(['Nm'])
+        expect(Nokogiri::XML(xml).remove_namespaces!.at_xpath('//CdtrSchmeId//Othr/Id').text)
+          .to eq(sdd.account.creditor_identifier)
+        expect(xml).to validate_against(xsd)
+      end
+    end
+
+    it 'writes only the id when the creditor sets an initiating party BIC' do
+      sdd = direct_debit_message(profile: described_class::SDD_08, initiating_party_bic: 'RLNWATWWXXX')
+      sdd.add_transaction(direct_debit_transaction)
+      xml = sdd.to_xml
+
+      expect(initiating_party_children(xml)).to eq(['Id'])
+      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
+    end
+
+    it 'writes only the id when the debtor sets an initiating party identifier' do
+      sct = SEPA::CreditTransfer.new(profile: described_class::SCT_09, name: SEPA::TestData::DEBTOR_NAME,
+                                     bic: SEPA::TestData::DEBTOR_BIC, iban: SEPA::TestData::DEBTOR_IBAN,
+                                     initiating_party_identifier: 'ACME-001')
+      sct.add_transaction(credit_transfer_transaction(
+                            creditor_address: SEPA::CreditorAddress.new(country_code: 'AT', town_name: 'Wien')
+                          ))
+      xml = sct.to_xml
+
+      expect(initiating_party_children(xml)).to eq(['Id'])
+      expect(xml).to validate_against('at/pain.001.001.09.at.005.xsd')
+    end
+
+    it 'keeps name and id on profiles without the rule' do
+      sdd = direct_debit_message(profile: SEPA::Profiles::EPC::SDD_08)
+      sdd.add_transaction(direct_debit_transaction)
+
+      expect(initiating_party_children(sdd.to_xml)).to eq(%w[Nm Id])
+    end
+  end
 end
