@@ -12,29 +12,31 @@ module SEPA
     # The original PSA XSDs use a STUZZA-specific targetNamespace
     # (`ISO:pain.*:APC:STUZZA:payments:*`); the vendored copies keep the
     # ISO namespace because Austrian banks require the ISO namespace for
-    # transmission.  XSD 1.1 `xs:assert` elements (cross-field checks
-    # already handled in Ruby) have been stripped from v09/v08 schemas so
-    # Nokogiri/libxml2 (XSD 1.0 only) can load them.
-    #
-    # PSA allows exactly one element in `<InitgPty>` ("GENAU EIN
-    # FOLGE-ELEMENT"), a rule the stripped schemas no longer enforce, so
-    # these profiles set `single_initiating_party_element`.
+    # transmission.  XSD 1.1 `xs:assert` elements have been stripped from
+    # v09/v08 schemas so Nokogiri/libxml2 (XSD 1.0 only) can load them.
     module AT
       VALIDATORS = [Validators::MinAmount].freeze
+
+      # "GENAU/NUR EIN FOLGE-ELEMENT" types of the PSA XSDs: asserts in v08/v09,
+      # documentation only in v02/v03, so `single_child_paths` enforces them.
+      LEGACY_SINGLE_CHILD_PATHS = %w[GrpHdr/InitgPty GrpHdr/InitgPty/Id/OrgId RmtInf FinInstnId].freeze
+      SINGLE_CHILD_PATHS = [*LEGACY_SINGLE_CHILD_PATHS, 'UltmtCdtr', 'UltmtDbtr'].freeze
+      SDD_SINGLE_CHILD_PATHS = [*SINGLE_CHILD_PATHS, 'AmdmntInfDtls', 'OrgnlCdtrSchmeId'].freeze
 
       FEATURES = {
         charset: Charset::AT,
         min_amount: BigDecimal('0.01'),
         requires_structured_address: true,
-        single_initiating_party_element: true
+        single_child_paths: SINGLE_CHILD_PATHS
       }.freeze
+      SDD_FEATURES = FEATURES.merge(single_child_paths: SDD_SINGLE_CHILD_PATHS).freeze
 
       # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine, not the
       # full structured fields — so we must not require structured addresses.
       LEGACY_FEATURES = {
         charset: Charset::AT,
         min_amount: BigDecimal('0.01'),
-        single_initiating_party_element: true
+        single_child_paths: LEGACY_SINGLE_CHILD_PATHS
       }.freeze
 
       # ─── SEPA Credit Transfer ────────────────────────────────────────────
@@ -62,11 +64,11 @@ module SEPA
 
       SDD_08 = ProfileRegistry.register(
         EPC::SDD_08.with(id: 'at.sdd.08', xsd_path: 'at/pain.008.001.08.at.004.xsd',
-                         features: FEATURES, validators: VALIDATORS)
+                         features: SDD_FEATURES, validators: VALIDATORS)
       )
 
       SDD_12 = ProfileRegistry.register(
-        EPC::SDD_12.with(id: 'at.sdd.12', features: FEATURES, validators: VALIDATORS)
+        EPC::SDD_12.with(id: 'at.sdd.12', features: SDD_FEATURES, validators: VALIDATORS)
       )
     end
   end

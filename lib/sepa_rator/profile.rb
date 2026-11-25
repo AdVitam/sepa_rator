@@ -14,8 +14,8 @@ module SEPA
     :min_amount,
     :requires_structured_address,
     :requires_country_code_on_address,
-    # `<InitgPty>` holds exactly one element (name or id), e.g. PSA (AT)
-    :single_initiating_party_element,
+    # Element paths that must hold exactly one child (PSA XSD 1.1 asserts libxml2 cannot run)
+    :single_child_paths,
     :extras
   ) do
     def self.default
@@ -31,7 +31,7 @@ module SEPA
         min_amount: nil,
         requires_structured_address: false,
         requires_country_code_on_address: false,
-        single_initiating_party_element: false,
+        single_child_paths: [].freeze,
         extras: {}.freeze
       )
     end
@@ -116,6 +116,10 @@ module SEPA
 
     def supports?(capability)
       capabilities.include?(capability)
+    end
+
+    def single_child?(path)
+      features.single_child_paths.include?(path)
     end
 
     def accepts?(transaction)

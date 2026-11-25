@@ -210,10 +210,10 @@ RSpec.describe SEPA::Profiles::AT do
       Nokogiri::XML(xml).remove_namespaces!.at_xpath('//GrpHdr/InitgPty').element_children.map(&:name)
     end
 
-    it 'declares the feature on every AT profile' do
+    it 'declares the rule on every AT profile' do
       [described_class::SCT_03, described_class::SCT_09, described_class::SCT_13,
        described_class::SDD_02, described_class::SDD_08, described_class::SDD_12].each do |profile|
-        expect(profile.features.single_initiating_party_element).to be(true), profile.id
+        expect(profile.single_child?('GrpHdr/InitgPty')).to be(true), profile.id
       end
     end
 
