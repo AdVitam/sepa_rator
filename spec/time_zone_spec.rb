@@ -3,17 +3,15 @@
 require 'spec_helper'
 
 RSpec.describe SEPA do
-  # 2026-11-24 12:00 UTC is already 2026-11-25 in Pacific/Kiritimati (UTC+14)
-  let(:now) { Time.utc(2026, 11, 24, 12, 0) }
+  # At 10:05 UTC only UTC+14 (Kiritimati) has reached 2026-11-25, so any other system zone works
+  let(:now) { Time.utc(2026, 11, 24, 10, 5) }
   let(:local_date) { Date.new(2026, 11, 25) }
 
   around do |example|
     zone = Time.zone
-    tz = ENV.fetch('TZ', nil)
     travel_to(now) { example.run }
   ensure
     Time.zone = zone
-    ENV['TZ'] = tz
   end
 
   context 'with an application time zone ahead of UTC' do
@@ -36,10 +34,7 @@ RSpec.describe SEPA do
   end
 
   context 'without an application time zone' do
-    before do
-      Time.zone = nil
-      ENV['TZ'] = 'UTC'
-    end
+    before { Time.zone = nil }
 
     it 'rejects a mandate signed on the local date as being in the future' do
       transaction = SEPA::DirectDebitTransaction.new(direct_debit_transaction(mandate_date_of_signature: local_date))
