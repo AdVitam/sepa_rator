@@ -83,6 +83,14 @@ require 'sepa_rator/profiles/nl'
 require 'sepa_rator/profiles/country_defaults'
 
 module SEPA
+  # Today's date for date validations. Uses the application time zone
+  # (`Date.current`) when ActiveSupport's time zones are loaded, as in Rails,
+  # and the system date otherwise. Around midnight the two differ: a mandate
+  # signed today in Europe/Vienna is still "in the future" for a UTC clock.
+  def self.today
+    Date.respond_to?(:current) ? Date.current : Date.today
+  end
+
   # Entry point for companion schema gems (sepa_rator-at, …) at require time.
   def self.register_schema_root(path)
     SchemaValidation.register_schema_root(path)
