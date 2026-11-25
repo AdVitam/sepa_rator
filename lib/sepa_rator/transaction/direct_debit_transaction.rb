@@ -25,7 +25,7 @@ module SEPA
     validates_inclusion_of :sequence_type, in: SEQUENCE_TYPES
     validates_inclusion_of :charge_bearer, in: CHARGE_BEARERS, allow_nil: true
     validates :debtor_address, :debtor_contact_details, :creditor_account, nested_model: true, allow_nil: true
-    validate { |t| t.validate_requested_date_after(SEPA.today.next) }
+    validate { |t| t.validate_requested_date_after(Date.current.next) }
 
     validate do |t|
       errors.add(:original_mandate_id, 'is invalid') if original_mandate_id && !original_mandate_id.to_s.match?(MandateIdentifierValidator::REGEX)
@@ -35,7 +35,7 @@ module SEPA
       end
 
       if t.mandate_date_of_signature.is_a?(Date)
-        errors.add(:mandate_date_of_signature, 'is in the future') if t.mandate_date_of_signature > SEPA.today
+        errors.add(:mandate_date_of_signature, 'is in the future') if t.mandate_date_of_signature > Date.current
       else
         errors.add(:mandate_date_of_signature, 'is not a Date')
       end

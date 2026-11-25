@@ -45,7 +45,7 @@ module SEPA
     validates_length_of :credit_transfer_mandate_id, within: 1..35, allow_nil: true
     validates_inclusion_of :credit_transfer_mandate_frequency, in: FREQUENCY_CODES, allow_nil: true
 
-    validate { |t| t.validate_requested_date_after(SEPA.today) }
+    validate { |t| t.validate_requested_date_after(Date.current) }
     validate :validate_instructions_for_creditor_agent
     validate :validate_regulatory_reportings
     validate :validate_credit_transfer_mandate_date_of_signature
