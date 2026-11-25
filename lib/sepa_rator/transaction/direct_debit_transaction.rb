@@ -36,6 +36,8 @@ module SEPA
         errors.add(:original_debtor_account, 'is not a valid IBAN')
       end
 
+      errors.add(:same_mandate_new_debtor_agent, 'cannot be combined with original_debtor_account') if original_debtor_account && same_mandate_new_debtor_agent
+
       if t.mandate_date_of_signature.is_a?(Date)
         errors.add(:mandate_date_of_signature, 'is in the future') if t.mandate_date_of_signature > Date.current
       else

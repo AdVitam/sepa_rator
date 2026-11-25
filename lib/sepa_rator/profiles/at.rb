@@ -13,17 +13,20 @@ module SEPA
         requires_structured_address: true
       }.freeze
 
+      # PSA credit transfer schemas drop these; `remove` is a no-op for direct debit profiles.
+      UNSUPPORTED_CT_CAPABILITIES = %i[txn_instruction_for_debtor_agent instructions_for_creditor_agent regulatory_reporting].freeze
+
       SUBSET = {
         features: FEATURES.merge(exclusive_initiating_party: true),
         validators: VALIDATORS,
-        capabilities: { remove: %i[contact_details agent_lei account_address] }
+        capabilities: { remove: %i[contact_details agent_lei account_address] + UNSUPPORTED_CT_CAPABILITIES }
       }.freeze
 
       # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine.
       LEGACY_SUBSET = {
         features: { charset: Charset::AT, min_amount: BigDecimal('0.01'), exclusive_initiating_party: true },
         validators: VALIDATORS,
-        capabilities: { remove: %i[contact_details structured_address] }
+        capabilities: { remove: %i[contact_details structured_address] + UNSUPPORTED_CT_CAPABILITIES }
       }.freeze
 
       # ─── SEPA Credit Transfer ────────────────────────────────────────────

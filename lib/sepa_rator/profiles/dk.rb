@@ -18,18 +18,21 @@ module SEPA
         min_amount: BigDecimal('0.01')
       }.freeze
 
+      # GBIC credit transfer schemas drop these.
+      UNSUPPORTED_CT_CAPABILITIES = %i[txn_instruction_for_debtor_agent instructions_for_creditor_agent regulatory_reporting].freeze
+
       # ─── SEPA Credit Transfer ────────────────────────────────────────────
 
       SCT_03_GBIC3 = ProfileRegistry.register(
         EPC::SCT_03.with(id: 'dk.sct.03.gbic3', xsd_path: 'dk/pain.001.001.03_GBIC_3.xsd',
                          features: LEGACY_FEATURES, validators: VALIDATORS,
-                         capabilities: { remove: %i[contact_details structured_address] })
+                         capabilities: { remove: %i[contact_details structured_address] + UNSUPPORTED_CT_CAPABILITIES })
       )
 
       SCT_09_GBIC5 = ProfileRegistry.register(
         EPC::SCT_09.with(id: 'dk.sct.09.gbic5', xsd_path: 'dk/pain.001.001.09_GBIC_5.xsd',
                          features: FEATURES, validators: VALIDATORS,
-                         capabilities: { remove: %i[contact_details agent_lei] })
+                         capabilities: { remove: %i[contact_details agent_lei uetr pmtinf_debtor_agent_instruction] + UNSUPPORTED_CT_CAPABILITIES })
       )
 
       SCT_13_GBIC5 = ProfileRegistry.register(
@@ -47,7 +50,7 @@ module SEPA
       SDD_08_GBIC5 = ProfileRegistry.register(
         EPC::SDD_08.with(id: 'dk.sdd.08.gbic5', xsd_path: 'dk/pain.008.001.08_GBIC_5.xsd',
                          features: FEATURES, validators: VALIDATORS,
-                         capabilities: { remove: %i[contact_details agent_lei] })
+                         capabilities: { remove: %i[contact_details agent_lei uetr] })
       )
 
       SDD_12_GBIC5 = ProfileRegistry.register(

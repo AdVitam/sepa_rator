@@ -465,6 +465,32 @@ RSpec.describe SEPA::DirectDebit do
         end
       end
 
+      context 'with a same-mandate-new-debtor-agent amendment on the EPC AOS schemas' do
+        %i[sdd_epc_002_02 sdd_epc_003_02].each do |profile_key|
+          it "places SMNDA in OrgnlDbtrAgt for #{profile_key}" do
+            sdd = build_dd(public_send(profile_key))
+            sdd.add_transaction(direct_debit_transaction.merge(same_mandate_new_debtor_agent: true, sequence_type: 'FRST'))
+            xml = sdd.to_xml
+            path = '//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf/DrctDbtTx/MndtRltdInf/AmdmntInfDtls'
+            expect(xml).to have_xml("#{path}/OrgnlDbtrAgt/FinInstnId/Othr/Id", 'SMNDA')
+            expect(xml).not_to include('OrgnlDbtrAcct')
+          end
+        end
+      end
+
+      SEPA::ProfileRegistry.all.select { |p| p.family == :direct_debit }.each do |profile|
+        it "emits and validates a SMNDA amendment for #{profile.id}" do
+          sdd = build_dd(profile)
+          sdd.add_transaction(direct_debit_transaction.merge(same_mandate_new_debtor_agent: true, sequence_type: 'FRST'))
+          xml = sdd.to_xml # raises on XSD violation
+
+          doc = Nokogiri::XML(xml).remove_namespaces!
+          expected = profile.features.smnda_in_debtor_agent ? 'OrgnlDbtrAgt/FinInstnId/Othr/Id' : 'OrgnlDbtrAcct/Id/Othr/Id'
+          expect(doc.at_xpath("//AmdmntInfDtls/#{expected}")&.text).to eq('SMNDA')
+          expect(doc.xpath('//AmdmntInfDtls/OrgnlDbtrAgt | //AmdmntInfDtls/OrgnlDbtrAcct').size).to eq(1)
+        end
+      end
+
       context 'with mandate amendments' do
         subject(:xml) do
           sdd = build_dd(sdd_02)
@@ -491,9 +517,10 @@ RSpec.describe SEPA::DirectDebit do
             'NL08RABO0135742099'
           )
           expect(xml).to have_xml(
-            '//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlDbtrAgt/FinInstnId/Othr/Id',
+            '//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[2]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlDbtrAcct/Id/Othr/Id',
             'SMNDA'
           )
+          expect(xml).not_to include('OrgnlDbtrAgt')
           expect(xml).to have_xml(
             '//Document/CstmrDrctDbtInitn/PmtInf/DrctDbtTxInf[3]/DrctDbtTx/MndtRltdInf/AmdmntInfDtls/OrgnlCdtrSchmeId/Nm',
             'Creditor Inc.'

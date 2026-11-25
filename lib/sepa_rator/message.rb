@@ -13,10 +13,7 @@ module SEPA
     attr_reader :account, :grouped_transactions, :profile, :initiation_source_name, :initiation_source_provider
 
     def initiation_source_name=(value)
-      if value && !profile.supports?(:initiation_source)
-        raise SEPA::ValidationError,
-              "[#{profile.id}] initiation_source_name is set but the profile does not support InitnSrc"
-      end
+      raise_unsupported_capability!('initiation_source_name', :initiation_source) if value && !profile.supports?(:initiation_source)
 
       @initiation_source_name = charset.text(value)
     end
@@ -203,7 +200,11 @@ module SEPA
 
     def assert_capabilities!(model, label)
       field, capability = model.capability_violation(profile)
-      raise SEPA::ValidationError, "[#{profile.id}] #{label}.#{field} requires capability :#{capability}, not supported by this profile" if field
+      raise_unsupported_capability!("#{label}.#{field}", capability) if field
+    end
+
+    def raise_unsupported_capability!(field, capability)
+      raise SEPA::ValidationError, "[#{profile.id}] #{field} requires capability :#{capability}, not supported by this profile"
     end
 
     # Transaction-level addresses (`creditor_address`, `debtor_address`) are

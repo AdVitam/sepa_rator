@@ -16,6 +16,8 @@ module SEPA
     :requires_country_code_on_address,
     # PSA subsets: `InitgPty` holds exactly one of `Nm` or `Id`.
     :exclusive_initiating_party,
+    # EPC AOS schemas carry SMNDA in `OrgnlDbtrAgt`; every later schema in `OrgnlDbtrAcct`.
+    :smnda_in_debtor_agent,
     :extras
   ) do
     def self.default
@@ -32,6 +34,7 @@ module SEPA
         requires_structured_address: false,
         requires_country_code_on_address: false,
         exclusive_initiating_party: false,
+        smnda_in_debtor_agent: false,
         extras: {}.freeze
       )
     end
