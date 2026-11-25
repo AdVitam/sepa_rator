@@ -175,6 +175,7 @@ module SEPA
       raise SEPA::ValidationError, "Transaction not compatible with profile #{profile.id}" unless transaction.compatible_with?(profile)
 
       validate_transaction_addresses_against_profile!(transaction)
+      Validators::SingleAgentIdentification.validate(transaction, profile, label: 'transaction')
       run_profile_validators(transaction)
     end
 
@@ -202,6 +203,7 @@ module SEPA
         end
       end
 
+      Validators::SingleAgentIdentification.validate(account, profile, label: label)
       assert_address_structured!(account.address, "#{label}.address")
       assert_address_has_country_code!(account.address, "#{label}.address")
     end

@@ -14,7 +14,7 @@ module SEPA
     :min_amount,
     :requires_structured_address,
     :requires_country_code_on_address,
-    # Element paths that must hold exactly one child (PSA XSD 1.1 asserts libxml2 cannot run)
+    # Relative element paths, matched anywhere in the document, that must hold exactly one child
     :single_child_paths,
     :extras
   ) do

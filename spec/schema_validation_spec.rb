@@ -119,6 +119,11 @@ RSpec.describe SEPA::SchemaValidation do
         .to raise_error(SEPA::SchemaValidationError, %r{#{SEPA::Profiles::ISO::SCT_09.id}.*Document/CstmrCdtTrfInitn/GrpHdr})
     end
 
+    it 'checks every listed path, not only the first' do
+      expect { ct_xml(%w[GrpHdr/InitgPty GrpHdr]) }
+        .to raise_error(SEPA::SchemaValidationError, %r{required in Document/CstmrCdtTrfInitn/GrpHdr\z})
+    end
+
     it 'raises when a listed element has no child' do
       expect { ct_xml(%w[GrpHdr/MsgId]) }
         .to raise_error(SEPA::SchemaValidationError, %r{CstmrCdtTrfInitn/GrpHdr/MsgId})

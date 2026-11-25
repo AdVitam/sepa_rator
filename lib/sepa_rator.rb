@@ -64,7 +64,7 @@ require 'sepa_rator/message/credit_transfer'
 
 # Profile validators (national rules) — loaded before profiles that use them.
 require 'sepa_rator/validators/min_amount'
-require 'sepa_rator/validators/single_amendment_detail'
+require 'sepa_rator/validators/single_agent_identification'
 require 'sepa_rator/validators/single_initiating_party'
 require 'sepa_rator/validators/dk/min_amount'
 

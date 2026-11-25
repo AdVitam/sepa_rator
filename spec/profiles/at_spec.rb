@@ -165,6 +165,39 @@ RSpec.describe SEPA::Profiles::AT do
     end
   end
 
+  describe 'agent identification (PSA: exactly one element in FinInstnId)' do
+    let(:lei) { '529900T8BM49AURSDO55' }
+
+    it 'rejects a message account with both a BIC and an agent LEI' do
+      expect { credit_transfer_message(profile: described_class::SCT_13, agent_lei: lei) }
+        .to raise_error(SEPA::ValidationError, /account accepts a bic or an agent_lei, not both/)
+    end
+
+    it 'rejects a transaction with both a BIC and an agent LEI' do
+      sct = credit_transfer_message(profile: described_class::SCT_13)
+
+      expect { sct.add_transaction(credit_transfer_transaction(agent_lei: lei)) }
+        .to raise_error(SEPA::ValidationError, /transaction accepts a bic or an agent_lei, not both/)
+    end
+
+    it 'rejects a creditor account override with both a BIC and an agent LEI' do
+      sdd = direct_debit_message(profile: described_class::SDD_12)
+      override = SEPA::CreditorAccount.new(name: 'Other Creditor', bic: SEPA::TestData::DEBTOR_BIC,
+                                           iban: SEPA::TestData::DEBTOR_IBAN, agent_lei: lei,
+                                           creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
+
+      expect { sdd.add_transaction(direct_debit_transaction(creditor_account: override)) }
+        .to raise_error(SEPA::ValidationError, /creditor_account accepts a bic or an agent_lei, not both/)
+    end
+
+    it 'keeps both on profiles without the rule' do
+      sct = credit_transfer_message(profile: SEPA::Profiles::EPC::SCT_13, agent_lei: lei)
+      sct.add_transaction(credit_transfer_transaction(agent_lei: lei))
+
+      expect(sct.to_xml).to have_xml('//Document/CstmrCdtTrfInitn/PmtInf/DbtrAgt/FinInstnId/LEI', lei)
+    end
+  end
+
   describe 'MinAmount shared validator' do
     it 'is the same class as Validators::DK::MinAmount (alias)' do
       expect(SEPA::Validators::DK::MinAmount).to equal(SEPA::Validators::MinAmount)
@@ -266,6 +299,15 @@ RSpec.describe SEPA::Profiles::AT do
       expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
     end
 
+    it 'writes only the initiating party BIC in OrgId on legacy profiles' do
+      sdd = direct_debit_message(profile: described_class::SDD_02, initiating_party_bic: 'RLNWATWWXXX')
+      sdd.add_transaction(direct_debit_transaction)
+      xml = sdd.to_xml
+
+      expect(children_of(xml, '//GrpHdr/InitgPty/Id/OrgId')).to eq(['BICOrBEI'])
+      expect(xml).to validate_against('at/pain.008.001.02.at.004.xsd')
+    end
+
     it 'writes only the LEI when the creditor sets an initiating party LEI' do
       xml = at_sdd_08(initiating_party_lei: '529900T8BM49AURSDO55')
 
@@ -296,50 +338,21 @@ RSpec.describe SEPA::Profiles::AT do
     end
   end
 
-  describe 'original creditor scheme (PSA: exactly one element in OrgnlCdtrSchmeId)' do
-    def amended_xml(original_creditor)
+  describe 'amendment details (PSA: at least one element)' do
+    it 'keeps every amendment detail and both original creditor scheme children' do
       sdd = direct_debit_message(profile: described_class::SDD_08)
       sdd.add_transaction(direct_debit_transaction(
-                            original_creditor_account: SEPA::CreditorAccount.new(**original_creditor)
+                            original_mandate_id: 'OLD-MANDATE',
+                            original_creditor_account: SEPA::CreditorAccount.new(
+                              name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER
+                            )
                           ))
-      sdd.to_xml
-    end
+      xml = sdd.to_xml
+      doc = Nokogiri::XML(xml).remove_namespaces!
 
-    def scheme_children(xml)
-      Nokogiri::XML(xml).remove_namespaces!.at_xpath('//OrgnlCdtrSchmeId').element_children.map(&:name)
-    end
-
-    it 'writes only the id when the original creditor has a name and an identifier' do
-      xml = amended_xml(name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER)
-
-      expect(scheme_children(xml)).to eq(['Id'])
-      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
+      expect(doc.at_xpath('//AmdmntInfDtls').element_children.map(&:name)).to eq(%w[OrgnlMndtId OrgnlCdtrSchmeId])
+      expect(doc.at_xpath('//OrgnlCdtrSchmeId').element_children.map(&:name)).to eq(%w[Nm Id])
       expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
-    end
-
-    it 'writes only the name when the original creditor has no identifier' do
-      xml = amended_xml(name: 'Old Creditor')
-
-      expect(scheme_children(xml)).to eq(['Nm'])
-      expect(xml).to satisfy_single_child_rules_of(described_class::SDD_08)
-      expect(xml).to validate_against('at/pain.008.001.08.at.004.xsd')
-    end
-  end
-
-  describe 'amendment details (PSA: exactly one element in AmdmntInfDtls)' do
-    [described_class::SDD_08, described_class::SDD_12].each do |profile|
-      it "rejects two amendment details under #{profile.id}" do
-        sdd = direct_debit_message(profile: profile)
-
-        expect do
-          sdd.add_transaction(direct_debit_transaction(
-                                original_mandate_id: 'OLD-MANDATE',
-                                original_creditor_account: SEPA::CreditorAccount.new(
-                                  name: 'Old Creditor', creditor_identifier: SEPA::TestData::CREDITOR_IDENTIFIER
-                                )
-                              ))
-        end.to raise_error(SEPA::ValidationError, /only one amendment detail/)
-      end
     end
   end
 end

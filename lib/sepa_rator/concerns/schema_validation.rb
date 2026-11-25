@@ -44,8 +44,8 @@ module SEPA
       )
     end
 
-    # The XSDs only document these "exactly one subsequent element" rules, so
-    # they are enforced here on the already-built document.
+    # libxml2 cannot run XSD 1.1 asserts and some XSDs only document these
+    # rules, so they are checked on the built document.
     def check_single_child_rules!(document, profile)
       paths = profile.features.single_child_paths
       return if paths.empty?

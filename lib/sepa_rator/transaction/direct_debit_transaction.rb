@@ -51,17 +51,8 @@ module SEPA
       warn '[SEPA] COR1 local instrument is deprecated since November 2017. Use CORE instead.'
     end
 
-    def amendment_details
-      {
-        original_mandate_id: original_mandate_id,
-        original_debtor_account: original_debtor_account,
-        same_mandate_new_debtor_agent: same_mandate_new_debtor_agent,
-        original_creditor_account: original_creditor_account
-      }.select { |_, value| value }
-    end
-
     def amendment_informations?
-      amendment_details.any?
+      original_mandate_id || original_debtor_account || same_mandate_new_debtor_agent || original_creditor_account
     end
 
     def compatible_capabilities?(profile)

@@ -16,13 +16,10 @@ module SEPA
     # v09/v08 schemas so Nokogiri/libxml2 (XSD 1.0 only) can load them.
     module AT
       VALIDATORS = [Validators::MinAmount].freeze
-      SDD_VALIDATORS = [*VALIDATORS, Validators::SingleAmendmentDetail].freeze
 
-      # "GENAU/NUR EIN FOLGE-ELEMENT" types of the PSA XSDs: asserts in v08/v09,
-      # documentation only in v02/v03, so `single_child_paths` enforces them.
-      LEGACY_SINGLE_CHILD_PATHS = %w[GrpHdr/InitgPty GrpHdr/InitgPty/Id/OrgId RmtInf FinInstnId].freeze
-      SINGLE_CHILD_PATHS = [*LEGACY_SINGLE_CHILD_PATHS, 'UltmtCdtr', 'UltmtDbtr'].freeze
-      SDD_SINGLE_CHILD_PATHS = [*SINGLE_CHILD_PATHS, 'AmdmntInfDtls', 'OrgnlCdtrSchmeId'].freeze
+      # PSA "GENAU/NUR EIN FOLGE-ELEMENT" types (stripped asserts in v08/v09,
+      # documentation in v02/v03); v12/v13 inherit them over the ISO XSD.
+      SINGLE_CHILD_PATHS = %w[GrpHdr/InitgPty GrpHdr/InitgPty/Id/OrgId RmtInf FinInstnId].freeze
 
       FEATURES = {
         charset: Charset::AT,
@@ -30,14 +27,13 @@ module SEPA
         requires_structured_address: true,
         single_child_paths: SINGLE_CHILD_PATHS
       }.freeze
-      SDD_FEATURES = FEATURES.merge(single_child_paths: SDD_SINGLE_CHILD_PATHS).freeze
 
       # PSA v03/v02 PostalAddress6 only supports Ctry + AdrLine, not the
       # full structured fields — so we must not require structured addresses.
       LEGACY_FEATURES = {
         charset: Charset::AT,
         min_amount: BigDecimal('0.01'),
-        single_child_paths: LEGACY_SINGLE_CHILD_PATHS
+        single_child_paths: SINGLE_CHILD_PATHS
       }.freeze
 
       # ─── SEPA Credit Transfer ────────────────────────────────────────────
@@ -65,11 +61,11 @@ module SEPA
 
       SDD_08 = ProfileRegistry.register(
         EPC::SDD_08.with(id: 'at.sdd.08', xsd_path: 'at/pain.008.001.08.at.004.xsd',
-                         features: SDD_FEATURES, validators: SDD_VALIDATORS)
+                         features: FEATURES, validators: VALIDATORS)
       )
 
       SDD_12 = ProfileRegistry.register(
-        EPC::SDD_12.with(id: 'at.sdd.12', features: SDD_FEATURES, validators: SDD_VALIDATORS)
+        EPC::SDD_12.with(id: 'at.sdd.12', features: FEATURES, validators: VALIDATORS)
       )
     end
   end

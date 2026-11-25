@@ -6,8 +6,8 @@ Successor to [salesking/sepa_king](https://github.com/salesking/sepa_king) (unma
 
 ### Fixed
 
-- AT (PSA) profiles follow the PSA "exactly one subsequent element" rules, lost when the XSD 1.1 asserts were stripped (v08/v09) and never enforced for the documentation-only v02/v03 rules. `<InitgPty>` holds the name, or the id when `initiating_party_identifier`, `initiating_party_bic` or `initiating_party_lei` is set; `InitgPty/Id/OrgId` holds that single identification and never the creditor identifier, which stays in `CdtrSchmeId`; `OrgnlCdtrSchmeId` holds the id when a creditor identifier is set, else the name. Austrian banks rejected the previous output
-- AT (PSA) profiles raise `SEPA::ValidationError` instead of dropping data: several initiating party identifications, `contact_details` on the message account, or several amendment details on a direct debit transaction
+- AT (PSA) profiles follow the PSA "exactly one subsequent element" rules, lost when the XSD 1.1 asserts were stripped (v08/v09) and never enforced for the documentation-only v02/v03 rules. `<InitgPty>` holds the name, or the id when `initiating_party_identifier`, `initiating_party_bic` or `initiating_party_lei` is set; `InitgPty/Id/OrgId` holds that single identification and never the creditor identifier, which stays in `CdtrSchmeId`. Austrian banks rejected the previous output
+- AT (PSA) profiles raise `SEPA::ValidationError` on data a single-child element cannot hold: several initiating party identifications, `contact_details` on the message account, or both a `bic` and an `agent_lei` on an account or transaction
 - AT (PSA) documents are checked after XSD validation for every single-child path of the profile; a violation raises `SEPA::SchemaValidationError`. New profile feature `single_child_paths` and `Profile#single_child?`
 
 ### Changed

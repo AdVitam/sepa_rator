@@ -547,6 +547,8 @@ The LEI is a 20-character identifier (ISO 17442) for legal entities in financial
 | `agent_lei` | Transaction | `CdtrAgt/FinInstnId/LEI` (CT) or `DbtrAgt/FinInstnId/LEI` (DD) |
 | `initiating_party_lei` | DebtorAccount / CreditorAccount | `InitgPty/Id/OrgId/LEI` |
 
+AT (PSA) profiles take a single child in `FinInstnId`: setting both `bic` and `agent_lei` on an account or a transaction raises `SEPA::ValidationError`.
+
 ```ruby
 # Account-level LEI (debtor's bank)
 sct = SEPA::CreditTransfer.new(
