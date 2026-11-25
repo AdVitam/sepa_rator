@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
+require 'date'
+require 'time'
 require 'active_model'
+require 'active_support/core_ext/date/calculations'
 require 'bigdecimal'
 require 'nokogiri'
 require 'ibandit'
