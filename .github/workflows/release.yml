@@ -21,7 +21,7 @@ jobs:
       - name: Build gems
         run: bundle exec rake build_all
       # Credentials expire 15 minutes after this step, so build all gems first.
-      - uses: rubygems/configure-rubygems-credentials@17e51a8c9fcf6d5f709e04cc612fd105f9273170
+      - uses: rubygems/configure-rubygems-credentials@c6ca7f4bac0e29c9bde8eeae0a0a986b27efa05f
       - name: Push to RubyGems
         # Re-runnable after a partial release: "already been pushed" is not an error.
         run: |
